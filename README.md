@@ -1,5 +1,7 @@
 # asaoffice — a Stardew-style pixel office for Claude Code
 
+> 🇮🇩 **Pemula?** Baca [PANDUAN.md](PANDUAN.md): panduan langkah demi langkah dalam bahasa Indonesia.
+
 A cozy farmhouse reskin of [`pixel-agents`](https://github.com/pixel-agents-hq/pixel-agents): every Claude Code
 session turns into a little villager who walks to a wooden desk, types on a retro computer while the agent edits
 files, reads while it searches, and pops a bubble when it's waiting on you. It runs locally and you can watch it
@@ -54,6 +56,11 @@ npm --prefix ~/asaoffice run office  # starts pixel-agents on http://127.0.0.1:3
 4. If no villager appears, check that hooks are on. If the session was started in another folder, turn on
    **Settings → Watch All Sessions**.
 
+**Claude Code in the Claude Desktop app** works too, as long as the session runs locally on your Mac (not in cloud
+or remote mode). Desktop sessions often run in a different folder, or in a worktree the app creates, so turn on
+**Settings → Watch All Sessions** in the office. Then give the session a task that reads or edits files. Plain Claude chats
+and cloud sessions can't show up, because they don't run Claude Code on your machine.
+
 `npm run office` always uses the `pixel-agents` installed in this repo, pinned to 1.4.1 so the overlay applies.
 A bare `npx pixel-agents` would run a separate copy without the Stardew floors, walls, and base characters.
 You can pass extra flags through, for example `npm --prefix ~/asaoffice run office -- --no-terminal`.
@@ -102,10 +109,10 @@ The script reads the running server's token from `~/.pixel-agents/servers/`. It 
 | Item | Status |
 | --- | --- |
 | `pixel-agents` runs and prints a local URL with a token | ✅ verified (1.4.1, `npm run office`) |
-| A Claude session spawns a character; it types / reads / waits | ✅ verified with simulated hook events (Edit, Grep, PermissionRequest). Confirm once with a real `claude` session on your machine. |
+| A Claude session spawns a character; it types / reads / waits | ✅ verified with simulated hook events, then with real sessions on macOS (terminal `claude` and the Claude Desktop Code tab) |
 | Office renders with Stardew-style tiles and characters, with no core source edits | ✅ external pack + asset overlay |
 | Cozy layout | ✅ `layouts/stardew-office.json` |
-| Viewable live from a phone via a tunnel | ✅ WebSocket verified under a foreign hostname on a phone viewport. Run `npm run tunnel` on your machine for the real thing. |
+| Viewable live from a phone via a tunnel | ✅ verified on a real phone through `npm run tunnel` (cloudflared) |
 | Token URL not exposed | Bound to `127.0.0.1`; tunnel URL printed only to your terminal |
 
 ## Gotchas
