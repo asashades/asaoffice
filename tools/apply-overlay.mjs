@@ -1,19 +1,23 @@
 // Optional: swap pixel-agents' bundled-only art (floors, walls, base characters) for the
-// Stardew versions in overlay/. External asset directories can't replace these, so this
-// patches the *installed copy* in node_modules — never the pixel-agents source.
-//   node tools/apply-overlay.mjs            apply (backs up originals once)
-//   node tools/apply-overlay.mjs --restore  put the originals back
+// Stardew versions in overlay/, and install the idle-chat addon (addon/). External asset
+// directories can't do either, so this patches the *installed copy* in node_modules — never
+// the pixel-agents source.
+//   node tools/apply-overlay.mjs                 apply (backs up originals once)
+//   node tools/apply-overlay.mjs --no-idle-chat  art only; also removes a previously installed addon
+//   node tools/apply-overlay.mjs --restore       put the originals back
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { pixelAgentsDist } from './lib/paths.mjs';
+import { applyWebviewAddon, restoreWebviewAddon } from './lib/webview-addon.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = pixelAgentsDist(root);
 const overlay = path.join(root, 'overlay');
 const backup = path.join(dist, '.asaoffice-backup');
 const restore = process.argv.includes('--restore');
+const idleChat = !process.argv.includes('--no-idle-chat');
 
 // The server reads dist/assets; dist/webview/assets is the webview's copy — patch both.
 const targets = [path.join(dist, 'assets'), path.join(dist, 'webview', 'assets')].filter((d) => fs.existsSync(d));
@@ -43,6 +47,17 @@ for (const target of targets) {
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.copyFileSync(path.join(overlay, rel), dest);
     changed++;
+  }
+}
+
+if (restore || !idleChat) {
+  const n = restoreWebviewAddon(dist, backup);
+  if (restore) changed += n;
+} else {
+  try {
+    console.log(applyWebviewAddon(root, dist, backup));
+  } catch (err) {
+    console.warn(`Skipped idle chat: ${err.message}`);
   }
 }
 
