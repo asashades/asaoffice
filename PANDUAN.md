@@ -44,6 +44,17 @@ Buat matiin salah satu tab, klik tab-nya lalu tekan **Control + C**.
 
 Chat biasa di Claude Desktop dan sesi cloud gak bakal muncul di kantor.
 
+## Villager ngobrol pas lagi santai 💬
+
+Kalau ada dua sesi Claude yang lagi nganggur (gak ada tugas) minimal 10 detik, villager-nya bisa jalan saling
+nyamperin terus ngobrol pakai balon teks. Obrolannya nyambung sama kerjaan mereka, misalnya tool yang barusan dipakai,
+nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet tugas, dia pamit dan balik ke meja.
+
+- Udah nyala otomatis setelah `npm run overlay` (termasuk di `npm run setup`). Abis `git pull`, jalanin
+  `npm run overlay` lagi, terus refresh browser.
+- Mau obrolannya pakai bahasa Inggris? Tambahin `&chatLang=en` di ujung link kantor.
+- Mau dimatiin? Tambahin `&idleChat=off` di ujung link kantor. Nyalain lagi pakai `&idleChat=on`.
+
 ## Kalau ada masalah
 
 | Masalah | Solusi |
@@ -51,6 +62,7 @@ Chat biasa di Claude Desktop dan sesi cloud gak bakal muncul di kantor.
 | `npm error enoent … package.json` | Kamu belum ada di folder proyek. Jalanin `cd ~/asaoffice` dulu. |
 | Karakter gak muncul | Buka **Settings**, pastiin **Instant Detection (Hooks)** dan **Watch All Sessions** udah ON. Terus di tab Claude ketik `/exit`, jalanin `claude` lagi, dan kasih dia tugas baca file. |
 | `Stop hook error: … SuperIsland …` | Ini dari aplikasi lain, bukan dari kantor pixel, dan gak ganggu apa-apa. Cara ngilanginnya: minta Claude hapus hook SuperIsland di `~/.claude/settings.json` (suruh dia backup file-nya dulu). |
+| Abis restart kantor, karakternya ilang | Normal. Karakter baru muncul lagi setelah sesi Claude-nya ngapa-ngapain. Kasih tugas atau kirim pesan di sesi itu. Jangan lupa buka link **baru** dari tab 1, soalnya token-nya ganti tiap restart. |
 | Link di HP gak kebuka lagi | Link-nya ganti tiap kali tunnel dinyalain ulang. Jalanin lagi tab 3, lalu scan QR yang baru. |
 | Tampilannya balik ke kantor abu-abu | Abis `npm install`, jalanin `npm run overlay`, terus restart tab 1. |
 
