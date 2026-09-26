@@ -1,0 +1,14 @@
+{
+  "id": "COZY_CALENDAR",
+  "name": "Wall Calendar",
+  "category": "wall",
+  "type": "asset",
+  "file": "COZY_CALENDAR.png",
+  "width": 16,
+  "height": 32,
+  "footprintW": 1,
+  "footprintH": 2,
+  "canPlaceOnWalls": true,
+  "canPlaceOnSurfaces": false,
+  "backgroundTiles": 0
+}

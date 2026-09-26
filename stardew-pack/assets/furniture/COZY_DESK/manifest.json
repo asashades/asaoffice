@@ -1,0 +1,33 @@
+{
+  "id": "COZY_DESK",
+  "name": "Farmhouse Desk",
+  "category": "desks",
+  "type": "group",
+  "groupType": "rotation",
+  "rotationScheme": "2-way",
+  "canPlaceOnWalls": false,
+  "canPlaceOnSurfaces": false,
+  "backgroundTiles": 1,
+  "members": [
+    {
+      "type": "asset",
+      "id": "COZY_DESK_FRONT",
+      "file": "COZY_DESK_FRONT.png",
+      "width": 48,
+      "height": 32,
+      "footprintW": 3,
+      "footprintH": 2,
+      "orientation": "front"
+    },
+    {
+      "type": "asset",
+      "id": "COZY_DESK_SIDE",
+      "file": "COZY_DESK_SIDE.png",
+      "width": 16,
+      "height": 64,
+      "footprintW": 1,
+      "footprintH": 4,
+      "orientation": "side"
+    }
+  ]
+}

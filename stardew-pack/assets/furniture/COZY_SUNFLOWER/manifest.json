@@ -1,0 +1,14 @@
+{
+  "id": "COZY_SUNFLOWER",
+  "name": "Potted Sunflower",
+  "category": "decor",
+  "type": "asset",
+  "file": "COZY_SUNFLOWER.png",
+  "width": 16,
+  "height": 32,
+  "footprintW": 1,
+  "footprintH": 2,
+  "canPlaceOnWalls": false,
+  "canPlaceOnSurfaces": false,
+  "backgroundTiles": 1
+}

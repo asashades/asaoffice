@@ -1,0 +1,29 @@
+{
+  "name": "asaoffice",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Stardew-style pixel-art office for Claude Code agents, built on pixel-agents",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "generate": "node tools/gen-assets.mjs && node tools/gen-layout.mjs",
+    "overlay": "node tools/apply-overlay.mjs",
+    "overlay:restore": "node tools/apply-overlay.mjs --restore",
+    "register": "node tools/register-pack.mjs",
+    "unregister": "node tools/register-pack.mjs --remove",
+    "setup": "npm run register && npm run overlay && npm run layout",
+    "office": "node tools/office.mjs",
+    "tunnel": "node tools/tunnel.mjs",
+    "preview": "node tools/preview.mjs",
+    "layout": "node tools/install-layout.mjs"
+  },
+  "devDependencies": {
+    "pngjs": "^7.0.0"
+  },
+  "dependencies": {
+    "pixel-agents": "1.4.1",
+    "qrcode-terminal": "0.12.0"
+  }
+}
