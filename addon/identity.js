@@ -1,5 +1,6 @@
 // asaoffice identity: who each villager is. Loaded right after core.js; the other add-ons use its names.
-//   - Twelve villagers, one per palette: 0–5 are the overlay's (Asa … Juno), 6–11 the pack's (Wren … Bayu).
+//   - Thirteen villagers, one per palette: 0–5 are the overlay's (Asa … Juno), 6–11 the pack's (Wren … Bayu),
+//     12 is Shades, the director (see director.js), whose face no ordinary session ever gets.
 //   - Staff (staff/roster.json, installed with `npm run staff`) are Claude Code subagents played by villagers 7–12.
 //     When a session calls one ("minta Wren ngetes"), the spawned sub-agent takes that villager's face and name,
 //     and while staff are installed, ordinary sessions never get a staff member's face.
@@ -14,7 +15,8 @@
   const ns = window.__asaoffice;
   const S = ns.t({ id: { helper: 'Asisten', calledBy: (n) => `dipanggil ${n}` }, en: { helper: 'Helper', calledBy: (n) => `called by ${n}` } });
 
-  ns.VILLAGERS = ['Asa', 'Rowan', 'Clem', 'Theo', 'Mabel', 'Juno', 'Wren', 'Pip', 'Sari', 'Gus', 'Iris', 'Bayu'];
+  ns.VILLAGERS = ['Asa', 'Rowan', 'Clem', 'Theo', 'Mabel', 'Juno', 'Wren', 'Pip', 'Sari', 'Gus', 'Iris', 'Bayu', 'Shades'];
+  ns.DIRECTOR_PALETTE = 12;
   const COUNT = ns.VILLAGERS.length;
   const pick = (v) => (v && typeof v === 'object' ? v[ns.lang] ?? v.en ?? '' : v ?? '');
 
@@ -38,7 +40,11 @@
     return agent ? staffByAgent(agent) : null;
   };
   const mainStaff = (ch) => taskStaff(ch) ?? staffByName(ch.agentName);
-  ns.staffOf = (ch) => (ch ? (ch.isSubagent ? subs.get(ch.id)?.staff ?? null : mainStaff(ch)) : null);
+  // Villagers the office plays itself (director.js: Shades, and staff acting out his work) carry their staff entry.
+  const cast = (ch) => ch.asaNpc || ch.asaDirector;
+  ns.staffOf = (ch) => (ch ? (cast(ch) ? ch.asaStaff ?? null : ch.isSubagent ? subs.get(ch.id)?.staff ?? null : mainStaff(ch)) : null);
+  /** Roster entry for an agent, installed or not (the director is in the office either way). */
+  ns.rosterEntry = (agent) => (ns.data?.staff ?? []).find((m) => m.agent === agent) ?? null;
   ns.staffRole = (m) => pick(m?.role);
   ns.staffDuty = (m) => pick(m?.duty);
   ns.portraitUrl = (ch) => `./asaoffice/characters/char_${(((ch?.palette ?? 0) % COUNT) + COUNT) % COUNT}.png`;
@@ -47,6 +53,7 @@
     if (!ch) return '';
     const staff = ns.staffOf(ch);
     if (staff) return staff.name;
+    if (cast(ch)) return ch.asaName ?? ns.VILLAGERS[(ch.palette ?? 0) % COUNT];
     const office = ns.view?.office;
     if (ch.isSubagent) {
       const parent = office?.characters.get(ch.parentAgentId);
@@ -58,7 +65,7 @@
     if (!office || !ch.hueShift) return base;
     // A repeated face: number it by arrival among the villagers sharing that palette.
     const twins = [...office.characters.values()]
-      .filter((c) => !c.isSubagent && c.palette === ch.palette && !ns.staffOf(c))
+      .filter((c) => !c.isSubagent && !cast(c) && c.palette === ch.palette && !ns.staffOf(c))
       .sort((a, b) => a.id - b.id);
     const n = twins.findIndex((c) => c.id === ch.id);
     return n > 0 ? `${base} ${n + 1}` : base;
@@ -70,7 +77,7 @@
 
   // ── Faces for ordinary sessions ──
   function assignMains(office, reserved) {
-    const mains = [...office.characters.values()].filter((c) => !c.isSubagent && !mainStaff(c)).sort((a, b) => a.id - b.id);
+    const mains = [...office.characters.values()].filter((c) => !c.isSubagent && !cast(c) && !mainStaff(c)).sort((a, b) => a.id - b.id);
     for (const id of assigned.keys()) if (!office.characters.has(id)) assigned.delete(id);
     const free = [...Array(COUNT).keys()].filter((p) => !reserved.has(p));
     const used = new Map(); // palette -> count
@@ -135,7 +142,7 @@
   }
 
   ns.onFrame((canvas, office) => {
-    const reserved = new Set(staffList().map((m) => m.palette));
+    const reserved = new Set([...staffList().map((m) => m.palette), ns.DIRECTOR_PALETTE]);
     const key = [...reserved].sort().join(',');
     if (key !== reservedKey) {
       reservedKey = key;
@@ -145,7 +152,7 @@
     assignMains(office, reserved);
     // Staff sessions started from the mailbox, and Agent Teams teammates named after a staff member, wear that villager's face too.
     for (const ch of office.characters.values()) {
-      const staff = !ch.isSubagent && mainStaff(ch);
+      const staff = !ch.isSubagent && !cast(ch) && mainStaff(ch);
       if (staff && ch.palette !== staff.palette) { ch.palette = staff.palette; ch.hueShift = 0; }
     }
   });

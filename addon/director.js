@@ -1,0 +1,394 @@
+// asaoffice director: Shades, the office's CEO, is always in — even when no Claude Code session is running.
+//   - With nothing to do he sits at the director's desk (bottom right), reads, and now and then gets up to
+//     stretch his legs and chat like everyone else.
+//   - When you send him a task from the mailbox, the session that runs it (`claude -p --agent shades-director`)
+//     takes his place: the villager you see *is* that session from then on (its tools, bubbles and sub-agents),
+//     and when the session ends he's back to being the office's own Shades, in the same spot.
+//   - A new task starts with a short meeting on the lounge sofas with the staff it needs.
+//   - "Mode Hemat": Shades does the work in one session, but the staff act it out — when he reads code Iris
+//     (or Gus while planning) sits at a desk reading, tests make Wren busy, git makes Pip busy, docs Sari, other
+//     edits and commands Bayu. Only installed staff (npm run staff) show up, and they leave again after the task.
+// Which session is his comes from the office data feed (taskAgents); the mailbox also tells us a moment before
+// (ns.director.expect) so the swap happens as the session appears instead of a few seconds later.
+(() => {
+  'use strict';
+  const ns = window.__asaoffice;
+  const S = ns.t({
+    id: {
+      awaiting: 'Rencana siap — cek surat',
+      directing: (n) => `Ngarahin ${n}`,
+      helping: 'Bantu Shades',
+      atDesk: 'Di meja direktur',
+      alwaysIn: 'Selalu di kantor',
+      acting: '🎭 bantu Shades',
+      open: 'Tim, ada tugas dari Komisaris.',
+      quote: (t) => `“${t}”`,
+      close: 'Oke, bubar. Gas!',
+      reply: {
+        'gus-planner': 'Aku bantu susun rencananya.',
+        'iris-researcher': 'Aku cari referensinya.',
+        'wren-tester': 'Nanti aku yang ngetes.',
+        'pip-reviewer': 'Aku review di akhir ya.',
+        'sari-writer': 'Laporannya aku rapihin.',
+        'bayu-debugger': 'Kalau ada bug, serahin aku.',
+      },
+      ok: 'Siap, Pak!',
+    },
+    en: {
+      awaiting: 'Plan ready — check the mail',
+      directing: (n) => `Directing ${n}`,
+      helping: 'Helping Shades',
+      atDesk: "At the director's desk",
+      alwaysIn: 'Always in the office',
+      acting: '🎭 helping Shades',
+      open: 'Team, a task from the Commissioner.',
+      quote: (t) => `“${t}”`,
+      close: "Alright, let's go!",
+      reply: {
+        'gus-planner': "I'll help with the plan.",
+        'iris-researcher': "I'll look up references.",
+        'wren-tester': "I'll test it after.",
+        'pip-reviewer': "I'll review at the end.",
+        'sari-writer': "I'll tidy up the report.",
+        'bayu-debugger': 'Bugs? Send them my way.',
+      },
+      ok: 'On it, boss!',
+    },
+  });
+
+  const DIRECTOR = 'shades-director';
+  const NPC_ID = 90000; // the office's own Shades
+  const STAFF_BASE = 90001; // staff acting out his work: STAFF_BASE + roster index
+  const MAX_ACTING = 3;
+  const IDLE_AFTER_MS = 15_000; // an acting villager with no new work goes back to idling
+  const LEAVE_AFTER_MS = 25_000; // …and leaves this long after Shades' session ended
+  const MEETING_LINE_MS = 3200;
+  const EDIT_TOOLS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit']);
+  const READ_TOOLS = new Set(['Read', 'Grep', 'Glob', 'LS']);
+
+  const director = () => ns.rosterEntry?.(DIRECTOR) ?? {
+    agent: DIRECTOR, name: 'Shades', palette: ns.DIRECTOR_PALETTE ?? 12, director: true,
+    role: { id: 'Direktur (CEO)', en: 'Director (CEO)' },
+    duty: { id: 'Nerima tugas dari Komisaris (kamu), bikin rencana, ngatur tim, terus nulis laporan.', en: 'Takes tasks from the Commissioner (you), plans them, runs the team and reports back.' },
+  };
+  const installedStaff = () => (ns.data?.staff ?? []).filter((m) => m.installed && !m.director && Number.isInteger(m.palette));
+  const directorLetters = () => (ns.data?.mail ?? []).filter((l) => l.agent === DIRECTOR);
+
+  let claimed = null; // pixel-agents id of the session playing Shades right now
+  let endedAt = 0; // when that session last ended (acting staff leave a little later)
+  let expecting = null; // { until, folder, prompt, meeting } from the mailbox
+  const seen = new Set(); // character ids we've already looked at for the expected session
+  const acting = new Map(); // staff agent -> { id, lastWork, status, toolName }
+  let directing = null; // { name, at }: Shades just handed a step to someone
+  let meeting = null; // { start, lines: [{ id, text }], ids: Set, shadesId }
+  let rest = { until: performance.now() + (60 + Math.random() * 120) * 1000, away: false }; // desk ↔ stroll rhythm
+  let readUntil = 0;
+
+  // ── Seats ──
+  const seatsOf = (office, test) => {
+    const uids = new Set(office.getLayout().furniture.filter((f) => test(f.type)).map((f) => f.uid));
+    return [...office.seats.keys()].filter((id) => uids.has(String(id).split(':')[0]));
+  };
+  const execSeat = (office) => {
+    const id = seatsOf(office, (t) => t.startsWith('COZY_EXEC_CHAIR'))[0] ?? null;
+    const seat = id && office.seats.get(id);
+    // Nobody actually sitting there (e.g. a session left without giving it back)? Then it's free again.
+    if (seat?.assigned && ![...office.characters.values()].some((c) => c.seatId === id)) seat.assigned = false;
+    return id;
+  };
+  const freeSeats = (office, test) => seatsOf(office, test).filter((id) => !office.seats.get(id)?.assigned);
+  const moveTo = (office, ch, seat) => {
+    if (!seat || ch.seatId === seat) return;
+    const s = office.seats.get(seat);
+    if (!s || s.assigned) return;
+    office.reassignSeat(ch.id, seat);
+  };
+  function copyPlace(from, to) {
+    for (const k of ['x', 'y', 'tileCol', 'tileRow', 'dir']) to[k] = from[k];
+    Object.assign(to, { path: [], moveProgress: 0, frame: 0, frameTimer: 0, matrixEffect: null, matrixEffectTimer: 0, matrixEffectSeeds: [] });
+    to.state = from.state === 'walk' ? 'idle' : from.state;
+  }
+  const dress = (ch, staff, extra = {}) => Object.assign(ch, { asaStaff: staff, asaName: staff.name, palette: staff.palette, hueShift: 0 }, extra);
+
+  // ── The office's own Shades ──
+  function ensureShades(office) {
+    let npc = office.characters.get(NPC_ID);
+    if (claimed != null) {
+      if (npc) { // the session is him now
+        const seat = npc.seatId && office.seats.get(npc.seatId);
+        if (seat) seat.assigned = false;
+        office.characters.delete(NPC_ID);
+      }
+      return null;
+    }
+    if (!npc) {
+      if (!office.seats?.size && !office.walkableTiles?.length) return null; // layout not loaded yet
+      const seat = execSeat(office);
+      office.addAgent(NPC_ID, director().palette, 0, seat ?? undefined, true);
+      npc = office.characters.get(NPC_ID);
+      if (!npc) return null;
+      dress(npc, director(), { asaNpc: true, asaShades: true });
+    }
+    if (npc.palette !== director().palette) dress(npc, director());
+    // Mostly at his desk; every few minutes a short walk (idle chat, activities and Pomodoro treat him like anyone).
+    const now = performance.now();
+    if (!meeting && now > rest.until) {
+      rest = rest.away
+        ? { away: false, until: now + (180 + Math.random() * 240) * 1000 }
+        : { away: true, until: now + (45 + Math.random() * 75) * 1000 };
+      if (rest.away) { office.setAgentActive(NPC_ID, false); office.setAgentTool(NPC_ID, null); }
+    }
+    if (!meeting && !rest.away) {
+      if (!npc.isActive) office.setAgentActive(NPC_ID, true);
+      const seat = execSeat(office);
+      if (seat && npc.seatId !== seat) moveTo(office, npc, seat);
+      // Alternate between typing and reading a document.
+      if (now > readUntil) {
+        readUntil = now + (20 + Math.random() * 40) * 1000;
+        office.setAgentTool(NPC_ID, npc.currentTool ? null : 'Read');
+      }
+    }
+    return npc;
+  }
+
+  // ── The session playing Shades ──
+  function claim(office, ch) {
+    const npc = office.characters.get(NPC_ID);
+    dress(ch, director(), { asaDirector: true });
+    if (npc && !npc.matrixEffect) {
+      copyPlace(npc, ch); // he just gets to work, right where he was
+      if (office.selectedAgentId === NPC_ID) office.selectedAgentId = ch.id;
+    } else if (ch.matrixEffect === 'spawn') {
+      Object.assign(ch, { matrixEffect: null, matrixEffectTimer: 0, matrixEffectSeeds: [] });
+    }
+    claimed = ch.id;
+    ensureShades(office); // removes the NPC and frees its seat
+    const start = expecting?.meeting ? startMeeting(office, ch, expecting.prompt) : false;
+    if (!start) moveTo(office, ch, execSeat(office));
+    expecting = null;
+  }
+  function release(office, ch) {
+    claimed = null;
+    endedAt = performance.now();
+    rest = { away: false, until: endedAt + (120 + Math.random() * 180) * 1000 };
+    if (meeting) endMeeting(office, ch?.id);
+    const place = ch ? { ...ch } : null;
+    if (ch) {
+      const seat = ch.seatId && office.seats.get(ch.seatId);
+      if (seat) seat.assigned = false;
+      office.characters.delete(ch.id); // skip the vanishing effect: Shades stays
+    }
+    const npc = ensureShades(office);
+    if (npc && place) {
+      copyPlace(place, npc);
+      const seat = execSeat(office);
+      if (npc.seatId !== seat) moveTo(office, npc, seat);
+      else office.reassignSeat(NPC_ID, seat); // re-plan the walk from where he stands
+    }
+  }
+  function track(office) {
+    const now = performance.now();
+    if (claimed != null) {
+      const ch = office.characters.get(claimed);
+      if (!ch || ch.matrixEffect === 'despawn') release(office, ch);
+      else if (ch.palette !== director().palette) dress(ch, director());
+      return;
+    }
+    if (expecting && now > expecting.until) expecting = null;
+    const map = ns.data?.taskAgents ?? {};
+    for (const ch of office.characters.values()) {
+      if (ch.isSubagent || ch.asaNpc || ch.matrixEffect === 'despawn') continue;
+      if (map[ch.id]?.agent === DIRECTOR) return claim(office, ch);
+      if (!seen.has(ch.id)) {
+        seen.add(ch.id);
+        const folder = expecting?.folder;
+        if (expecting && ch.matrixEffect === 'spawn' && (!ch.folderName || !folder || ch.folderName === folder)) return claim(office, ch);
+      }
+    }
+    for (const id of seen) if (!office.characters.has(id)) seen.delete(id);
+  }
+
+  // ── Meeting on the lounge sofas ──
+  function pickTeam(prompt, phasePlan) {
+    const staff = installedStaff();
+    const want = [];
+    const t = String(prompt ?? '').toLowerCase();
+    const add = (agent) => { if (!want.includes(agent)) want.push(agent); };
+    if (phasePlan) add('gus-planner');
+    if (/\b(bug|error|crash|rusak|gagal|fix|benerin|perbaiki)/.test(t)) add('bayu-debugger');
+    if (/\b(test|tes|ngetes|qa|coba)/.test(t)) add('wren-tester');
+    if (/\b(review|cek|periksa|audit|keamanan|security)/.test(t)) add('pip-reviewer');
+    if (/\b(doc|dokumen|readme|tulis|nulis|changelog|laporan|artikel)/.test(t)) add('sari-writer');
+    if (/\b(riset|research|cari|bandingin|compare|library|web)/.test(t)) add('iris-researcher');
+    add('gus-planner');
+    add('iris-researcher');
+    return want.map((a) => staff.find((m) => m.agent === a)).filter(Boolean);
+  }
+  function startMeeting(office, shades, prompt) {
+    const sofas = freeSeats(office, (t) => t.startsWith('COZY_SOFA'));
+    const plan = directorLetters().some((l) => l.status === 'running' && l.phase === 'plan');
+    const team = pickTeam(prompt, plan).slice(0, Math.min(MAX_ACTING, sofas.length - 1));
+    if (!team.length) return false;
+    moveTo(office, shades, sofas[0]);
+    const ids = new Set([shades.id]);
+    const lines = [{ id: shades.id, text: S.open }];
+    const gist = String(prompt ?? '').replace(/\s+/g, ' ').trim();
+    if (gist) lines.push({ id: shades.id, text: S.quote(gist.length > 22 ? `${gist.slice(0, 21)}…` : gist) });
+    team.forEach((m, i) => {
+      const npc = castStaff(office, m, sofas[i + 1]);
+      if (!npc) return;
+      ids.add(npc.id);
+      office.setAgentActive(npc.id, true);
+      acting.get(m.agent).lastWork = performance.now() + 20_000;
+      lines.push({ id: npc.id, text: S.reply[m.agent] ?? S.ok });
+    });
+    lines.push({ id: shades.id, text: S.close });
+    meeting = { start: performance.now() + 1500, lines, ids, shadesId: shades.id };
+    return true;
+  }
+  function endMeeting(office, leaving = null) {
+    const m = meeting;
+    meeting = null;
+    if (!m) return;
+    const shades = m.shadesId !== leaving && office.characters.get(m.shadesId);
+    if (shades) moveTo(office, shades, execSeat(office));
+    // The team goes to proper desks for the work.
+    for (const id of m.ids) {
+      if (id === m.shadesId) continue;
+      const desk = freeSeats(office, (t) => t.startsWith('COZY_CHAIR'))[0];
+      const ch = office.characters.get(id);
+      if (ch && desk) moveTo(office, ch, desk);
+    }
+  }
+  function drawMeeting(ctx, office, offX, offY, zoom) {
+    const now = performance.now();
+    const i = Math.floor((now - meeting.start) / MEETING_LINE_MS);
+    if (i >= meeting.lines.length) return endMeeting(office);
+    if (i < 0) return;
+    const line = meeting.lines[i];
+    const ch = office.characters.get(line.id);
+    if (!ch) return;
+    const lift = ch.state === 'type' ? 10 : 0;
+    ns.drawSpeech?.(ctx, offX + ch.x * zoom, offY + (ch.y + lift - 28) * zoom, zoom, { text: line.text, t: now / 1000 + ch.id });
+  }
+
+  // ── Staff acting out the work ──
+  function castStaff(office, staff, seat) {
+    const idx = (ns.data?.staff ?? []).findIndex((m) => m.agent === staff.agent);
+    const id = STAFF_BASE + Math.max(0, idx);
+    let ch = office.characters.get(id);
+    if (!ch || ch.matrixEffect === 'despawn') {
+      if (ch) office.characters.delete(id);
+      office.addAgent(id, staff.palette, 0, seat ?? undefined, false);
+      ch = office.characters.get(id);
+      if (!ch) return null;
+      dress(ch, staff, { asaNpc: true, asaActing: true });
+    } else if (seat) moveTo(office, ch, seat);
+    const a = acting.get(staff.agent) ?? { id, lastWork: performance.now() };
+    a.id = id;
+    acting.set(staff.agent, a);
+    return ch;
+  }
+  function whoDoes(toolName, status) {
+    const s = String(status ?? '');
+    const plan = directorLetters().some((l) => l.status === 'running' && l.phase === 'plan');
+    if (toolName === 'Bash') {
+      if (/\b(test|pytest|vitest|jest|lint|check)\b/i.test(s)) return 'wren-tester';
+      if (/\bgit\b/.test(s)) return 'pip-reviewer';
+      return 'bayu-debugger';
+    }
+    if (EDIT_TOOLS.has(toolName)) return /\.(md|mdx|txt|rst)\b/i.test(s) ? 'sari-writer' : 'bayu-debugger';
+    if (toolName === 'WebSearch' || toolName === 'WebFetch') return 'iris-researcher';
+    if (READ_TOOLS.has(toolName)) return plan ? 'gus-planner' : 'iris-researcher';
+    if (toolName === 'TodoWrite') return 'gus-planner';
+    return null;
+  }
+  ns.onMessage((msg) => {
+    if (claimed == null || msg?.id !== claimed || msg.type !== 'agentToolStart' || typeof msg.status !== 'string') return;
+    if (msg.toolName === 'Task' || msg.toolName === 'Agent') return; // a real staff member is coming
+    const office = ns.view?.office;
+    const agent = whoDoes(msg.toolName, msg.status);
+    const staff = agent && installedStaff().find((m) => m.agent === agent);
+    if (!office || !staff) return;
+    // Already here for real (a sub-agent or a mailbox task of their own)? Then they don't need a stand-in.
+    for (const c of office.characters.values()) if (!c.asaNpc && ns.staffOf?.(c)?.agent === agent) return;
+    if (!acting.has(agent) && acting.size >= MAX_ACTING) return;
+    const ch = castStaff(office, staff);
+    if (!ch) return;
+    Object.assign(acting.get(agent), { lastWork: Math.max(performance.now(), acting.get(agent).lastWork), status: msg.status, toolName: msg.toolName });
+    office.setAgentActive(ch.id, true);
+    office.setAgentTool(ch.id, msg.toolName);
+    directing = { name: staff.name, at: performance.now() };
+  });
+  function tendStaff(office) {
+    const now = performance.now();
+    for (const [agent, a] of acting) {
+      const ch = office.characters.get(a.id);
+      if (!ch || ch.matrixEffect === 'despawn') { acting.delete(agent); continue; }
+      if (meeting?.ids.has(a.id)) continue;
+      if (ch.isActive && now - a.lastWork > IDLE_AFTER_MS) {
+        office.setAgentActive(a.id, false);
+        office.setAgentTool(a.id, null);
+        a.status = null;
+      }
+      if (claimed == null && now - endedAt > LEAVE_AFTER_MS && now - a.lastWork > LEAVE_AFTER_MS) {
+        office.removeAgent(a.id);
+        acting.delete(agent);
+      }
+    }
+  }
+
+  // ── What the other add-ons show for these villagers ──
+  const statusText = (a) => (a?.status ? ns.translateStatus?.(a.status) ?? a.status : null);
+  const actingFor = (ch) => [...acting.values()].find((a) => a.id === ch.id);
+  const awaiting = () => directorLetters().some((l) => l.status === 'awaiting');
+  /** Status bubble for the office's cast: null = the usual bubble, false = none, or { kind, text, waiting }. */
+  ns.castBubble = (ch) => {
+    if (meeting?.ids.has(ch.id)) return false;
+    if (ch.asaShades || ch.asaDirector) {
+      if (awaiting()) return { kind: 'waiting', text: S.awaiting, waiting: true, hold: true }; // until you answer it
+      if (ch.asaDirector && directing && performance.now() - directing.at < 6000 && ch.isActive) return { kind: 'agent', text: S.directing(directing.name) };
+      return ch.asaShades ? false : null;
+    }
+    if (ch.asaActing) {
+      const a = actingFor(ch);
+      return ch.isActive && a?.status ? { kind: a.toolName, text: statusText(a) } : false;
+    }
+    return null;
+  };
+  /** Villager card: [status text, colour] for the cast, or null. */
+  ns.castStatus = (ch) => {
+    if (ch.asaShades && ch.isActive) return [S.atDesk, '#5aa84a'];
+    if (ch.asaActing && ch.isActive) {
+      const t = statusText(actingFor(ch));
+      return [t ? `${S.helping}: ${t}` : S.helping, '#5aa84a'];
+    }
+    return null;
+  };
+  /** Villager card: a note after the role line. */
+  ns.castNote = (ch) => (ch.asaActing ? S.acting : ch.asaShades ? S.alwaysIn : '');
+
+  ns.director = {
+    /** The mailbox just started (or resumed) a task for Shades in `cwd`: claim the next session that appears there. */
+    expect({ cwd, prompt = '', meeting: withMeeting = false }) {
+      const folder = String(cwd ?? '').split(/[\\/]/).filter(Boolean).pop() ?? null;
+      expecting = { until: performance.now() + 25_000, folder, prompt, meeting: withMeeting };
+    },
+    id: () => claimed ?? NPC_ID,
+    working: () => claimed != null,
+  };
+
+  ns.onFrame((canvas, office, offX, offY, zoom, editMode) => {
+    if (!office?.characters) return;
+    track(office);
+    ensureShades(office);
+    tendStaff(office);
+    if (meeting && !editMode) {
+      const ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      drawMeeting(ctx, office, offX, offY, zoom);
+      ctx.restore();
+    }
+  });
+})();

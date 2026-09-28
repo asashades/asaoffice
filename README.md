@@ -12,7 +12,7 @@ from your phone through a tunnel.
 The pack is **original pixel art**, drawn by `tools/` in a Stardew Valley–*inspired* style (warm wood, gingham,
 sunflowers, an orange office cat and a hen). No sprites are taken from Stardew Valley or any other game.
 
-| Twelve villagers (walk · type · read, 3 directions each) | Furniture |
+| Thirteen villagers (walk · type · read, 3 directions each) | Furniture |
 | --- | --- |
 | ![characters](docs/characters.png) | ![furniture](docs/furniture.png) |
 
@@ -20,11 +20,11 @@ sunflowers, an orange office cat and a hen). No sprites are taken from Stardew V
 
 | Path | What it is |
 | --- | --- |
-| `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: villagers 7–12 (Wren, Pip, Sari, Gus, Iris, Bayu), 21 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and two pets: Oyen the cat (the layout's default) and Clucky the hen. |
+| `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: villagers 7–13 (Wren, Pip, Sari, Gus, Iris, Bayu, and Shades the director), 24 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants, the director's desk and chair…), and two pets: Oyen the cat (the layout's default) and Clucky the hen. |
 | `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and villagers 1–6 (Asa, Rowan, Clem, Theo, Mabel, Juno) in place of the bundled characters, for the parts `pixel-agents` only loads from its own bundle. |
 | `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), [idle activities and expressions](#idle-activities-and-expressions), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night), and a [Pomodoro timer](#pomodoro) on the wall clock. |
 | `staff/` | The [office staff](#office-staff) (also the [mailbox](#mailbox-send-tasks-from-the-office)'s task runners): six Claude Code subagents with job descriptions (`staff/agents/*.md`), each played by a villager (`staff/roster.json`). Install with `npm run staff`. |
-| `layouts/stardew-office.json` | A ready-made office: a 6-desk workroom, fireplace lounge, and kitchenette. Import it via **Layout → Import**, or `npm run layout`. |
+| `layouts/stardew-office.json` | A ready-made office: a 6-desk workroom, fireplace lounge, and the director's corner. Import it via **Layout → Import**, or `npm run layout`. |
 | `tools/` | The sprite generator (`npm run generate`), plus setup, launcher, and tunnel scripts. |
 
 ## Quick start
@@ -243,8 +243,9 @@ run their own. `&pomodoro=off` in the URL turns it off (remembered). In the cons
 
 Every villager has a face and a name of its own (`addon/identity.js`):
 
-- **Twelve villagers.** Palettes 0–5 are Asa, Rowan, Clem, Theo, Mabel and Juno (the overlay's replacements for
-  pixel-agents' six bundled characters). Palettes 6–11 are Wren, Pip, Sari, Gus, Iris and Bayu, loaded from the pack.
+- **Thirteen villagers.** Palettes 0–5 are Asa, Rowan, Clem, Theo, Mabel and Juno (the overlay's replacements for
+  pixel-agents' six bundled characters). Palettes 6–11 are Wren, Pip, Sari, Gus, Iris and Bayu, loaded from the pack,
+  and palette 12 is Shades, the director (see below), whose face ordinary sessions never get.
   Sessions get distinct faces while there are enough. After that a face repeats with a different hue and a number
   ("Asa 2"), so you never see an identical twin.
 - **Sub-agents.** pixel-agents gives a sub-agent its parent's exact look. Here it keeps the parent's face with a
@@ -254,11 +255,12 @@ Every villager has a face and a name of its own (`addon/identity.js`):
 
 ## Office staff
 
-`npm run staff` installs six Claude Code subagents into `~/.claude/agents/`, each with a job description
+`npm run staff` installs seven Claude Code subagents into `~/.claude/agents/`, each with a job description
 (`staff/agents/*.md`) and a villager (`staff/roster.json`):
 
 | Villager | Subagent | Job |
 | --- | --- | --- |
+| Shades | `shades-director` | The director (CEO): plans a task, runs the team, reports back to you, the Commissioner |
 | Wren | `wren-tester` | Runs the tests, writes missing ones, reports bugs with repro steps |
 | Pip | `pip-reviewer` | Reviews diffs for bugs and security problems (read-only) |
 | Sari | `sari-writer` | Writes and tidies READMEs, guides, comments and changelogs |
@@ -314,6 +316,39 @@ At most 3 tasks run at once, and each is stopped after 30 minutes. Letters are k
 `~/.pixel-agents/asaoffice-mail.json` (last 60). Tasks use your normal Claude Code account and usage.
 `OFFICE_TASKS=off npm run office` turns sending off. Existing offices need the mailbox placed once: run
 `npm run layout`, or pick **Layout → Mailbox**.
+
+**Approval modes** (the **Cara kerja** menu when you send a task), like Claude Code's own modes:
+
+| Mode | What happens |
+| --- | --- |
+| 📝 **Rencana dulu** (plan first) | A read-only first run that ends with a plan. The letter waits for you: **✅ Setujui** runs it with the member's full access (`--resume`), **✏️ Revisi** sends your notes back for a new plan, **❌ Tolak** closes it. The default for Shades. |
+| ⚡ **Langsung jalan** (just do it) | Works straight away within its access. The default for everyone else. |
+| 👀 **Cuma laporan** (report only) | Read-only from start to finish (read, git, and web if the member has it). |
+
+## Shades, the director
+
+Shades (sunglasses, navy suit, red tie) is always in the office, even when no Claude Code session is running
+(`addon/director.js`). He has his own corner: the director's desk and red executive chair on the parquet floor at
+the bottom right. With nothing to do he works at his desk, reads, and now and then gets up to walk around and chat.
+
+Send him a task from the mailbox (he's preselected once `npm run staff` has installed him). He plans first by
+default, and his final message is a **Laporan untuk Komisaris** (a report for the Commissioner, which is you): a
+summary, what was done and by whom, results and proof, decisions you need to make, and next steps.
+
+- **Mode Hemat** (thrifty, the default): Shades does the whole task in **one** session. The staff act it out: a new
+  task starts with a short meeting on the lounge sofas with the staff it needs (picked from the task's wording), then
+  whenever Shades reads code, Iris (or Gus while he's planning) sits at a desk reading; tests make Wren busy, git
+  makes Pip busy, docs Sari, and other edits and commands Bayu. Shades' bubble says who he's directing. The stand-ins
+  go back to idling when there's nothing for them and leave about half a minute after the task. Only installed staff
+  show up.
+- **Delegasi beneran** (real delegation): Shades may also hand steps to the staff as real subagents (the Task/Agent
+  tool), one at a time. The office shows them as the real sub-agents they are. This uses more of your quota.
+
+How it works: the office adds its own Shades villager (it isn't a session, so notifications, the task board and the
+Holo-board ignore him). When a mailbox task for `shades-director` starts, the session that runs it takes his place
+on the spot, so the Shades you see is that session: its tools, bubbles and sub-agents. When it ends he goes back to
+being the office's own Shades, in the same spot. The mailbox tells the add-on a moment before the session appears,
+and the data feed (`taskAgents`) confirms it. He takes one task at a time: a second one waits until he's done.
 
 ## How the add-ons hook in
 

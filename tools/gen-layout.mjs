@@ -10,14 +10,14 @@ const ROWS = 15; // no bottom wall: like the bundled office, the room just ends 
 const WALL = 0;
 const VOID = 255;
 const WOOD = 2; // floor_1 long vertical boards
-const CHECKER = 6; // floor_5 kitchen checker
 const RUG = 9; // floor_8 soft weave
+const PARQUET = 3; // floor_2 parquet, for the director's office
 
 const COLORS = {
   wall: { h: 32, s: 38, b: 4, c: 0 },
   wood: { h: 30, s: 42, b: -10, c: 0 },
   rug: { h: 8, s: 42, b: -8, c: 0 },
-  checker: { h: 45, s: 30, b: 8, c: 10 },
+  director: { h: 18, s: 38, b: -22, c: 6 },
 };
 
 const tiles = new Array(COLS * ROWS).fill(VOID);
@@ -34,7 +34,7 @@ for (let r = 1; r < ROWS; r++)
     if (edge || divider) put(c, r, WALL, COLORS.wall);
     else if (c <= 13) put(c, r, WOOD, COLORS.wood);
     else if (r <= 10) put(c, r, RUG, COLORS.rug);
-    else put(c, r, CHECKER, COLORS.checker);
+    else put(c, r, PARQUET, COLORS.director); // Shades' office
   }
 
 let n = 0;
@@ -77,16 +77,18 @@ add('COZY_SOFA_SIDE:left', 18, 7);
 add('COZY_SOFA_BACK', 16, 9);
 add('COZY_MUG', 16, 8);
 
-// Kitchenette
-add('COZY_BARREL', 20, 11);
-add('COZY_CRATE', 20, 13);
+// Director's office (Shades): replaces the old kitchenette, keeping the same number of items so later uids stay stable
+add('COZY_EXEC_DESK_FRONT', 15, 11);
+add('COZY_PC_FRONT_OFF', 16, 11);
+add('COZY_EXEC_CHAIR_BACK', 16, 12); // Shades' seat
 add('COZY_FERN', 14, 12);
-add('COZY_LANTERN', 16, 12);
 
 // Added later, so earlier uids stay stable: Holo-board above the fireplace (click it for today's stats)
 add('COZY_HOLOBOARD', 17, 0);
 add('COZY_TASKBOARD', 11, 0); // next to the calendar; click it for what each session is working on
 add('COZY_MAILBOX', 9, 0); // task results and the daily report
+add('COZY_LANTERN', 20, 12); // director's office
+add('COZY_MUG', 17, 11);
 
 const layout = {
   version: 1,

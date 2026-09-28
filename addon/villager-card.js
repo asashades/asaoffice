@@ -69,6 +69,8 @@
     const m = meta.get(ch.id);
     if (ch.matrixEffect === 'despawn') return [S.leaving, '#9a8a7a'];
     if (ch.bubbleType === 'permission') return [S.permission, '#e0a030'];
+    const cast = ns.castStatus?.(ch);
+    if (cast) return cast;
     if (ch.isActive) return [`${S.working}${ch.currentTool ? ` · ${ch.currentTool}` : ''}`, '#5aa84a'];
     const partner = ns.idleChat?.partnerOf?.(ch.id);
     if (partner != null) {
@@ -149,7 +151,8 @@
     const parent = ch.isSubagent ? office.characters.get(ch.parentAgentId) : null;
     const staff = ns.staffOf(ch);
     p.name.textContent = `${ns.villagerName(ch)}${ch.agentName && !staff ? ` (${ch.agentName})` : ''}`;
-    p.role.textContent = staff ? `${ns.staffRole(staff)}${parent ? ` · ${ns.subagentCaller(ch)}` : ''}` : '';
+    const note = ns.castNote?.(ch);
+    p.role.textContent = staff ? `${ns.staffRole(staff)}${parent ? ` · ${ns.subagentCaller(ch)}` : ''}${note ? ` · ${note}` : ''}` : '';
     p.role.style.display = staff ? '' : 'none';
     p.duty.textContent = staff ? ns.staffDuty(staff) : '';
     p.duty.style.display = staff ? '' : 'none';

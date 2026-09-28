@@ -127,7 +127,7 @@
   ns.onFrame((canvas, office) => {
     const now = Date.now();
     for (const ch of office.characters.values()) {
-      if (ch.isSubagent) continue;
+      if (ch.isSubagent || ch.asaNpc) continue; // the office's own cast (director.js) isn't a session
       const permission = ch.bubbleType === 'permission';
       let s = seen.get(ch.id);
       if (!s) {

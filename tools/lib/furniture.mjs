@@ -449,6 +449,58 @@ function taskboard2x2() {
   return s.outline(OUT);
 }
 
+// ── Director's corner (Shades) ──
+const EXEC = { w0: '#8a4a36', w1: '#6e3526', w2: '#5a2a1e', w3: '#431d15', leather: '#7a2a2a', leatherL: '#9a3a34', leatherD: '#521a1c' };
+
+function execDeskFront() {
+  const s = new Sprite(48, 32);
+  s.rect(2, 11, 44, 13, EXEC.w1).hline(2, 11, 44, EXEC.w0);
+  for (let x = 6; x < 44; x += 9) s.vline(x, 12, 11, EXEC.w2); // grain
+  s.rect(14, 13, 20, 8, '#3f6a4a').hline(14, 13, 20, '#5a8a60'); // green desk mat
+  s.rect(4, 13, 6, 3, C.cream).hline(4, 15, 6, C.creamS); // papers
+  s.rect(38, 14, 4, 2, C.gold).set(39, 12, '#f7d154').vline(40, 12, 2, C.metal); // little brass lamp
+  s.rect(2, 24, 44, 5, EXEC.w2).hline(2, 24, 44, EXEC.w3);
+  s.rect(19, 25, 10, 3, C.gold).hline(20, 26, 8, C.goldS); // name plate
+  for (const lx of [2, 42]) s.rect(lx, 29, 4, 2, EXEC.w3);
+  return s.outline(OUT);
+}
+
+function execDeskSide() {
+  const s = new Sprite(16, 64);
+  s.rect(1, 11, 14, 44, EXEC.w1).vline(1, 11, 44, EXEC.w0);
+  for (let y = 16; y < 55; y += 9) s.hline(2, y, 12, EXEC.w2);
+  s.rect(4, 20, 8, 16, '#3f6a4a');
+  s.rect(1, 55, 14, 5, EXEC.w2).hline(1, 55, 14, EXEC.w3);
+  for (const ly of [60]) { s.rect(1, ly, 3, 2, EXEC.w3); s.rect(12, ly, 3, 2, EXEC.w3); }
+  return s.outline(OUT);
+}
+
+function execChair(orientation) {
+  const s = new Sprite(16, 32);
+  if (orientation === 'back') {
+    // tall leather back, seen from behind (drawn in front of the sitter)
+    s.rect(3, 12, 10, 13, EXEC.leather).hline(3, 12, 10, EXEC.leatherL).vline(3, 13, 12, EXEC.leatherL);
+    for (let y = 15; y < 25; y += 3) s.hline(4, y, 8, EXEC.leatherD);
+    s.rect(2, 25, 12, 3, EXEC.leatherD);
+    s.vline(7, 28, 2, C.metal).vline(8, 28, 2, C.metal);
+    s.hline(3, 30, 10, C.metal);
+    return s.outline(OUT);
+  }
+  if (orientation === 'front') {
+    s.rect(3, 8, 10, 12, EXEC.leather).hline(3, 8, 10, EXEC.leatherL);
+    for (let x = 5; x < 12; x += 3) s.vline(x, 10, 9, EXEC.leatherD);
+    s.rect(2, 20, 12, 5, EXEC.leatherL).hline(2, 24, 12, EXEC.leatherD);
+    s.rect(1, 17, 2, 7, EXEC.leatherD).rect(13, 17, 2, 7, EXEC.leatherD);
+    s.vline(7, 25, 4, C.metal).vline(8, 25, 4, C.metal).hline(3, 29, 10, C.metal);
+    return s.outline(OUT);
+  }
+  s.rect(2, 8, 3, 18, EXEC.leather).vline(2, 8, 18, EXEC.leatherL);
+  s.rect(2, 19, 10, 4, EXEC.leatherL).hline(2, 22, 10, EXEC.leatherD);
+  s.rect(5, 17, 6, 2, EXEC.leatherD);
+  s.vline(7, 23, 5, C.metal).hline(3, 28, 9, C.metal);
+  return s.outline(OUT);
+}
+
 // A wall-mounted wooden mailbox with a red flag; the addon's mailbox (task results, daily report) opens on click.
 function mailbox() {
   const s = new Sprite(16, 32);
@@ -714,6 +766,32 @@ export function buildFurniture() {
   single('COZY_HOLOBOARD', 'Holo-board', 'wall', holoboard2x2(), [2, 2], { wall: true });
   single('COZY_TASKBOARD', 'Task Board', 'wall', taskboard2x2(), [2, 2], { wall: true });
   single('COZY_MAILBOX', 'Mailbox', 'wall', mailbox(), [1, 2], { wall: true });
+
+  items.push({
+    dir: 'COZY_EXEC_DESK',
+    manifest: {
+      id: 'COZY_EXEC_DESK', name: "Director's Desk", category: 'desks', type: 'group', groupType: 'rotation',
+      rotationScheme: '2-way', canPlaceOnWalls: false, canPlaceOnSurfaces: false, backgroundTiles: 1,
+      members: [
+        { type: 'asset', id: 'COZY_EXEC_DESK_FRONT', file: 'COZY_EXEC_DESK_FRONT.png', width: 48, height: 32, footprintW: 3, footprintH: 2, orientation: 'front' },
+        { type: 'asset', id: 'COZY_EXEC_DESK_SIDE', file: 'COZY_EXEC_DESK_SIDE.png', width: 16, height: 64, footprintW: 1, footprintH: 4, orientation: 'side' },
+      ],
+    },
+    files: { COZY_EXEC_DESK_FRONT: execDeskFront(), COZY_EXEC_DESK_SIDE: execDeskSide() },
+  });
+  items.push({
+    dir: 'COZY_EXEC_CHAIR',
+    manifest: {
+      id: 'COZY_EXEC_CHAIR', name: "Director's Chair", category: 'chairs', type: 'group', groupType: 'rotation',
+      rotationScheme: '3-way-mirror', canPlaceOnWalls: false, canPlaceOnSurfaces: false, backgroundTiles: 1,
+      members: [
+        { type: 'asset', id: 'COZY_EXEC_CHAIR_FRONT', file: 'COZY_EXEC_CHAIR_FRONT.png', width: 16, height: 32, footprintW: 1, footprintH: 2, orientation: 'front' },
+        { type: 'asset', id: 'COZY_EXEC_CHAIR_BACK', file: 'COZY_EXEC_CHAIR_BACK.png', width: 16, height: 32, footprintW: 1, footprintH: 2, orientation: 'back' },
+        { type: 'asset', id: 'COZY_EXEC_CHAIR_SIDE', file: 'COZY_EXEC_CHAIR_SIDE.png', width: 16, height: 32, footprintW: 1, footprintH: 2, orientation: 'side', mirrorSide: true },
+      ],
+    },
+    files: { COZY_EXEC_CHAIR_FRONT: execChair('front'), COZY_EXEC_CHAIR_BACK: execChair('back'), COZY_EXEC_CHAIR_SIDE: execChair('side') },
+  });
   single('COZY_FIREPLACE', 'Stone Fireplace', 'decor', fireplace(), [2, 2], { bg: 1 });
   single('COZY_SUNFLOWER', 'Potted Sunflower', 'decor', stampItem('sunflower', 16, 32, pot, 13), [1, 2], { bg: 1 });
   single('COZY_FERN', 'Potted Fern', 'decor', stampItem('fern', 16, 32, pot, 16), [1, 2], { bg: 1 });

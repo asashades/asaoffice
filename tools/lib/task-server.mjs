@@ -9,6 +9,12 @@
 // Each task runs `claude -p` headless in a folder Claude Code already worked in (from the transcripts), as a staff
 // member (`--agent wren-tester`) or plain Claude, with `--permission-mode dontAsk` and a small allow-list per staff
 // member (staff/roster.json → access): anything else is refused automatically instead of prompting.
+// Approval modes, like Claude Code's own:
+//   - plan   ("Rencana dulu", the director's default): a read-only first run that ends with a plan; the letter waits
+//            for you (✅ approve / ✏️ revise / ❌ reject) before anything is changed.
+//   - auto   ("Langsung jalan", the staff default): works straight away within its allow-list.
+//   - report ("Cuma laporan"): read-only from start to finish.
+// The director (Shades) can also delegate: then it may call the staff as real subagents (the Task/Agent tool).
 // Letters (tasks, their replies and results) are kept in ~/.pixel-agents/asaoffice-mail.json.
 import { spawn } from 'node:child_process';
 import crypto from 'node:crypto';
@@ -34,6 +40,26 @@ const TOOLS = {
     'Bash(python3 -m pytest:*)', 'Bash(go test:*)', 'Bash(cargo test:*)',
   ],
 };
+const MODES = ['plan', 'auto', 'report'];
+const READ_ONLY = new Set(['read', 'git', 'web']);
+const DELEGATE_TOOLS = ['Task', 'Agent'];
+
+// What the session is told on top of its own prompt, per phase (passed with --append-system-prompt).
+const PHASE_PROMPT = {
+  plan: 'TAHAP RENCANA. Komisaris (user) minta rencana dulu sebelum ada yang diubah. Jangan ubah file apa pun dan '
+    + 'jangan jalankan perintah yang mengubah sesuatu. Pelajari kode yang relevan, lalu tulis rencana singkat: '
+    + 'langkah bernomor, siapa di tim yang pegang tiap langkah, file yang kena, dan risikonya. '
+    + 'Tutup dengan satu baris: "Menunggu persetujuan Komisaris."',
+  report: 'MODE CUMA LAPORAN. Jangan ubah file apa pun. Baca, periksa, lalu tulis laporannya.',
+  work: 'Rencana sudah disetujui (atau Komisaris minta langsung jalan). Kerjakan, cek hasilnya, lalu tutup dengan laporan.',
+};
+const STYLE_PROMPT = {
+  solo: 'Delegasi: MATI. Kerjakan semua langkah sendiri (jangan panggil subagent); cukup sebut siapa di tim yang '
+    + '"pegang" tiap langkah.',
+  delegate: 'Delegasi: NYALA. Kamu boleh menyerahkan langkah ke staf lewat subagent (Task/Agent tool), '
+    + 'SATU PER SATU, dengan brief yang jelas. Langkah kecil kerjakan sendiri.',
+};
+
 /** Claude Code tool allow-list for a set of access levels ('test' implies read-only git). */
 export function allowedTools(access) {
   const set = new Set(access);
@@ -111,6 +137,12 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     return out;
   }
 
+  // The director works on one task at a time (he's one person in the office).
+  const directorBusy = (agent) => {
+    const member = agent ? roster().staff.find((m) => m.agent === agent) : null;
+    return !!member?.director && letters.some((l) => l.agent === agent && running.has(l.id));
+  };
+
   const allowedDirs = () => {
     const dirs = new Map((projects?.() ?? []).map((p) => [p.cwd, p]));
     for (const d of extraDirs) if (d && !dirs.has(d)) dirs.set(d, { name: path.basename(d), cwd: d });
@@ -125,10 +157,16 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     }
     const r = roster();
     const member = letter.agent ? r.staff.find((m) => m.agent === letter.agent) : null;
-    const access = member?.access ?? r.general?.access ?? ['read'];
+    let access = member?.access ?? r.general?.access ?? ['read'];
+    const phase = letter.mode === 'report' ? 'report' : letter.phase === 'plan' ? 'plan' : 'work';
+    if (phase !== 'work') access = access.filter((a) => READ_ONLY.has(a)).concat('git');
+    const tools = allowedTools(access);
+    if (phase === 'work' && member?.director && letter.style === 'delegate') tools.push(...DELEGATE_TOOLS);
+    let system = PHASE_PROMPT[phase];
+    if (member?.director) system += `\n${STYLE_PROMPT[letter.style === 'delegate' ? 'delegate' : 'solo']}`;
     // The prompt goes in on stdin, so text that starts with "-" can never be read as a CLI option.
     const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'dontAsk',
-      '--allowedTools', ...allowedTools(access)];
+      '--allowedTools', ...tools, '--append-system-prompt', system];
     if (resume) args.push('--resume', letter.sessionId);
     else args.push('--session-id', letter.sessionId);
     if (letter.agent) args.push('--agent', letter.agent);
@@ -168,9 +206,9 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       clearTimeout(timer);
       running.delete(letter.id);
       const answer = String(result?.result ?? lastText ?? '').trim();
-      if (answer) letter.thread.push({ from: 'agent', text: answer.slice(0, MAX_RESULT), at: new Date().toISOString() });
+      if (answer) letter.thread.push({ from: 'agent', text: answer.slice(0, MAX_RESULT), at: new Date().toISOString(), kind: phase });
       const failed = signal || (result ? result.is_error : code !== 0);
-      letter.status = letter.stopped ? 'stopped' : failed ? 'error' : 'done';
+      letter.status = letter.stopped ? 'stopped' : failed ? 'error' : phase === 'plan' ? 'awaiting' : 'done';
       letter.error = failed && !letter.stopped
         ? (signal ? 'Tugasnya dihentikan (kelamaan atau dimatikan).' : (stderr.trim().split('\n').pop() || `claude keluar dengan kode ${code}`)).slice(0, 400)
         : null;
@@ -215,12 +253,12 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (!safeEqual(req.headers.authorization ?? '', `Bearer ${token}`)) return send(res, 401, { error: 'token' }, origin);
 
     const url = new URL(req.url, 'http://x');
-    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop))?$/.exec(url.pathname);
+    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject))?$/.exec(url.pathname);
     try {
       if (req.method === 'GET' && url.pathname === '/api/options') {
         const r = roster();
         return send(res, 200, {
-          staff: r.staff.filter((s) => installed(s.agent)).map(({ agent, name, role, access }) => ({ agent, name, role, access })),
+          staff: r.staff.filter((s) => installed(s.agent)).map(({ agent, name, role, access, director }) => ({ agent, name, role, access, director: !!director })),
           general: r.general,
           projects: allowedDirs(),
           claude: !!findClaude(),
@@ -237,9 +275,13 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const member = agent ? roster().staff.find((s) => s.agent === agent) : null;
         if (agent && (!member || !installed(agent))) return send(res, 400, { error: 'agent' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
+        if (directorBusy(agent)) return send(res, 429, { error: 'director busy' }, origin);
+        const mode = MODES.includes(body.mode) ? body.mode : member?.director ? 'plan' : 'auto';
+        const style = member?.director && body.style === 'delegate' ? 'delegate' : 'solo';
         const letter = {
           id: crypto.randomUUID().slice(0, 8), agent, name: member?.name ?? null, cwd: dir.cwd, project: dir.name,
           sessionId: crypto.randomUUID(), status: 'running', read: true, createdAt: new Date().toISOString(),
+          mode, style, phase: mode === 'plan' ? 'plan' : 'work',
           thread: [{ from: 'you', text: prompt, at: new Date().toISOString() }],
         };
         letters.unshift(letter);
@@ -253,10 +295,31 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (!text || text.length > MAX_PROMPT) return send(res, 400, { error: 'text' }, origin);
         if (running.has(letter.id)) return send(res, 409, { error: 'running' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
+        if (directorBusy(letter.agent)) return send(res, 429, { error: 'director busy' }, origin);
         if (!allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
-        letter.thread.push({ from: 'you', text, at: new Date().toISOString() });
+        // A reply to a plan that's waiting for you is a revision: it stays a plan until you approve it.
+        const revise = letter.status === 'awaiting';
+        letter.thread.push({ from: 'you', text, at: new Date().toISOString(), kind: revise ? 'revise' : undefined });
         letter.read = true;
-        run(letter, text, { resume: true });
+        run(letter, revise ? `Komisaris minta rencananya direvisi:\n${text}\n\nTulis ulang rencananya.` : text, { resume: true });
+        return send(res, 200, { letter }, origin);
+      }
+      if (req.method === 'POST' && (m?.[2] === 'approve' || m?.[2] === 'reject')) {
+        if (letter.status !== 'awaiting') return send(res, 409, { error: 'not awaiting' }, origin);
+        const at = new Date().toISOString();
+        letter.read = true;
+        if (m[2] === 'reject') {
+          letter.thread.push({ from: 'you', text: '❌ Ditolak.', at, kind: 'reject' });
+          Object.assign(letter, { status: 'rejected', finishedAt: at });
+          save();
+          return send(res, 200, { letter }, origin);
+        }
+        if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
+        if (directorBusy(letter.agent)) return send(res, 429, { error: 'director busy' }, origin);
+        if (!allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
+        letter.thread.push({ from: 'you', text: '✅ Disetujui, silakan jalan.', at, kind: 'approve' });
+        letter.phase = 'work';
+        run(letter, 'Komisaris menyetujui rencananya. Kerjakan sekarang sesuai rencana, cek hasilnya, lalu tulis Laporan untuk Komisaris.', { resume: true });
         return send(res, 200, { letter }, origin);
       }
       if (req.method === 'POST' && m?.[2] === 'read') {
