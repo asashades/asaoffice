@@ -10,13 +10,13 @@
       agent: 'Agent', working: 'Sedang bekerja', permission: 'Menunggu izinmu', waiting: 'Menunggu balasanmu',
       chatting: 'Ngobrol dengan', walkingTo: 'Menghampiri', idle: 'Santai', leaving: 'Pamit pulang', forMin: (m) => `${m} menit`,
       project: 'Proyek', lastTool: 'Tool terakhir', context: 'Context', subagents: 'Sub-agent', team: 'Tim', since: 'Terlihat sejak',
-      none: '—', subagent: 'Sub-agent dari',
+      none: '—', subagent: 'Sub-agent dari', task: 'Mengerjakan', prompt: 'Permintaan terakhir',
     },
     en: {
       agent: 'Agent', working: 'Working', permission: 'Needs your permission', waiting: 'Waiting for your reply',
       chatting: 'Chatting with', walkingTo: 'Walking over to', idle: 'Relaxing', leaving: 'Heading out', forMin: (m) => `${m} min`,
       project: 'Project', lastTool: 'Last tool', context: 'Context', subagents: 'Sub-agents', team: 'Team', since: 'Seen since',
-      none: '—', subagent: 'Sub-agent of',
+      none: '—', subagent: 'Sub-agent of', task: 'Working on', prompt: 'Last prompt',
     },
   });
 
@@ -34,6 +34,9 @@
     border-top: 1px dashed #c9a877; }
   .asa-card-row b { font-weight: normal; opacity: 0.7; }
   .asa-card-row span { text-align: right; overflow-wrap: anywhere; }
+  .asa-card-task { font-size: 13px; padding: 4px 0 6px; }
+  .asa-card-task b { font-weight: normal; }
+  .asa-card-task q { display: block; font-style: italic; opacity: 0.75; margin-top: 3px; font-size: 12px; }
   .asa-bar { height: 8px; background: #d9c49a; border: 1px solid #744122; margin-top: 4px; }
   .asa-bar i { display: block; height: 100%; }
   .asa-card .asa-close { position: absolute; top: 4px; right: 6px; background: none; border: 0; font: inherit;
@@ -43,6 +46,8 @@
 
   const locale = ns.lang === 'id' ? 'id-ID' : 'en-US';
   const meta = new Map(); // id -> { lastTool, firstSeen, idleSince }
+  // Warm the portrait images so the first card doesn't open with an empty frame.
+  for (let i = 0; i < 6; i++) new Image().src = `./assets/characters/char_${i}.png`;
   let card = null; // { id, el, parts }
   let lastUpdate = 0;
 
@@ -90,7 +95,11 @@
     const name = h('div', { class: 'asa-card-name' });
     const dot = h('i', { class: 'asa-dot' });
     const statusText = h('span');
+    const taskTitle = h('b');
+    const taskPrompt = h('q');
+    const task = h('div', { class: 'asa-card-task' }, taskTitle, taskPrompt);
     const parts = {
+      task, taskTitle, taskPrompt,
       name,
       dot,
       statusText,
@@ -113,6 +122,7 @@
       { class: 'asa-card', role: 'status' },
       closeBtn,
       h('div', { class: 'asa-card-top' }, portrait, h('div', {}, name, h('div', { class: 'asa-card-status' }, dot, statusText))),
+      task,
       parts.project.el,
       parts.tool.el,
       parts.context.el,
@@ -135,6 +145,12 @@
     p.statusText.textContent = parent ? `${S.subagent} ${ns.villagerName(parent)} · ${text}` : text;
     p.dot.style.background = color;
     p.project.value.textContent = ch.folderName || S.none;
+    // Best match from the task board feed: the most recently active session in this villager's folder.
+    const session = (ns.data?.tasks ?? []).find((t) => t.project && t.project === ch.folderName);
+    p.task.style.display = session && (session.title || session.prompt) ? '' : 'none';
+    p.taskTitle.textContent = session?.title ? `${S.task}: ${session.title}` : '';
+    p.taskPrompt.textContent = session?.prompt ?? '';
+    p.taskPrompt.style.display = session?.prompt ? '' : 'none';
     p.tool.value.textContent = ch.currentTool || m?.lastTool || S.none;
     const pct = ch.maxContextTokens > 0 ? Math.min(100, Math.round((ch.contextTokens / ch.maxContextTokens) * 100)) : 0;
     const k = (n) => `${Math.round(n / 1000)}k`;
