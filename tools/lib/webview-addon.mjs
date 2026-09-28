@@ -13,6 +13,8 @@ const SCRIPTS = [
   'camera.js',
   'notify.js',
   'status-icons.js',
+  'idle-activities.js',
+  'expressions.js',
   'idle-chat-lines.js',
   'idle-chat.js',
   'villager-card.js',
