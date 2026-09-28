@@ -74,6 +74,17 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
 - Mau obrolannya pakai bahasa Inggris? Tambahin `&chatLang=en` di ujung link kantor.
 - Mau dimatiin? Tambahin `&idleChat=off` di ujung link kantor. Nyalain lagi pakai `&idleChat=on`.
 
+## Villager makin hidup 🛋️
+
+- **Pas santai**, villager gak cuma ngobrol: kadang rehat ngopi, duduk baca buku di sofa, lihat-lihat rak buku,
+  menghangatkan diri di perapian (lebih sering pas sore/malam), memandang ke jendela, nyiram tanaman, atau ngelus
+  Clucky. Ada ikon kecil oranye di atas kepalanya. Begitu dapet tugas, dia langsung balik ke meja.
+- **Ekspresi**:
+  - 💤 **zzz** = context-nya udah 80% penuh. Saatnya `/compact`.
+  - 💧 **keringetan** = udah kerja 15 menit nonstop, atau nungguin izinmu lebih dari 1 menit.
+  - ✨ **lompat senang** = baru selesai ngerjain tugas.
+- Mau dimatiin? Tambahin `&idleActivities=off` atau `&expressions=off` di ujung link kantor.
+
 ## Kartu villager, kalender, dan Holo-board 🗓️
 
 - **Klik villager** → muncul kartu di pojok kanan atas: namanya, lagi ngapain (kerja pakai tool apa, nunggu
@@ -81,7 +92,7 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
 - **Klik kalender di dinding** → kalender bulan ini, lengkap sama acara dari aplikasi **Calendar** di Mac.
   Klik tanggalnya buat lihat agenda hari itu. Angka merah di kalender = jumlah acara hari ini.
 - **Klik layar hologram di atas perapian (Holo-board)** → dashboard kerja Claude hari ini: jumlah tool call,
-  file yang diedit, command, sesi, jam tersibuk, grafik 14 hari, dan streak harian 🔥.
+  file yang diedit, command, sesi, pemakaian token dan model, jam tersibuk, grafik 14 hari, dan streak harian 🔥.
 
 Pertama kali nyalain kantor, Mac bakal nanya **"Asa Office ingin mengakses kalender"** (atau "Terminal", kalau
 kamu nyalain lewat Terminal). Klik **Izinkan** biar acara kamu muncul. Kelewat? Buka **System Settings → Privasi &
@@ -89,6 +100,27 @@ Keamanan → Kalender**, nyalain Asa Office (atau Terminal), terus matiin dan ny
 
 Kalau Holo-board belum ada di kantor kamu, jalanin `npm run layout` (layout lama otomatis di-backup), atau klik
 **Layout**, cari **Holo-board**, terus tempel di dinding mana aja.
+
+## Kamera, notifikasi, papan tugas, dan siang-malam 🌙
+
+- **Simbol kecil di atas villager**: label besar di atas kepala villager udah diganti simbol mungil biar kantor gak
+  penuh: ✎ lagi edit, 🔍 lagi baca/cari, >_ jalanin command, 🌐 buka web, 👥 pakai sub-agent, ⚙ lainnya, dan "…" biru
+  kalau dia nungguin balasanmu. **Klik villager-nya** buat lihat detail, termasuk dia lagi ngerjain apa dan
+  permintaan terakhirmu. Kangen label lama? Tambahin `&labels=full` di ujung link kantor.
+
+- **🔒 Kunci kamera** (di bawah tombol + / −, nyala dari awal): tampilan kantor diam di tengah. Klik villager cuma
+  buka kartunya, kameranya gak ikut lari. Scroll trackpad juga gak geser kantor. Zoom tetap bisa pakai + / −.
+  Mau bebas lagi? Klik 🔒 sampai jadi 🔓.
+- **🔔 Notifikasi**: pas villager butuh izin atau selesai kerja, muncul pesan kecil di atas kantor (klik buat langsung
+  milih villager-nya), bunyi "ting", notifikasi Mac kalau jendelanya lagi ketutup, dan HP bergetar. Waktu pertama
+  diklik, browser nanya izin notifikasi: klik **Izinkan**. Klik lagi jadi 🔕 buat diem.
+- **Papan tugas** (papan gabus di sebelah kalender): klik buat lihat tiap sesi Claude 24 jam terakhir: judulnya,
+  permintaan terakhirmu, proyeknya, berapa tool dan file hari ini, dan villager mana yang lagi ngerjain. Angka hijau
+  di papannya = jumlah villager yang lagi kerja.
+- **Siang-malam**: kantornya ikut jam kamu. Sore jadi oranye, magrib ungu, malam gelap dengan bintang di jendela,
+  lentera dan perapian nyala. Mau matiin? Tambahin `&dayNight=off` di ujung link kantor.
+
+Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layout**, cari **Task Board**, tempel di dinding.
 
 ## Kalau ada masalah
 

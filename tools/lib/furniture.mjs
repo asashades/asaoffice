@@ -427,6 +427,28 @@ function holoboard2x2() {
   return s.outline(OUT);
 }
 
+// A cork "help wanted" board with pinned notes; the addon's task board opens when it's clicked.
+function taskboard2x2() {
+  const s = new Sprite(32, 32);
+  s.rect(2, 3, 28, 22, C.w3).hline(2, 3, 28, C.w1).hline(2, 24, 28, C.w4);
+  s.rect(4, 5, 24, 18, '#c99a62');
+  for (let i = 0; i < 40; i++) {
+    const x = 4 + ((i * 7) % 24);
+    const y = 5 + ((i * 11) % 18);
+    s.set(x, y, '#b5864f');
+  }
+  const note = (x, y, w, h, paper, pin) => {
+    s.rect(x, y, w, h, paper);
+    for (let r = y + 2; r < y + h - 1; r += 2) s.hline(x + 1, r, w - 2 - ((r + x) % 3), '#9a8a7a');
+    s.set(x + Math.floor(w / 2), y, pin);
+  };
+  note(6, 7, 7, 8, C.cream, C.red);
+  note(15, 6, 6, 7, '#fff6a8', '#4a8ac8');
+  note(22, 8, 5, 9, C.cream, C.greenS);
+  note(12, 15, 8, 6, '#ffe0d0', C.gold);
+  return s.outline(OUT);
+}
+
 function fireplace() {
   const s = new Sprite(32, 32);
   const r = rng(21);
@@ -668,6 +690,7 @@ export function buildFurniture() {
   single('COZY_CLOCK', 'Pendulum Clock', 'wall', stampItem('clock', 16, 32, { W: C.w3, w: C.w4, C: C.cream, k: C.ink, Y: C.gold, y: C.goldS }, 1), [1, 2], { wall: true });
   single('COZY_CALENDAR', 'Wall Calendar', 'wall', stampItem('calendar', 16, 32, { r: C.redS, R: C.red, C: C.cream, c: C.creamS, k: C.w4 }, 3), [1, 2], { wall: true });
   single('COZY_HOLOBOARD', 'Holo-board', 'wall', holoboard2x2(), [2, 2], { wall: true });
+  single('COZY_TASKBOARD', 'Task Board', 'wall', taskboard2x2(), [2, 2], { wall: true });
   single('COZY_FIREPLACE', 'Stone Fireplace', 'decor', fireplace(), [2, 2], { bg: 1 });
   single('COZY_SUNFLOWER', 'Potted Sunflower', 'decor', stampItem('sunflower', 16, 32, pot, 13), [1, 2], { bg: 1 });
   single('COZY_FERN', 'Potted Fern', 'decor', stampItem('fern', 16, 32, pot, 16), [1, 2], { bg: 1 });

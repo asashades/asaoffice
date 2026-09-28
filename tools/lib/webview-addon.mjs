@@ -6,13 +6,29 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 // Load order matters: core.js first (settings, frame hook, panels), then the add-ons.
-const SCRIPTS = ['core.js', 'idle-chat-lines.js', 'idle-chat.js', 'villager-card.js', 'calendar.js', 'holoboard.js'];
+// Day-night goes before the add-ons that draw on top of it (speech bubbles, Holo-board, badges).
+const SCRIPTS = [
+  'core.js',
+  'daynight.js',
+  'camera.js',
+  'notify.js',
+  'status-icons.js',
+  'idle-activities.js',
+  'expressions.js',
+  'idle-chat-lines.js',
+  'idle-chat.js',
+  'villager-card.js',
+  'calendar.js',
+  'holoboard.js',
+  'taskboard.js',
+];
 const HTML_MARKER = '<!-- asaoffice addon -->';
-const JS_MARKER = '/*asaoffice-hook*/';
+const JS_MARKER_PREFIX = '/*asaoffice-hook';
+const JS_MARKER = '/*asaoffice-hook:2*/';
 // pixel-agents 1.4.1 render callback: right after drawing, it stores the frame's offsets.
-// In that scope: t = canvas, e = OfficeState, d/p = offsetX/offsetY, f = zoom, n = edit mode.
+// In that scope: t = canvas, e = OfficeState, d/p = offsetX/offsetY, f = zoom, n = edit mode, m = pan ref.
 const ANCHOR = 'y.current={x:d,y:p},';
-const HOOK = `y.current={x:d,y:p},${JS_MARKER}(()=>{try{window.__asaoffice?.afterRender?.(t,e,d,p,f,n)}catch{}})(),`;
+const HOOK = `y.current={x:d,y:p},${JS_MARKER}(()=>{try{window.__asaoffice?.afterRender?.(t,e,d,p,f,n,m)}catch{}})(),`;
 
 function bundlePath(webview) {
   const html = fs.readFileSync(path.join(webview, 'index.html'), 'utf8');
@@ -34,6 +50,12 @@ export function applyWebviewAddon(root, dist, backup) {
   const webview = path.join(dist, 'webview');
   const bundle = bundlePath(webview);
   let js = fs.readFileSync(bundle, 'utf8');
+  if (js.includes(JS_MARKER_PREFIX) && !js.includes(JS_MARKER)) {
+    // An older hook version: start again from the original bundle.
+    const saved = path.join(backup, path.relative(dist, bundle));
+    if (!fs.existsSync(saved)) throw new Error('original bundle backup missing; run `npm install` to reset pixel-agents');
+    js = fs.readFileSync(saved, 'utf8');
+  }
   if (!js.includes(JS_MARKER)) {
     if (js.split(ANCHOR).length !== 2) {
       throw new Error('render hook anchor not found (pixel-agents version changed?); office addon not installed');
@@ -54,7 +76,7 @@ export function applyWebviewAddon(root, dist, backup) {
   const out = path.join(webview, 'asaoffice');
   fs.mkdirSync(out, { recursive: true });
   for (const s of SCRIPTS) fs.copyFileSync(path.join(root, 'addon', s), path.join(out, s));
-  return `office addon installed: idle chat, villager card, calendar, Holo-board (${path.relative(root, out)})`;
+  return `office addon installed: ${SCRIPTS.length - 1} add-ons (${path.relative(root, out)})`;
 }
 
 export function restoreWebviewAddon(dist, backup) {

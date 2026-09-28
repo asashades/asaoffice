@@ -1,0 +1,14 @@
+{
+  "id": "COZY_TASKBOARD",
+  "name": "Task Board",
+  "category": "wall",
+  "type": "asset",
+  "file": "COZY_TASKBOARD.png",
+  "width": 32,
+  "height": 32,
+  "footprintW": 2,
+  "footprintH": 2,
+  "canPlaceOnWalls": true,
+  "canPlaceOnSurfaces": false,
+  "backgroundTiles": 0
+}

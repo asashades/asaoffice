@@ -1,4 +1,4 @@
-// Feeds the office's addon panels (calendar, Holo-board) while `npm run office` runs. Writes one JSON
+// Feeds the office's addon panels (calendar, Holo-board, task board) while `npm run office` runs. Writes one JSON
 // file into the webview's static folder, named after a hash of the server's token: pixel-agents serves
 // static files without checking the token, so only someone who already holds the office URL can find
 // it. The file is deleted when the office stops.
@@ -76,7 +76,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
   const script = path.join(root, 'tools', 'lib', 'mac-calendar.js');
 
   const stats = new ClaudeStats();
-  const data = { version: 1, generatedAt: null, stats: null, calendar: { status: calendar ? 'loading' : 'off', events: [] } };
+  const data = { version: 1, generatedAt: null, stats: null, tasks: [], calendar: { status: calendar ? 'loading' : 'off', events: [] } };
   const write = () => {
     data.generatedAt = new Date().toISOString();
     const tmp = `${file}.tmp`;
@@ -88,6 +88,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
   const refreshStats = () => {
     try {
       data.stats = stats.scan();
+      data.tasks = stats.tasks();
       write();
     } catch (err) {
       log(`[asaoffice] office data: stats failed: ${err.message}`);
