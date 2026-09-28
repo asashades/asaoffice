@@ -1,7 +1,8 @@
 // asaoffice addon core: shared plumbing for the office add-ons (idle chat, villager card, calendar,
 // Holo-board). Loaded first.
-//   - frame hook: the bundle patch calls __asaoffice.afterRender(canvas, office, offX, offY, zoom, editMode)
-//     after each frame; add-ons subscribe with __asaoffice.onFrame(fn).
+//   - frame hook: the bundle patch calls __asaoffice.afterRender(canvas, office, offX, offY, zoom, editMode, panRef)
+//     after each frame; add-ons subscribe with __asaoffice.onFrame(fn). panRef.current is the camera pan.
+//   - toolbar: __asaoffice.toolbarButton({ id, title, onClick }) adds a button under the zoom buttons.
 //   - furniture clicks: __asaoffice.onFurnitureClick('COZY_CALENDAR', fn) fires when that item is clicked.
 //   - panels: __asaoffice.panel.open({ theme, title, render }) shows one modal panel at a time.
 //   - data: __asaoffice.fetchData() reads the JSON that `npm run office` writes (calendar + stats).
@@ -37,9 +38,10 @@
   const frameHandlers = [];
   ns.onFrame = (fn) => frameHandlers.push(fn);
   ns.view = null;
-  ns.afterRender = (canvas, office, offX, offY, zoom, editMode) => {
-    ns.view = { canvas, office, offX, offY, zoom, editMode };
+  ns.afterRender = (canvas, office, offX, offY, zoom, editMode, panRef) => {
+    ns.view = { canvas, office, offX, offY, zoom, editMode, panRef };
     attachCanvas(canvas);
+    placeToolbar();
     for (const fn of frameHandlers) {
       try { fn(canvas, office, offX, offY, zoom, editMode); } catch (err) { console.error('[asaoffice]', err); }
     }
@@ -47,7 +49,7 @@
 
   // ── Furniture clicks ──
   // Footprints of the clickable items (tiles, from their manifests). Wall items are anchored at their top-left.
-  const FOOTPRINT = { COZY_CALENDAR: [1, 2], COZY_HOLOBOARD: [2, 2], COZY_CLOCK: [1, 2] };
+  const FOOTPRINT = { COZY_CALENDAR: [1, 2], COZY_HOLOBOARD: [2, 2], COZY_TASKBOARD: [2, 2], COZY_CLOCK: [1, 2] };
   const clickHandlers = new Map();
   ns.onFurnitureClick = (type, fn) => clickHandlers.set(type, fn);
   ns.findFurniture = (type) => (ns.view?.office?.getLayout?.().furniture ?? []).filter((f) => f.type === type);
@@ -193,6 +195,37 @@
     get isOpen() { return !!current; },
   };
 
+  // ── Toolbar: our buttons sit under pixel-agents' zoom buttons and borrow their look ──
+  const toolbar = [];
+  ns.toolbarButton = ({ id, title, onClick }) => {
+    const btn = document.createElement('button');
+    btn.id = `asa-tb-${id}`;
+    btn.type = 'button';
+    btn.title = title;
+    btn.setAttribute('aria-label', title);
+    btn.addEventListener('click', (e) => { e.stopPropagation(); onClick(btn); });
+    toolbar.push(btn);
+    return btn;
+  };
+  let lastPlace = 0;
+  function placeToolbar() {
+    if (toolbar.length === 0 || performance.now() - lastPlace < 1000) return;
+    lastPlace = performance.now();
+    // pixel-agents' zoom buttons are SVG icons titled "Zoom in/out (Ctrl+Scroll)".
+    const zoomOut = document.querySelector('button[title^="Zoom out"]');
+    if (!zoomOut) return;
+    const r = zoomOut.getBoundingClientRect();
+    toolbar.forEach((btn, i) => {
+      if (!btn.isConnected) document.body.appendChild(btn);
+      btn.className = zoomOut.className; // same pixel look as the zoom buttons
+      Object.assign(btn.style, {
+        position: 'fixed', left: `${r.left}px`, top: `${r.bottom + 8 + i * (r.height + 8)}px`,
+        width: `${r.width}px`, height: `${r.height}px`, zIndex: 50, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', fontSize: '18px', padding: 0,
+      });
+    });
+  }
+
   // Tiny DOM helper: h('div', { class: 'x', style: {...} }, ...children)
   ns.h = (tag, attrs = {}, ...children) => {
     const el = document.createElement(tag);
@@ -216,6 +249,7 @@
 
   ns.onFrame((canvas, office, offX, offY, zoom, editMode) => {
     if (editMode && current) ns.panel.close(); // the layout editor takes over the canvas
+    for (const btn of toolbar) btn.style.visibility = editMode ? 'hidden' : '';
     if (performance.now() - lastRefresh > 60_000) ns.refreshData();
   });
 })();
