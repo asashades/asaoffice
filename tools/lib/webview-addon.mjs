@@ -12,6 +12,7 @@ const SCRIPTS = [
   'daynight.js',
   'camera.js',
   'notify.js',
+  'status-icons.js',
   'idle-chat-lines.js',
   'idle-chat.js',
   'villager-card.js',
