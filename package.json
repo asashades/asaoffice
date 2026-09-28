@@ -18,7 +18,8 @@
     "tunnel": "node tools/tunnel.mjs",
     "preview": "node tools/preview.mjs",
     "layout": "node tools/install-layout.mjs",
-    "app": "node tools/install-app.mjs"
+    "app": "node tools/install-app.mjs",
+    "staff": "node tools/install-staff.mjs"
   },
   "devDependencies": {
     "pngjs": "^7.0.0"

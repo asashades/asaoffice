@@ -12,7 +12,7 @@ from your phone through a tunnel.
 The pack is **original pixel art**, drawn by `tools/` in a Stardew Valley–*inspired* style (warm wood, gingham,
 sunflowers, an orange office cat and a hen). No sprites are taken from Stardew Valley or any other game.
 
-| Villagers (walk · type · read, 3 directions) | Furniture |
+| Twelve villagers (walk · type · read, 3 directions each) | Furniture |
 | --- | --- |
 | ![characters](docs/characters.png) | ![furniture](docs/furniture.png) |
 
@@ -20,9 +20,10 @@ sunflowers, an orange office cat and a hen). No sprites are taken from Stardew V
 
 | Path | What it is |
 | --- | --- |
-| `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: 6 characters, 21 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and two pets: Oyen the cat (the layout's default) and Clucky the hen. |
-| `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and the same 6 characters, for the parts `pixel-agents` only loads from its own bundle. |
+| `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: villagers 7–12 (Wren, Pip, Sari, Gus, Iris, Bayu), 21 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and two pets: Oyen the cat (the layout's default) and Clucky the hen. |
+| `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and villagers 1–6 (Asa, Rowan, Clem, Theo, Mabel, Juno) in place of the bundled characters, for the parts `pixel-agents` only loads from its own bundle. |
 | `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), [idle activities and expressions](#idle-activities-and-expressions), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night), and a [Pomodoro timer](#pomodoro) on the wall clock. |
+| `staff/` | The [office staff](#office-staff): six Claude Code subagents with job descriptions (`staff/agents/*.md`), each played by a villager (`staff/roster.json`). Install with `npm run staff`. |
 | `layouts/stardew-office.json` | A ready-made office: a 6-desk workroom, fireplace lounge, and kitchenette. Import it via **Layout → Import**, or `npm run layout`. |
 | `tools/` | The sprite generator (`npm run generate`), plus setup, launcher, and tunnel scripts. |
 
@@ -42,6 +43,8 @@ npm run setup      # register the pack, apply the overlay, install the layout (r
 - `npm run register` adds `stardew-pack/` to `~/.pixel-agents/config.json`. That's the same as **Settings → Add Asset Directory**.
 - `npm run overlay` copies `overlay/` into this repo's installed copy of `pixel-agents`, installs the idle-chat addon, and backs up the originals. Undo it with `npm run overlay:restore`.
 - `npm run layout` backs up `~/.pixel-agents/layout.json`, then installs the Stardew layout.
+
+Optionally, `npm run staff` hires the [office staff](#office-staff): six Claude Code subagents with their own jobs.
 
 ### Phase 1: run it and watch a real session
 
@@ -231,6 +234,47 @@ The timer is kept in the browser (localStorage), so a reload picks it up where i
 run their own. `&pomodoro=off` in the URL turns it off (remembered). In the console, `__asaoffice.pomodoro.start()`,
 `.skip()` and `.state` help with testing.
 
+## Villager identities
+
+Every villager has a face and a name of its own (`addon/identity.js`):
+
+- **Twelve villagers.** Palettes 0–5 are Asa, Rowan, Clem, Theo, Mabel and Juno (the overlay's replacements for
+  pixel-agents' six bundled characters). Palettes 6–11 are Wren, Pip, Sari, Gus, Iris and Bayu, loaded from the pack.
+  Sessions get distinct faces while there are enough. After that a face repeats with a different hue and a number
+  ("Asa 2"), so you never see an identical twin.
+- **Sub-agents.** pixel-agents gives a sub-agent its parent's exact look. Here it keeps the parent's face with a
+  shifted hue and is called "Asa · Asisten", or "Asa · Explore" for a named subagent type. The parent's bubble says
+  "Nunggu asisten" while the sub-agent's bubble shows its own task and tools.
+- Faces and names are applied in the browser each frame (`ch.palette` / `ch.hueShift`), so the server is untouched.
+
+## Office staff
+
+`npm run staff` installs six Claude Code subagents into `~/.claude/agents/`, each with a job description
+(`staff/agents/*.md`) and a villager (`staff/roster.json`):
+
+| Villager | Subagent | Job |
+| --- | --- | --- |
+| Wren | `wren-tester` | Runs the tests, writes missing ones, reports bugs with repro steps |
+| Pip | `pip-reviewer` | Reviews diffs for bugs and security problems (read-only) |
+| Sari | `sari-writer` | Writes and tidies READMEs, guides, comments and changelogs |
+| Gus | `gus-planner` | Breaks big jobs into steps and writes the plan (read-only) |
+| Iris | `iris-researcher` | Researches the web and the code and summarizes with sources |
+| Bayu | `bayu-debugger` | Finds a bug's root cause, fixes it minimally and proves it |
+
+Any Claude Code session on the Mac can then hand them work ("minta Wren ngetes perubahan ini", "suruh Pip review
+diff-nya"), and Claude also calls them on its own when a task matches their description. When one is spawned, the
+office shows that villager instead of a generic helper, and its card shows the role, who called it, and its job.
+While staff are installed, ordinary sessions never get a staff member's face.
+
+How it's matched: `npm run office` rescans the session transcripts every 4 seconds for `Agent`/`Task` tool calls and
+publishes `{ tool_use id: subagent_type }` in its data feed. pixel-agents names each sub-agent by the same tool_use
+id, so `identity.js` can tell which staff member it is. Agent Teams teammates named after a staff member (for example
+`wren-tester` or `Wren`) get that villager too.
+
+Unlike an always-on agent platform, the staff don't run by themselves: they work when a session, Dispatch or a
+scheduled Routine calls them. Edit a file in `staff/agents/` and run `npm run staff` again to change a job
+description (a copy you edited in `~/.claude/agents/` is backed up first). `npm run staff -- --remove` removes them.
+
 ## How the add-ons hook in
 
 `npm run overlay` copies `addon/` to `dist/webview/asaoffice/`, adds `<script>` tags for it to `index.html`
@@ -261,7 +305,7 @@ anything in `addon/`, run `npm run overlay` and reload the page.
   folders alphabetically, so Oyen the cat is 2 and Clucky the hen is 3. The layout's pet uses `petType: 2`, and an
   older layout that had the hen at 2 now shows the cat there. If a release adds bundled pets, re-add Oyen from the
   Layout editor's pet tool.
-- **Duplicate faces:** with the overlay on, the six villagers exist twice: once as bundled, once from the pack.
-  Agents 7–12 reuse faces before any hue-shifting kicks in. It's harmless.
+- **Faces without the overlay:** without `npm run overlay`, palettes 0–5 are pixel-agents' own characters, and
+  the add-ons (names, staff) aren't installed at all.
 - **Out of scope:** Google Antigravity support (it would need a new `HookProvider`), commanding agents from the
   office, and multi-machine sync.

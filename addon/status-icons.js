@@ -27,8 +27,8 @@
   };
   const COLOR = { working: '#4f9a45', waiting: '#4a8ac8' };
   const S = ns.t({
-    id: { waiting: 'Nunggu balasanmu', edit: 'Ngedit', search: 'Nyari', command: 'Jalanin command', web: 'Buka web', agent: 'Sub-agent', other: 'Kerja' },
-    en: { waiting: 'Waiting for you', edit: 'Editing', search: 'Searching', command: 'Running a command', web: 'On the web', agent: 'Sub-agent', other: 'Working' },
+    id: { waiting: 'Nunggu balasanmu', edit: 'Ngedit', search: 'Nyari', command: 'Jalanin command', web: 'Buka web', agent: 'Sub-agent', other: 'Kerja', waitingFor: (n) => `Nunggu ${n}`, helper: 'asisten', task: (d) => `Tugas: ${d}` },
+    en: { waiting: 'Waiting for you', edit: 'Editing', search: 'Searching', command: 'Running a command', web: 'On the web', agent: 'Sub-agent', other: 'Working', waitingFor: (n) => `Waiting for ${n}`, helper: 'a helper', task: (d) => `Task: ${d}` },
   });
   const MAX_CHARS = 26;
 
@@ -56,7 +56,7 @@
    * A cream speech bubble with a coloured icon and a short line of text, its tail pointing down at (cx, bottom).
    * opts: { glyph, color, text, t (for the gentle bob), alpha }
    */
-  function speech(ctx, cx, bottom, zoom, { glyph, color, text, t = 0, alpha = 1 }) {
+  function speech(ctx, cx, bottom, zoom, { glyph, color, text, t = 0, alpha = 1, avoid = null }) {
     const u = Math.max(1, Math.round(zoom));
     const label = text.length > MAX_CHARS ? `${text.slice(0, MAX_CHARS - 1)}…` : text;
     ctx.font = `${Math.max(9, Math.round(5.5 * zoom))}px "FS Pixel Sans", sans-serif`;
@@ -66,7 +66,13 @@
     const hgt = 11 * u;
     const bob = Math.round(Math.sin(t * 3) * u * 0.5);
     const x = Math.round(cx - w / 2);
-    const y = Math.round(bottom - hgt - 3 * u - bob);
+    let y = Math.round(bottom - hgt - 3 * u - bob);
+    // Neighbours' bubbles (drawn earlier this frame): step up until this one is clear of them.
+    if (avoid) {
+      const hits = (yy) => avoid.some((r) => x < r.x + r.w && x + w > r.x && yy < r.y + r.h && yy + hgt + 2 * u > r.y);
+      for (let tries = 0; tries < 4 && hits(y); tries++) y -= hgt + 2 * u;
+      avoid.push({ x, y, w, h: hgt + 2 * u });
+    }
     ctx.globalAlpha = alpha;
     // outline (cut corners), fill
     ctx.fillStyle = '#2b1a10';
@@ -133,7 +139,9 @@
     return status;
   };
 
-  const tools = new Map(); // agent id -> { status, toolName, open: Set<toolId> }
+  const tools = new Map(); // agent id -> { status, toolName, toolId, open: Set<toolId> }
+  const subStatus = new Map(); // `${parentId}:${parentToolId}` -> latest tool status of that sub-agent
+  const subTask = new Map(); // `${parentId}:${toolId}` -> the task description it was spawned with
   ns.onMessage((msg) => {
     if (typeof msg?.id !== 'number') return;
     if (msg.type === 'agentToolStart' && typeof msg.status === 'string') {
@@ -141,15 +149,43 @@
       if (!msg.runInBackground || !cur.status) {
         cur.status = msg.status;
         cur.toolName = msg.toolName;
+        cur.toolId = msg.toolId;
       }
       cur.open.add(msg.toolId);
       tools.set(msg.id, cur);
+      const task = /^Subtask: (.*)$/.exec(msg.status)?.[1];
+      if (task) subTask.set(`${msg.id}:${msg.toolId}`, task.trim());
     } else if (msg.type === 'agentToolDone') {
       tools.get(msg.id)?.open.delete(msg.toolId);
     } else if (msg.type === 'agentToolsClear' || msg.type === 'agentClosed') {
       tools.delete(msg.id);
+    } else if (msg.type === 'subagentToolStart' && typeof msg.status === 'string') {
+      subStatus.set(`${msg.id}:${msg.parentToolId}`, msg.status);
+    } else if (msg.type === 'subagentClear') {
+      subStatus.delete(`${msg.id}:${msg.parentToolId}`);
+      subTask.delete(`${msg.id}:${msg.parentToolId}`);
     }
   });
+  /** Status line for sub-agent villager `ch`: its current tool, else the task it was given. */
+  function subText(office, ch) {
+    const meta = office.subagentMeta?.get?.(ch.id);
+    if (!meta) return null;
+    const key = `${meta.parentAgentId}:${meta.parentToolId}`;
+    const st = subStatus.get(key);
+    if (st) return translate(st);
+    const task = subTask.get(key);
+    return task ? S.task(task) : null;
+  }
+  /** A parent busy with a sub-agent says who it's waiting for instead of repeating the sub-agent's task. */
+  function parentText(office, ch) {
+    const cur = tools.get(ch.id);
+    if (!cur || (cur.toolName !== 'Agent' && cur.toolName !== 'Task') || !cur.open.has(cur.toolId)) return null;
+    const subId = office.getSubagentId?.(ch.id, cur.toolId);
+    const sub = subId != null ? office.characters.get(subId) : null;
+    if (!sub) return null;
+    const staff = ns.staffOf?.(sub);
+    return S.waitingFor(staff ? staff.name : S.helper);
+  }
   /** What villager `id` is doing right now, as a short translated line, or null. Used by the villager card too. */
   ns.statusText = (id) => {
     const s = tools.get(id)?.status;
@@ -165,6 +201,7 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     // Draw the selected villager last so its bubble sits on top of any neighbours'.
     const list = [...office.characters.values()].sort((a, b) => (a.id === office.selectedAgentId) - (b.id === office.selectedAgentId));
+    const avoid = [];
     for (const ch of list) {
       if (ch.currentTool && !ch.asaActivity) lastTool.set(ch.id, ch.currentTool);
       if (ch.matrixEffect) continue;
@@ -180,7 +217,7 @@
       } else if (ch.isActive) {
         const kind = KIND[ch.currentTool ?? lastTool.get(ch.id) ?? tools.get(ch.id)?.toolName] ?? 'other';
         glyph = GLYPH[kind];
-        text = (!ch.isSubagent && ns.statusText(ch.id)) || S[kind];
+        text = (ch.isSubagent ? subText(office, ch) : parentText(office, ch) ?? ns.statusText(ch.id)) || S[kind];
       }
       if (!glyph) continue;
       const lift = ch.state === 'type' ? 10 : 0;
@@ -188,7 +225,7 @@
       const cx = offX + ch.x * zoom;
       const phase = ch.isActive ? t + ch.id : 0;
       if (mode === 'icons') badge(ctx, cx, offY + (ch.y + lift - 25) * zoom, zoom * (ch.isSubagent ? 0.8 : 1), glyph, color, phase);
-      else speech(ctx, cx, bottom, ch.isSubagent ? zoom * 0.85 : zoom, { glyph, color, text, t: phase, alpha: ch.isSubagent ? 0.85 : 1 });
+      else speech(ctx, cx, bottom, ch.isSubagent ? zoom * 0.85 : zoom, { glyph, color, text, t: phase, alpha: ch.isSubagent ? 0.9 : 1, avoid });
     }
     ctx.restore();
     for (const id of lastTool.keys()) if (!office.characters.has(id)) lastTool.delete(id);

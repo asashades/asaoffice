@@ -1,4 +1,5 @@
-// Feeds the office's addon panels (calendar, Holo-board, task board) while `npm run office` runs. Writes one JSON
+// Feeds the office's addon panels (calendar, Holo-board, task board) and villager identities (staff roster,
+// which staff member each sub-agent is) while `npm run office` runs. Writes one JSON
 // file into the webview's static folder, named after a hash of the server's token: pixel-agents serves
 // static files without checking the token, so only someone who already holds the office URL can find
 // it. The file is deleted when the office stops.
@@ -11,6 +12,7 @@ import path from 'node:path';
 import { ClaudeStats } from './claude-stats.mjs';
 
 const STATS_EVERY_MS = 60_000;
+const SPAWNS_EVERY_MS = 4_000; // sub-agents are often short-lived, so their staff identity is looked up quickly
 const CALENDAR_EVERY_MS = 5 * 60_000;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -76,7 +78,22 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
   const script = path.join(root, 'tools', 'lib', 'mac-calendar.js');
 
   const stats = new ClaudeStats();
-  const data = { version: 1, generatedAt: null, stats: null, tasks: [], calendar: { status: calendar ? 'loading' : 'off', events: [] } };
+  const data = {
+    version: 1, generatedAt: null, stats: null, tasks: [], subagents: {}, staff: [],
+    calendar: { status: calendar ? 'loading' : 'off', events: [] },
+  };
+  // Staff roster, with which members are installed as Claude Code subagents (npm run staff).
+  const rosterFile = path.join(root, 'staff', 'roster.json');
+  const readStaff = () => {
+    try {
+      const agentsDir = path.join(os.homedir(), '.claude', 'agents');
+      return JSON.parse(fs.readFileSync(rosterFile, 'utf8')).staff.map((m) => ({
+        ...m, installed: fs.existsSync(path.join(agentsDir, `${m.agent}.md`)),
+      }));
+    } catch {
+      return [];
+    }
+  };
   const write = () => {
     data.generatedAt = new Date().toISOString();
     const tmp = `${file}.tmp`;
@@ -89,10 +106,23 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
     try {
       data.stats = stats.scan();
       data.tasks = stats.tasks();
+      data.subagents = stats.spawns();
+      data.staff = readStaff();
+      lastSpawns = stats.spawnsVersion;
       write();
     } catch (err) {
       log(`[asaoffice] office data: stats failed: ${err.message}`);
     }
+  };
+  let lastSpawns = -1;
+  const refreshSpawns = () => {
+    try {
+      stats.scan();
+      if (stats.spawnsVersion === lastSpawns) return;
+      lastSpawns = stats.spawnsVersion;
+      data.subagents = stats.spawns();
+      write();
+    } catch { /* the minute refresh reports errors */ }
   };
   let firstCalendar = true;
   const refreshCalendar = async () => {
@@ -112,7 +142,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
   };
 
   refreshStats();
-  const timers = [setInterval(refreshStats, STATS_EVERY_MS)];
+  const timers = [setInterval(refreshStats, STATS_EVERY_MS), setInterval(refreshSpawns, SPAWNS_EVERY_MS)];
   if (calendar) {
     refreshCalendar();
     timers.push(setInterval(refreshCalendar, CALENDAR_EVERY_MS));

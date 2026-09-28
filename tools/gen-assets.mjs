@@ -19,11 +19,12 @@ const overlay = path.join(root, 'overlay');
 
 for (const dir of [pack, overlay]) fs.rmSync(dir, { recursive: true, force: true });
 
+// Twelve different villagers: 1–6 replace pixel-agents' six bundled characters (overlay, palettes 0–5) and
+// 7–12 load from the pack as extra characters (palettes 6–11), so no two palettes share a face.
 CHARACTERS.forEach((c, i) => {
   const sheet = renderCharacter(c);
-  sheet.save(path.join(pack, 'characters', `char_${i}.png`));
-  // Same sprites for the optional overlay, so bundled characters can be replaced 1:1.
-  sheet.save(path.join(overlay, 'characters', `char_${i}.png`));
+  if (i < 6) sheet.save(path.join(overlay, 'characters', `char_${i}.png`));
+  else sheet.save(path.join(pack, 'characters', `char_${i - 6}.png`));
 });
 
 for (const item of buildFurniture()) {

@@ -32,6 +32,7 @@
   };
   ns.lang = ns.setting('chatLang', ['id', 'en'], 'id');
   ns.t = (strings) => strings[ns.lang] ?? strings.en;
+  // Fallback names; addon/identity.js replaces these with the twelve villagers and staff names.
   ns.VILLAGERS = ['Asa', 'Rowan', 'Clem', 'Theo', 'Mabel', 'Juno'];
   ns.villagerName = (ch) => ns.VILLAGERS[(ch?.palette ?? 0) % ns.VILLAGERS.length];
 

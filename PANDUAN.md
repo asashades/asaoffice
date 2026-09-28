@@ -139,6 +139,35 @@ Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layo
 - Timer-nya disimpan di browser, jadi refresh halaman gak bikin ilang. Tapi timer di Mac dan di HP jalan sendiri-sendiri.
 - Bunyinya ikut tombol 🔔. Mau Pomodoro dimatiin? Tambahin `&pomodoro=off` di ujung link kantor.
 
+## 12 villager, asisten, dan karyawan kantor 👥
+
+- **12 villager beda**: Asa, Rowan, Clem, Theo, Mabel, Juno, Wren, Pip, Sari, Gus, Iris, dan Bayu. Tiap sesi Claude dapet
+  muka sendiri. Kalau sesinya lebih banyak dari muka yang ada, muka yang sama dipakai lagi tapi warnanya beda dan
+  namanya dikasih nomor ("Asa 2"), jadi gak ada kembaran persis.
+- **Asisten (sub-agent)**: pas Claude manggil sub-agent, muncul villager kecil yang mirip induknya tapi warnanya beda,
+  namanya misalnya **"Asa · Asisten"**. Balon induknya bilang "Nunggu asisten", dan balon si asisten nunjukin tugasnya.
+- **Karyawan kantor** (opsional, kayak "karyawan" di Hermes): 6 persona dengan jobdesc masing-masing. Pasang sekali:
+  ```
+  cd ~/asaoffice
+  npm run staff
+  ```
+  | Villager | Jabatan | Tugasnya |
+  | --- | --- | --- |
+  | Wren | Tester (QA) | Jalanin test, nulis test yang kurang, ngelaporin bug |
+  | Pip | Reviewer kode | Meriksa perubahan kode, gak ngedit, cuma ngasih catatan |
+  | Sari | Penulis dokumentasi | Nulis dan ngerapihin README, panduan, changelog |
+  | Gus | Perencana | Mecah kerjaan besar jadi langkah-langkah, gak ngedit kode |
+  | Iris | Peneliti | Nyari info di web dan kode, ngerangkum pakai sumber |
+  | Bayu | Pemburu bug | Nyari akar masalah, benerin, terus buktiin udah beres |
+
+  Abis itu restart kantor, terus buka sesi `claude` baru. Cara nyuruhnya tinggal ngomong biasa ke Claude, misalnya
+  *"minta Wren ngetes perubahan ini"* atau *"suruh Pip review diff-nya"*. Claude juga bisa manggil mereka sendiri
+  kalau tugasnya cocok. Pas dipanggil, villager-nya muncul di kantor, dan kartunya nunjukin jabatan, jobdesc, dan
+  siapa yang manggil.
+- Mereka gak kerja sendiri 24 jam: mereka kerja pas dipanggil sama kamu, Claude, Dispatch, atau jadwal Routine.
+- Mau ubah jobdesc? Edit file di `staff/agents/`, terus jalanin `npm run staff` lagi. Mau copot semua?
+  `npm run staff -- --remove`.
+
 ## Kalau ada masalah
 
 | Masalah | Solusi |

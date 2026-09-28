@@ -1,0 +1,65 @@
+{
+  "_comment": "Office staff: each entry is a Claude Code subagent (staff/agents/<agent>.md) played by one villager. palette = the villager's sprite (6–11 = villagers 7–12). `npm run staff` installs the agents into ~/.claude/agents/.",
+  "staff": [
+    {
+      "agent": "wren-tester",
+      "name": "Wren",
+      "palette": 6,
+      "role": { "id": "Tester (QA)", "en": "Tester (QA)" },
+      "duty": {
+        "id": "Jalanin test, nulis test yang kurang, dan ngelaporin bug lengkap sama cara reproduksinya.",
+        "en": "Runs the tests, writes missing ones, and reports bugs with steps to reproduce."
+      }
+    },
+    {
+      "agent": "pip-reviewer",
+      "name": "Pip",
+      "palette": 7,
+      "role": { "id": "Reviewer kode", "en": "Code reviewer" },
+      "duty": {
+        "id": "Meriksa perubahan kode: bug, keamanan, dan hal yang bikin bingung. Gak ngedit, cuma ngasih catatan.",
+        "en": "Reviews changes for bugs, security issues and anything confusing. Doesn't edit, only reports."
+      }
+    },
+    {
+      "agent": "sari-writer",
+      "name": "Sari",
+      "palette": 8,
+      "role": { "id": "Penulis dokumentasi", "en": "Documentation writer" },
+      "duty": {
+        "id": "Nulis dan ngerapihin README, panduan, komentar, dan changelog biar gampang dipahami.",
+        "en": "Writes and tidies READMEs, guides, comments and changelogs so they're easy to follow."
+      }
+    },
+    {
+      "agent": "gus-planner",
+      "name": "Gus",
+      "palette": 9,
+      "role": { "id": "Perencana", "en": "Planner" },
+      "duty": {
+        "id": "Mecah pekerjaan besar jadi langkah-langkah kecil, nimbang pilihan, dan nulis rencana. Gak ngedit kode.",
+        "en": "Breaks big jobs into small steps, weighs the options and writes the plan. Doesn't edit code."
+      }
+    },
+    {
+      "agent": "iris-researcher",
+      "name": "Iris",
+      "palette": 10,
+      "role": { "id": "Peneliti", "en": "Researcher" },
+      "duty": {
+        "id": "Nyari info di web dan di kode, terus ngerangkum temuannya lengkap sama sumbernya.",
+        "en": "Looks things up on the web and in the code and sums up what she finds, with sources."
+      }
+    },
+    {
+      "agent": "bayu-debugger",
+      "name": "Bayu",
+      "palette": 11,
+      "role": { "id": "Pemburu bug", "en": "Bug hunter" },
+      "duty": {
+        "id": "Nyari akar masalah error atau bug, benerin sekecil mungkin, terus buktiin udah beres.",
+        "en": "Tracks a bug or error to its root cause, fixes it minimally and proves it's fixed."
+      }
+    }
+  ]
+}

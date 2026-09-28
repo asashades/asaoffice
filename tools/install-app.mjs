@@ -52,7 +52,7 @@ function iconMaster() {
     }
   for (const [x, y] of [[8, 7], [9, 7], [26, 9], [27, 9]]) s.set(x, y, hex('#fff6dc')); // clouds
   // Standing, facing-down frame of the first villager (frame 1 of the down row).
-  const sheet = Sprite.load(path.join(root, 'stardew-pack', 'assets', 'characters', 'char_0.png'));
+  const sheet = Sprite.load(path.join(root, 'overlay', 'characters', 'char_0.png')); // villager 1, Asa
   const frame = new Sprite(16, 32);
   for (let y = 0; y < 32; y++) for (let x = 0; x < 16; x++) frame.set(x, y, sheet.get(16 + x, y));
   s.blit(frame, 10, 2);
