@@ -1,7 +1,8 @@
 // Claude Code activity for the office, read from the session transcripts in ~/.claude/projects.
 // Files are read incrementally (only bytes appended since the last scan); only assistant lines with a
 // tool_use block and session-title lines are parsed.
-//   snapshot() — daily counts for the Holo-board (counts only: no paths, prompts or project names)
+//   snapshot() — daily counts for the Holo-board: tool calls, token usage, models (counts only: no paths,
+//                prompts or project names)
 //   tasks()    — the task board: each session active in the last day with its title, last prompt,
 //                project folder name, today's tool calls and edited files, and its TodoWrite list if any
 import fs from 'node:fs';
@@ -44,7 +45,10 @@ export class ClaudeStats {
   day(key) {
     let d = this.perDay.get(key);
     if (!d) {
-      d = { tools: 0, sessions: new Set(), files: new Set(), hours: new Array(24).fill(0) };
+      d = {
+        tools: 0, sessions: new Set(), files: new Set(), hours: new Array(24).fill(0),
+        tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, models: new Map(), messages: new Set(),
+      };
       for (const k of KINDS) d[k] = 0;
       this.perDay.set(key, d);
     }
@@ -68,7 +72,9 @@ export class ClaudeStats {
     if (line.includes('"type":"custom-title"') || line.includes('"type":"ai-title"') || line.includes('"type":"last-prompt"')) {
       return this.handleTitle(line);
     }
-    if (!line.includes('"type":"tool_use"') || !line.includes('"type":"assistant"')) return;
+    if (!line.includes('"type":"assistant"')) return;
+    const hasTool = line.includes('"type":"tool_use"');
+    if (!hasTool && !line.includes('"usage"')) return;
     let rec;
     try { rec = JSON.parse(line); } catch { return; }
     if (rec.type !== 'assistant' || !rec.timestamp) return;
@@ -76,6 +82,19 @@ export class ClaudeStats {
     if (!(ts.getTime() >= cutoffMs)) return;
     const blocks = Array.isArray(rec.message?.content) ? rec.message.content : [];
     const d = this.day(localDay(ts));
+    // Token usage and model, once per API message (a message's content blocks share one id and usage).
+    const usage = rec.message?.usage;
+    const msgId = rec.message?.id;
+    if (usage && msgId && !d.messages.has(msgId)) {
+      d.messages.add(msgId);
+      d.tokens.input += usage.input_tokens || 0;
+      d.tokens.output += usage.output_tokens || 0;
+      d.tokens.cacheRead += usage.cache_read_input_tokens || 0;
+      d.tokens.cacheWrite += usage.cache_creation_input_tokens || 0;
+      const model = typeof rec.message.model === 'string' ? rec.message.model.replace(/^claude-/, '') : null;
+      if (model && model !== '<synthetic>') d.models.set(model, (d.models.get(model) || 0) + 1);
+    }
+    if (!hasTool) return;
     const sess = rec.sessionId ? this.session(rec.sessionId) : null;
     const today = localDay(new Date());
     if (sess) {
@@ -180,7 +199,10 @@ export class ClaudeStats {
   snapshot(now = new Date()) {
     const days = {};
     for (const [key, d] of [...this.perDay].sort(([a], [b]) => a.localeCompare(b))) {
-      const row = { tools: d.tools, sessions: d.sessions.size, files: d.files.size };
+      const row = {
+        tools: d.tools, sessions: d.sessions.size, files: d.files.size,
+        tokens: d.tokens, models: Object.fromEntries([...d.models].sort((a, b) => b[1] - a[1])),
+      };
       for (const k of KINDS) row[k] = d[k];
       days[key] = row;
     }

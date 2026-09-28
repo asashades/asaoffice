@@ -11,6 +11,7 @@
       title: 'HOLO-BOARD', toolsToday: 'tool call hari ini', best: (n) => `rekor 14 hari: ${n}`,
       edit: 'Edit', files: (n) => `${n} file`, search: 'Baca & cari', command: 'Command', web: 'Web', agent: 'Sub-agent',
       sessions: 'Sesi hari ini', activeNow: 'Aktif sekarang', of: (a, b) => `${a} dari ${b}`,
+      tokens: 'Token hari ini', out: 'output', inp: 'input', cached: (p) => `${p}% dari cache`, models: 'Model',
       hours: 'Aktivitas per jam', busiest: (a, b) => `jam tersibuk ${a}–${b}`, quiet: 'belum ada aktivitas hari ini',
       days: '14 hari terakhir', streak: (n, capped) => `Streak ${capped ? `${n}+` : n} hari berturut-turut`, noStreak: 'Mulai streak baru hari ini',
       updated: 'Diperbarui', nodata: 'Data belum ada. Jalankan kantor lewat `npm run office`, lalu tunggu sebentar.',
@@ -19,6 +20,7 @@
       title: 'HOLO-BOARD', toolsToday: 'tool calls today', best: (n) => `14-day best: ${n}`,
       edit: 'Edits', files: (n) => `${n} files`, search: 'Read & search', command: 'Commands', web: 'Web', agent: 'Sub-agents',
       sessions: 'Sessions today', activeNow: 'Active now', of: (a, b) => `${a} of ${b}`,
+      tokens: 'Tokens today', out: 'output', inp: 'input', cached: (p) => `${p}% from cache`, models: 'Models',
       hours: 'Activity by hour', busiest: (a, b) => `busiest ${a}–${b}`, quiet: 'no activity yet today',
       days: 'Last 14 days', streak: (n, capped) => `${capped ? `${n}+` : n}-day streak`, noStreak: 'Start a new streak today',
       updated: 'Updated', nodata: 'No data yet. Start the office with `npm run office` and give it a moment.',
@@ -43,6 +45,12 @@
   .asa-holo-bars i.hot { background: #5ff3ff; box-shadow: 0 0 8px #5ff3ff; }
   .asa-holo-axis { display: flex; gap: 2px; font-size: 10px; opacity: 0.6; }
   .asa-holo-axis span { flex: 1; text-align: center; }
+  .asa-holo-tok { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 6px; font-size: 13px; }
+  .asa-holo-tok b { font-weight: normal; font-size: 20px; color: #fff; margin-right: 4px; }
+  .asa-holo-models { display: flex; height: 12px; margin-top: 6px; border: 1px solid rgba(95,243,255,0.5); }
+  .asa-holo-models i { display: block; height: 100%; }
+  .asa-holo-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; margin-top: 4px; opacity: 0.85; }
+  .asa-holo-legend i { display: inline-block; width: 8px; height: 8px; margin-right: 4px; }
   .asa-holo-streak { margin-top: 14px; padding: 8px; border: 1px dashed #5ff3ff; text-align: center; }
   `;
 
@@ -101,6 +109,32 @@
         tile('●', S.activeNow, S.of(active, total)),
       ),
     );
+
+    const tok = today.tokens;
+    if (tok && (tok.output || tok.input || tok.cacheRead)) {
+      const fmt = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1)}B` : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : String(n));
+      const inputAll = tok.input + tok.cacheRead + tok.cacheWrite;
+      const cachePct = inputAll ? Math.round((tok.cacheRead / inputAll) * 100) : 0;
+      body.append(
+        h('div', { class: 'asa-holo-sec' }, h('span', {}, S.tokens)),
+        h(
+          'div',
+          { class: 'asa-holo-tok' },
+          h('span', {}, h('b', {}, fmt(tok.output)), `⇡ ${S.out}`),
+          h('span', {}, h('b', {}, fmt(inputAll)), `⇣ ${S.inp} · ${S.cached(cachePct)}`),
+        ),
+      );
+    }
+    const models = Object.entries(today.models ?? {});
+    if (models.length) {
+      const total = models.reduce((a, [, n]) => a + n, 0);
+      const palette = ['#5ff3ff', '#b58cff', '#ffd166', '#7cf29c', '#ff8fa3'];
+      body.append(
+        h('div', { class: 'asa-holo-sec' }, h('span', {}, S.models)),
+        h('div', { class: 'asa-holo-models' }, models.map(([, n], i) => h('i', { style: { width: `${(n / total) * 100}%`, background: palette[i % palette.length] } }))),
+        h('div', { class: 'asa-holo-legend' }, models.map(([m, n], i) => h('span', {}, h('i', { style: { background: palette[i % palette.length] } }), `${m} ${Math.round((n / total) * 100)}%`))),
+      );
+    }
 
     const hours = stats.hours ?? [];
     const peak = hours.some((v) => v > 0) ? hours.indexOf(Math.max(...hours)) : -1;
