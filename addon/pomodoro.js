@@ -247,7 +247,11 @@
       for (const [id, g] of gather) {
         const ch = office.characters.get(id);
         if (!ch || ch.bubbleType || ch.tileCol !== g.col || ch.tileRow !== g.row || ch.state !== 'idle') continue;
-        if (ns.drawSpeech) ns.drawSpeech(ctx, offX + ch.x * zoom, offY + (ch.y - 28) * zoom, zoom, { glyph: CUP, color: '#6ea84e', text: S.break, t: t * 0.6 + id });
+        if (ns.drawSpeech) {
+          ns.drawSpeech(ctx, offX + ch.x * zoom, offY + (ch.y - 28) * zoom, zoom, {
+            glyph: CUP, color: '#6ea84e', text: S.break, t: t * 0.6 + id, key: `break:${id}`, hold: ns.bubbleFocused?.(ch),
+          });
+        }
         else ns.drawBadge(ctx, offX + ch.x * zoom, offY + (ch.y - 25) * zoom, zoom, CUP, '#6ea84e', t * 0.6 + id);
       }
     }

@@ -230,7 +230,12 @@
       if (!ch || ch.bubbleType) continue;
       const lift = ch.state === 'type' ? 10 : 0;
       const x = offX + ch.x * zoom;
-      if (ns.drawSpeech) ns.drawSpeech(ctx, x, offY + (ch.y + lift - 28) * zoom, zoom, { glyph: job.glyph, color: COLOR, text: label(job), t: t * 0.6 + job.id });
+      if (ns.drawSpeech) {
+        ns.drawSpeech(ctx, x, offY + (ch.y + lift - 28) * zoom, zoom, {
+          glyph: job.glyph, color: COLOR, text: label(job), t: t * 0.6 + job.id,
+          key: `activity:${job.id}`, hold: ns.bubbleFocused?.(ch),
+        });
+      }
       else ns.drawBadge(ctx, x, offY + (ch.y + lift - 25) * zoom, zoom, job.glyph, COLOR, t * 0.6 + job.id);
     }
     ctx.restore();

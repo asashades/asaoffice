@@ -54,11 +54,45 @@
     ctx.fillRect(Math.round(cx - u), y + size, 2 * u, u);
   }
 
+  // ── Brief bubbles: a bubble pops up when what it says changes, stays a few seconds, then fades away, so the
+  // office stays clean. Hovering or selecting a villager shows it again. ?bubbles=always keeps them up (remembered).
+  const brief = ns.setting('bubbles', ['brief', 'always'], 'brief') === 'brief';
+  const SHOW_MS = 4000;
+  const FADE_MS = 700;
+  const shown = new Map(); // key -> { text, since }
+  /**
+   * Opacity for the bubble `key` saying `text`: 1 for SHOW_MS after the text changes, then fading to 0.
+   * hold: always show (hovered/selected). quiet: a change to this text doesn't pop the bubble up again
+   * (e.g. "Mikir…" between tools).
+   */
+  function bubbleAlpha(key, text, { hold = false, quiet = false } = {}) {
+    const now = performance.now();
+    let s = shown.get(key);
+    if (!s) shown.set(key, (s = { text, since: quiet ? -Infinity : now, seen: now }));
+    else if (s.text !== text) Object.assign(s, { text, since: quiet ? s.since : now });
+    s.seen = now;
+    if (!brief || hold) return 1;
+    const age = now - s.since;
+    return age < SHOW_MS ? 1 : age < SHOW_MS + FADE_MS ? 1 - (age - SHOW_MS) / FADE_MS : 0;
+  }
+  setInterval(() => { // forget bubbles of villagers that left
+    const cutoff = performance.now() - 60_000;
+    for (const [k, s] of shown) if (s.seen < cutoff) shown.delete(k);
+  }, 30_000);
+  /** Is villager `ch` hovered or selected (its bubbles always show)? */
+  const focused = (ch) => {
+    const o = ns.view?.office;
+    return !!o && (o.hoveredAgentId === ch.id || o.selectedAgentId === ch.id);
+  };
+
   /**
    * A cream speech bubble with a coloured icon and a short line of text, its tail pointing down at (cx, bottom).
-   * opts: { glyph, color, text, t (for the gentle bob), alpha }
+   * opts: { glyph, color, text, t (for the gentle bob), alpha, avoid (rects of bubbles drawn this frame),
+   *         key (makes it a brief bubble, see bubbleAlpha), hold, quiet }
    */
-  function speech(ctx, cx, bottom, zoom, { glyph, color, text, t = 0, alpha = 1, avoid = null }) {
+  function speech(ctx, cx, bottom, zoom, { glyph, color, text, t = 0, alpha = 1, avoid = null, key = null, hold = false, quiet = false }) {
+    if (key) alpha *= bubbleAlpha(key, text, { hold, quiet });
+    if (alpha <= 0.01) return;
     const u = Math.max(1, Math.round(zoom));
     const label = text.length > MAX_CHARS ? `${text.slice(0, MAX_CHARS - 1)}…` : text;
     ctx.font = `${Math.max(9, Math.round(5.5 * zoom))}px "FS Pixel Sans", sans-serif`;
@@ -105,6 +139,7 @@
   }
   ns.drawBadge = badge;
   ns.drawSpeech = speech;
+  ns.bubbleFocused = focused;
   ns.GLYPH = GLYPH;
 
   const mode = ns.setting('labels', ['bubbles', 'icons', 'full'], 'bubbles');
@@ -218,6 +253,7 @@
       let glyph = null;
       let color = COLOR.working;
       let text = null;
+      let quiet = false;
       if (waitingForYou) {
         glyph = GLYPH.waiting;
         color = COLOR.waiting;
@@ -228,6 +264,7 @@
         const thinking = !ch.isSubagent && !ch.currentTool && !(cur?.open.size > 0);
         const kind = KIND[ch.currentTool ?? lastTool.get(ch.id) ?? cur?.toolName] ?? 'other';
         glyph = thinking ? GLYPH.think : GLYPH[kind];
+        quiet = thinking;
         text = thinking
           ? S.think
           : (ch.isSubagent ? subText(office, ch) : parentText(office, ch) ?? ns.statusText(ch.id)) || S[kind];
@@ -243,7 +280,12 @@
       const cx = offX + ch.x * zoom;
       const phase = ch.isActive ? t + ch.id : 0;
       if (mode === 'icons') badge(ctx, cx, offY + (ch.y + lift - 25) * zoom, zoom * (ch.isSubagent ? 0.8 : 1), glyph, color, phase);
-      else speech(ctx, cx, bottom, ch.isSubagent ? zoom * 0.85 : zoom, { glyph, color, text, t: phase, alpha: ch.isSubagent ? 0.9 : 1, avoid });
+      else {
+        speech(ctx, cx, bottom, ch.isSubagent ? zoom * 0.85 : zoom, {
+          glyph, color, text, t: phase, alpha: ch.isSubagent ? 0.9 : 1, avoid,
+          key: `status:${ch.id}`, hold: focused(ch), quiet,
+        });
+      }
     }
     ctx.restore();
     for (const id of lastTool.keys()) if (!office.characters.has(id)) lastTool.delete(id);

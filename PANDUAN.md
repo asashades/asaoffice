@@ -111,7 +111,11 @@ Kalau Holo-board belum ada di kantor kamu, jalanin `npm run layout` (layout lama
   muka) yang bilang dia lagi ngapain, misalnya "Ngedit app.ts", "Jalanin: npm test", "Nyari kode", atau
   "Subtugas: …". Kalau dia lagi mikir (gak pakai tool), balonnya bilang "Mikir…". Kalau sesinya lebih banyak dari meja,
   sisanya kerja dari sofa pakai ikon laptop 💻 ("Dari sofa: …"). Kalau dia lagi nungguin balasanmu, balonnya biru:
-  "Nunggu balasanmu". **Klik villager-nya** buat
+  "Nunggu balasanmu".
+  Biar kantor tetap bersih, **balonnya cuma muncul sebentar** (sekitar 4 detik) tiap ada yang berubah, misalnya pas
+  ganti tool atau mulai aktivitas baru, terus ngilang pelan-pelan. Mau lihat lagi? Arahin kursor ke villager-nya,
+  atau klik dia. Lebih suka balon yang selalu kelihatan? Tambahin `&bubbles=always` di ujung link kantor. Balik ke
+  mode sebentar pakai `&bubbles=brief`. **Klik villager-nya** buat
   lihat detail, termasuk permintaan terakhirmu. Lebih suka ikon aja? Tambahin `&labels=icons` di ujung link kantor.
   Kangen label lama? Pakai `&labels=full`. Balik ke balon pakai `&labels=bubbles`.
 
