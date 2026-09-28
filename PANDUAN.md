@@ -74,6 +74,17 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
 - Mau obrolannya pakai bahasa Inggris? Tambahin `&chatLang=en` di ujung link kantor.
 - Mau dimatiin? Tambahin `&idleChat=off` di ujung link kantor. Nyalain lagi pakai `&idleChat=on`.
 
+## Villager makin hidup 🛋️
+
+- **Pas santai**, villager gak cuma ngobrol: kadang rehat ngopi, duduk baca buku di sofa, lihat-lihat rak buku,
+  menghangatkan diri di perapian (lebih sering pas sore/malam), memandang ke jendela, nyiram tanaman, atau ngelus
+  Clucky. Ada ikon kecil oranye di atas kepalanya. Begitu dapet tugas, dia langsung balik ke meja.
+- **Ekspresi**:
+  - 💤 **zzz** = context-nya udah 80% penuh. Saatnya `/compact`.
+  - 💧 **keringetan** = udah kerja 15 menit nonstop, atau nungguin izinmu lebih dari 1 menit.
+  - ✨ **lompat senang** = baru selesai ngerjain tugas.
+- Mau dimatiin? Tambahin `&idleActivities=off` atau `&expressions=off` di ujung link kantor.
+
 ## Kartu villager, kalender, dan Holo-board 🗓️
 
 - **Klik villager** → muncul kartu di pojok kanan atas: namanya, lagi ngapain (kerja pakai tool apa, nunggu

@@ -22,7 +22,7 @@ sunflowers, a hen). No sprites are taken from Stardew Valley or any other game.
 | --- | --- |
 | `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: 6 characters, 19 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and a hen pet. |
 | `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and the same 6 characters, for the parts `pixel-agents` only loads from its own bundle. |
-| `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), and a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night). |
+| `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), [idle activities and expressions](#idle-activities-and-expressions), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), and a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night). |
 | `layouts/stardew-office.json` | A ready-made office: a 6-desk workroom, fireplace lounge, and kitchenette. Import it via **Layout → Import**, or `npm run layout`. |
 | `tools/` | The sprite generator (`npm run generate`), plus setup, launcher, and tunnel scripts. |
 
@@ -137,6 +137,20 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
   Timing and frequency are in `CFG` at the top of `addon/idle-chat.js`.
 - **Console:** `__asaoffice.idleChat.start()` starts a chat right away between any two idle villagers, and
   `__asaoffice.idleChat.conversations` lists the chats in progress.
+
+## Idle activities and expressions
+
+- **Idle activities:** besides chatting, a villager that has been idle for a while may take a coffee break by a barrel
+  or crate, sit and read on a free sofa seat, browse the bookshelf, warm up at the fireplace (more often in the
+  evening), look out of a window, water a plant, or pet Clucky. An amber badge shows the activity and the villager
+  card says what it's doing. If its session gets a task, it drops everything (and gets up from the sofa) and
+  pixel-agents walks it back to its desk. Sofa seats assigned to an agent are never used, and a villager is never in
+  a chat and an activity at once. `&idleActivities=off` turns them off; `__asaoffice.activities.start('sofa')` starts
+  one right away.
+- **Expressions:** a floating "zzz" when a session's context window is 80% full or more (time for `/compact`), a sweat
+  drop after 15 minutes of non-stop work or when a permission request has waited over a minute, and a happy hop with
+  sparkles when a turn it worked on for 8+ seconds finishes. `&expressions=off` turns them off;
+  `__asaoffice.expressions.preview(id, 'zzz' | 'sweat' | 'hop')` tries one on a villager.
 
 ## Villager card, calendar, and Holo-board
 
