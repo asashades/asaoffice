@@ -23,7 +23,7 @@ sunflowers, an orange office cat and a hen). No sprites are taken from Stardew V
 | `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: villagers 7–12 (Wren, Pip, Sari, Gus, Iris, Bayu), 21 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and two pets: Oyen the cat (the layout's default) and Clucky the hen. |
 | `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and villagers 1–6 (Asa, Rowan, Clem, Theo, Mabel, Juno) in place of the bundled characters, for the parts `pixel-agents` only loads from its own bundle. |
 | `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), [idle activities and expressions](#idle-activities-and-expressions), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night), and a [Pomodoro timer](#pomodoro) on the wall clock. |
-| `staff/` | The [office staff](#office-staff): six Claude Code subagents with job descriptions (`staff/agents/*.md`), each played by a villager (`staff/roster.json`). Install with `npm run staff`. |
+| `staff/` | The [office staff](#office-staff) (also the [mailbox](#mailbox-send-tasks-from-the-office)'s task runners): six Claude Code subagents with job descriptions (`staff/agents/*.md`), each played by a villager (`staff/roster.json`). Install with `npm run staff`. |
 | `layouts/stardew-office.json` | A ready-made office: a 6-desk workroom, fireplace lounge, and kitchenette. Import it via **Layout → Import**, or `npm run layout`. |
 | `tools/` | The sprite generator (`npm run generate`), plus setup, launcher, and tunnel scripts. |
 
@@ -279,6 +279,41 @@ id, so `identity.js` can tell which staff member it is. Agent Teams teammates na
 Unlike an always-on agent platform, the staff don't run by themselves: they work when a session, Dispatch or a
 scheduled Routine calls them. Edit a file in `staff/agents/` and run `npm run staff` again to change a job
 description (a copy you edited in `~/.claude/agents/` is backed up first). `npm run staff -- --remove` removes them.
+
+## Mailbox: send tasks from the office
+
+Click the mailbox on the wall (next to the calendar), or **✉️ Kirim tugas baru** on the task board:
+
+1. **Tugas baru:** pick who does it (plain Claude, or an installed staff member), the project (folders Claude Code
+   worked in recently, plus the office's own workspace), and what to do, then send it.
+2. The office runs it on the Mac as a headless Claude Code session. With hooks on, its villager walks to a desk and
+   works like any other session, and a staff member shows up as their own villager (Wren, Pip, …).
+3. The answer arrives as a **letter**, with a chime and a red badge on the mailbox. Reply in the letter to continue the
+   same conversation (`claude -p --resume`), stop a running task, or archive the letter.
+4. Each morning there's a **daily report** letter with yesterday's sessions, tool calls, edited files, tokens, most used
+   model, mailbox tasks done and the streak.
+
+What a task may do depends on who does it (`staff/roster.json` → `access`). Everything else is refused automatically
+(`--permission-mode dontAsk`) instead of prompting, because nobody is there to answer:
+
+| Access | Allows |
+| --- | --- |
+| `read` | Read, Grep, Glob, LS, TodoWrite |
+| `web` | WebSearch, WebFetch |
+| `edit` | Edit, MultiEdit, Write, NotebookEdit (inside the project) |
+| `git` | `git status / diff / log / show` |
+| `test` | common test runners (`npm test`, `npm run test/lint/check`, `vitest`, `jest`, `pnpm/yarn test`, `pytest`, `go test`, `cargo test`), plus `git` |
+
+Plain Claude and Wren and Bayu get read + edit + test. Sari gets read + edit. Pip gets read + git. Gus and Iris get
+read + web.
+
+**Only from the Mac.** The API (`tools/lib/task-server.mjs`) listens on `127.0.0.1:<office port + 1>`. It checks the
+Host header, accepts browser requests only from the office page's own local origin, and needs the office token. The
+phone (through the tunnel) can read letters but not send tasks. Prompts go to `claude` on stdin, never as arguments.
+At most 3 tasks run at once, and each is stopped after 30 minutes. Letters are kept in
+`~/.pixel-agents/asaoffice-mail.json` (last 60). Tasks use your normal Claude Code account and usage.
+`OFFICE_TASKS=off npm run office` turns sending off. Existing offices need the mailbox placed once: run
+`npm run layout`, or pick **Layout → Mailbox**.
 
 ## How the add-ons hook in
 

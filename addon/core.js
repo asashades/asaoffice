@@ -74,7 +74,7 @@
 
   // ── Furniture clicks ──
   // Footprints of the clickable items (tiles, from their manifests). Wall items are anchored at their top-left.
-  const FOOTPRINT = { COZY_CALENDAR: [1, 2], COZY_HOLOBOARD: [2, 2], COZY_TASKBOARD: [2, 2], COZY_CLOCK: [1, 2] };
+  const FOOTPRINT = { COZY_CALENDAR: [1, 2], COZY_HOLOBOARD: [2, 2], COZY_TASKBOARD: [2, 2], COZY_CLOCK: [1, 2], COZY_MAILBOX: [1, 2] };
   const clickHandlers = new Map();
   ns.onFurnitureClick = (type, fn) => clickHandlers.set(type, fn);
   ns.findFurniture = (type) => (ns.view?.office?.getLayout?.().furniture ?? []).filter((f) => f.type === type);
@@ -166,6 +166,10 @@
     background-image: repeating-linear-gradient(0deg, rgba(95,243,255,0.05) 0 1px, transparent 1px 3px); }
   .asa-holo .asa-head { color: #5ff3ff; margin-bottom: 14px; padding-right: 36px; text-shadow: 0 0 8px rgba(95,243,255,0.7); }
   .asa-muted { opacity: 0.7; font-size: 13px; }
+  .asa-btn { font: inherit; font-size: 14px; cursor: pointer; padding: 6px 12px; background: #fffbe9; color: #3a2117;
+    border: 2px solid #744122; box-shadow: 0 2px 0 #744122; }
+  .asa-btn.primary { background: #c8503c; color: #fff6dc; border-color: #973a2f; box-shadow: 0 2px 0 #973a2f; }
+  .asa-btn:disabled { opacity: 0.5; cursor: default; }
   `;
   let styled = false;
   let current = null;

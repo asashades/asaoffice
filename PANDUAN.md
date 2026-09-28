@@ -174,6 +174,31 @@ Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layo
 - Mau ubah jobdesc? Edit file di `staff/agents/`, terus jalanin `npm run staff` lagi. Mau copot semua?
   `npm run staff -- --remove`.
 
+## Kotak surat: kirim tugas dari kantor 📮
+
+Sekarang kamu bisa **nyuruh Claude langsung dari kantor**, gak perlu buka Terminal.
+
+1. Klik **kotak surat** di dinding (sebelah kalender), terus klik **✉️ Tugas baru**. Bisa juga lewat tombol
+   **✉️ Kirim tugas baru** di papan tugas.
+2. Pilih **siapa** yang ngerjain (Claude biasa, atau karyawan kayak Wren/Pip), **proyeknya**, terus tulis **tugasnya**.
+   Contoh: *"jalanin semua test terus kasih tahu yang gagal"*. Klik **Kirim tugas**.
+3. Villager-nya jalan ke meja dan mulai kerja. Kalau yang kamu pilih karyawan, yang datang villager dia sendiri
+   (misalnya Wren).
+4. Kalau udah selesai, bunyi "ting", terus ada **angka merah di kotak surat**. Buka buat baca hasilnya dalam bentuk surat.
+5. Mau lanjut? Tulis di kotak **Balas**, nanti dia nerusin kerjaan yang sama. Ada juga tombol **Hentikan** (kalau
+   masih jalan) dan **Arsipkan**.
+6. Tiap pagi ada **surat laporan harian** dari kantor: kemarin ada berapa sesi, tool, file diedit, token, dan streak 🔥.
+
+**Batasan biar aman:**
+- Tugas cuma boleh ngelakuin hal sesuai jabatannya. Pip dan Gus cuma baca. Wren dan Bayu boleh ngedit dan jalanin
+  test. Command lain ditolak otomatis, jadi Claude gak bakal nanya-nanya izin di tengah jalan.
+- Kirim tugas **cuma bisa dari Mac** yang nyalain kantor. Dari HP (lewat tunnel) kamu tetap bisa baca surat, tapi gak
+  bisa ngirim tugas.
+- Maksimal 3 tugas jalan barengan, dan tiap tugas otomatis dihentikan setelah 30 menit.
+- Tugas ini pakai akun Claude Code kamu yang biasa, jadi ikut kepake kuotanya.
+- Kotak suratnya belum ada di dinding? Jalanin `npm run layout`, atau klik **Layout**, cari **Mailbox**, terus
+  tempel di dinding.
+
 ## Kalau ada masalah
 
 | Masalah | Solusi |
@@ -184,6 +209,7 @@ Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layo
 | Abis restart kantor, karakternya ilang | Normal. Karakter baru muncul lagi setelah sesi Claude-nya ngapa-ngapain. Kasih tugas atau kirim pesan di sesi itu. Jangan lupa buka link **baru** dari tab 1, soalnya token-nya ganti tiap restart. |
 | Kalender atau Holo-board kosong | Kantornya harus dinyalain pakai app Asa Office atau `npm --prefix ~/asaoffice run office` (tab 1). Tunggu semenit, terus klik lagi. Pesan di panel kalender bakal ngasih tahu kalau izin Kalender belum dikasih. |
 | App Asa Office gak mau kebuka | Lihat catatannya di `~/Library/Logs/asaoffice/office.log`, atau jalanin `npm run app` lagi. |
+| Kotak surat bilang "Kirim tugas cuma bisa dari Mac…" | Buka kantornya di Mac (bukan HP), lewat app Asa Office atau `npm run office`. Kalau muncul "`claude` gak ketemu", pastiin Claude Code bisa dijalanin dari Terminal (`claude --version`). |
 | Link di HP gak kebuka lagi | Link-nya ganti tiap kali tunnel dinyalain ulang. Jalanin lagi tab 3, lalu scan QR yang baru. |
 | Tampilannya balik ke kantor abu-abu | Abis `npm install`, jalanin `npm run overlay`, terus restart tab 1. |
 

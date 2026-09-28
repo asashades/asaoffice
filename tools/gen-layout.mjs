@@ -86,6 +86,7 @@ add('COZY_LANTERN', 16, 12);
 // Added later, so earlier uids stay stable: Holo-board above the fireplace (click it for today's stats)
 add('COZY_HOLOBOARD', 17, 0);
 add('COZY_TASKBOARD', 11, 0); // next to the calendar; click it for what each session is working on
+add('COZY_MAILBOX', 9, 0); // task results and the daily report
 
 const layout = {
   version: 1,
