@@ -22,7 +22,7 @@ sunflowers, a hen). No sprites are taken from Stardew Valley or any other game.
 | --- | --- |
 | `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: 6 characters, 19 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and a hen pet. |
 | `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and the same 6 characters, for the parts `pixel-agents` only loads from its own bundle. |
-| `addon/` | Idle chat: villagers whose sessions are idle walk over to each other and chat in speech bubbles. See [Idle chat](#idle-chat). |
+| `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board). |
 | `layouts/stardew-office.json` | A ready-made office: a 6-desk workroom, fireplace lounge, and kitchenette. Import it via **Layout → Import**, or `npm run layout`. |
 | `tools/` | The sprite generator (`npm run generate`), plus setup, launcher, and tunnel scripts. |
 
@@ -66,6 +66,19 @@ and cloud sessions can't show up, because they don't run Claude Code on your mac
 A bare `npx pixel-agents` would run a separate copy without the Stardew floors, walls, and base characters.
 You can pass extra flags through, for example `npm --prefix ~/asaoffice run office -- --no-terminal`.
 Set `OFFICE_PORT` to use a port other than 3100.
+
+### Open it without Terminal (macOS)
+
+```bash
+npm run app        # builds ~/Applications/Asa Office.app (re-run after moving the repo or upgrading Node)
+```
+
+Open **Asa Office** from Spotlight or Finder, then right-click its Dock icon → **Options → Keep in Dock**. Clicking
+it starts the office in the background if it isn't running (log: `~/Library/Logs/asaoffice/office.log`) and opens
+it with the current token in its own window: an app-mode window of Chrome, Edge, or Brave if one is installed,
+otherwise your default browser. Click the Dock icon again to reopen the window. Quit the app (⌘Q) to stop the
+office it started; an office you started from Terminal is left alone. The first time, macOS asks whether
+**Asa Office** may access your calendars. `npm run app -- --remove` deletes the app.
 
 ### Phase 2: the reskin
 
@@ -118,19 +131,54 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
 (including whether both work on the same one), how full its context window is, and the time of day and weekday.
 
 - **Language:** Indonesian by default. Add `&chatLang=en` to the office URL for English (it's remembered).
-- **Turn it off:** add `&idleChat=off` to the URL (remembered; `&idleChat=on` turns it back on), or install
-  without it: `node tools/apply-overlay.mjs --no-idle-chat`.
+- **Turn it off:** add `&idleChat=off` to the URL (remembered; `&idleChat=on` turns it back on). To install
+  the art overlay without any add-ons: `node tools/apply-overlay.mjs --no-addon`.
 - **Edit the dialogue:** change `addon/idle-chat-lines.js`, run `npm run overlay`, and reload the page.
   Timing and frequency are in `CFG` at the top of `addon/idle-chat.js`.
 - **Console:** `__asaoffice.idleChat.start()` starts a chat right away between any two idle villagers, and
   `__asaoffice.idleChat.conversations` lists the chats in progress.
 
-How it hooks in: `npm run overlay` copies `addon/` to `dist/webview/asaoffice/`, adds two `<script>` tags to
-`index.html`, and patches one spot in the minified bundle so that it calls
-`window.__asaoffice.afterRender(canvas, office, offsetX, offsetY, zoom, editMode)` after each frame. The addon
-moves villagers with pixel-agents' own `walkToTile` and draws bubbles on the same canvas. The patch looks for an
-exact anchor in the 1.4.1 bundle. If a future release changes it, `npm run overlay` skips idle chat with a
-warning and the rest of the overlay still applies.
+## Villager card, calendar, and Holo-board
+
+- **Villager card:** click a villager. Next to the usual camera follow, a card shows its name, what it's doing
+  (working with which tool, needs permission, waiting for you, chatting with whom, or relaxing), its project,
+  last tool, context-window fill, sub-agents, and when it appeared. Click the villager again, or ×, to close it.
+- **Calendar:** click the wall calendar for a month view (Monday first, with the Stardew season) of your macOS
+  Calendar events, from last month to two months ahead. Click a day for its agenda. A red badge on the calendar
+  shows how many events are on today.
+- **Holo-board:** the holographic screen above the fireplace shows today's tool-call count and the last 12
+  hours. Click it for the dashboard: tool calls against your 14-day best, edits and files touched, reads and
+  searches, commands, web, sub-agents, sessions, agents active right now, activity by hour, the last 14 days,
+  and your daily streak.
+
+Existing offices need the Holo-board placed once: run `npm run layout` (it backs up your current layout first),
+or open **Layout**, find **Holo-board** among the wall items, and put it anywhere on a wall.
+
+**Where the data comes from.** `npm run office` now also runs a small feed next to the server. Every minute it
+counts tool calls in your Claude Code transcripts (`~/.claude/projects`, last 45 days, read incrementally), and
+every 5 minutes it reads macOS Calendar through EventKit (`tools/lib/mac-calendar.js`). It writes one JSON file
+into the webview folder, named after a SHA-256 hash of the office token, and deletes it when the office stops.
+`pixel-agents` serves static files without checking the token, so the hashed name is what keeps it private:
+only someone who already has the office URL (and could see the office anyway) can find it. Event titles and
+calendar names are in that file; the stats are counts only, with no paths, prompts, or project names.
+
+- **Calendar permission:** the first time the office starts, macOS asks whether Terminal (or the Asa Office app,
+  or whichever app runs `npm run office`) may access your calendars. Click **Allow**. If you dismissed it, turn it on under
+  **System Settings → Privacy & Security → Calendars** and restart the office. The calendar panel says which
+  step is missing.
+- **Skip the calendar:** `OFFICE_CALENDAR=off npm run office` never touches Calendar; the Holo-board still works.
+- **A bare `npx pixel-agents`** doesn't run the feed, so the calendar and Holo-board panels stay empty.
+
+## How the add-ons hook in
+
+`npm run overlay` copies `addon/` to `dist/webview/asaoffice/`, adds `<script>` tags for it to `index.html`
+(rebuilt from the original each time), and patches one spot in the minified bundle so that it calls
+`window.__asaoffice.afterRender(canvas, office, offsetX, offsetY, zoom, editMode)` after each frame.
+`addon/core.js` fans that out to the add-ons, turns canvas clicks into furniture clicks, and draws the panels.
+Villagers move with pixel-agents' own `walkToTile`, and everything else is drawn on the same canvas or as DOM
+panels on top. The patch looks for an exact anchor in the 1.4.1 bundle. If a future release changes it,
+`npm run overlay` skips the add-ons with a warning and the rest of the overlay still applies. After changing
+anything in `addon/`, run `npm run overlay` and reload the page.
 
 ## Acceptance checklist
 
