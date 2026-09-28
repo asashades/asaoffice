@@ -57,7 +57,7 @@
       if (!m) meta.set(ch.id, (m = { idleSince: null, cooldownUntil: clock + 5, lastTool: null }));
       if (ch.isActive) m.idleSince = null;
       else if (m.idleSince === null) m.idleSince = clock;
-      if (ch.currentTool) m.lastTool = ch.currentTool;
+      if (ch.currentTool && !ch.asaActivity) m.lastTool = ch.currentTool; // skip the sofa-reading pose
     }
     for (const id of meta.keys()) if (!office.characters.has(id)) meta.delete(id);
   }
@@ -66,7 +66,7 @@
   const interrupted = (ch) => ch.isActive || ch.matrixEffect || ch.bubbleType === 'permission';
   function available(ch) {
     return !ch.isActive && !ch.isSubagent && !ch.isGreeter && !ch.isHeadless && !ch.matrixEffect &&
-      ch.bubbleType !== 'permission' && !inConvo(ch.id);
+      ch.bubbleType !== 'permission' && !inConvo(ch.id) && !ns.activities?.isBusy(ch.id);
   }
   function eligible(ch) {
     const m = meta.get(ch.id);

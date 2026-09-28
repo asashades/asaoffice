@@ -56,7 +56,7 @@
     for (const ch of office.characters.values()) {
       let m = meta.get(ch.id);
       if (!m) meta.set(ch.id, (m = { lastTool: null, firstSeen: now, idleSince: ch.isActive ? null : now }));
-      if (ch.currentTool) m.lastTool = ch.currentTool;
+      if (ch.currentTool && !ch.asaActivity) m.lastTool = ch.currentTool;
       if (ch.isActive) m.idleSince = null;
       else if (m.idleSince === null) m.idleSince = now;
     }
@@ -75,6 +75,8 @@
       return [`${talking ? S.chatting : S.walkingTo} ${ns.villagerName(other)}`, '#4a8ac8'];
     }
     if (ch.waitingAwaitingInput || ch.bubbleType === 'waiting') return [S.waiting, '#c8503c'];
+    const activity = ns.activities?.describe(ch.id);
+    if (activity) return [activity, '#c98a2b'];
     const mins = m?.idleSince ? Math.floor((Date.now() - m.idleSince) / 60000) : 0;
     return [mins > 0 ? `${S.idle} · ${S.forMin(mins)}` : S.idle, '#9a8a7a'];
   }
@@ -151,7 +153,7 @@
     p.taskTitle.textContent = session?.title ? `${S.task}: ${session.title}` : '';
     p.taskPrompt.textContent = session?.prompt ?? '';
     p.taskPrompt.style.display = session?.prompt ? '' : 'none';
-    p.tool.value.textContent = ch.currentTool || m?.lastTool || S.none;
+    p.tool.value.textContent = (!ch.asaActivity && ch.currentTool) || m?.lastTool || S.none;
     const pct = ch.maxContextTokens > 0 ? Math.min(100, Math.round((ch.contextTokens / ch.maxContextTokens) * 100)) : 0;
     const k = (n) => `${Math.round(n / 1000)}k`;
     p.context.value.textContent = ch.contextTokens > 0 ? `${pct}% · ${k(ch.contextTokens)} / ${k(ch.maxContextTokens)}` : S.none;

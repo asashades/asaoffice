@@ -7,13 +7,6 @@
 (() => {
   'use strict';
   const ns = window.__asaoffice;
-  const mode = ns.setting('labels', ['icons', 'full'], 'icons');
-  if (mode === 'full') return;
-
-  const style = document.createElement('style');
-  style.textContent = '[data-testid="agent-overlay"] { display: none !important; }';
-  document.head.appendChild(style);
-
   const KIND = {
     Edit: 'edit', MultiEdit: 'edit', Write: 'edit', NotebookEdit: 'edit',
     Read: 'search', Grep: 'search', Glob: 'search', LS: 'search',
@@ -32,6 +25,9 @@
     waiting: ['.......', '.......', '.......', '#.#.#..', '.......', '.......', '.......'],
   };
   const COLOR = { working: '#4f9a45', waiting: '#4a8ac8' };
+  // Shared with other add-ons (idle activities, expressions).
+  ns.drawBadge = badge;
+  ns.GLYPH = GLYPH;
 
   function badge(ctx, cx, bottom, zoom, glyph, color, t) {
     const u = Math.max(1, Math.round(zoom)); // one art pixel
@@ -52,6 +48,13 @@
     ctx.fillRect(Math.round(cx - u), y + size, 2 * u, u);
   }
 
+  const mode = ns.setting('labels', ['icons', 'full'], 'icons');
+  if (mode === 'full') return;
+
+  const style = document.createElement('style');
+  style.textContent = '[data-testid="agent-overlay"] { display: none !important; }';
+  document.head.appendChild(style);
+
   const lastTool = new Map();
   ns.onFrame((canvas, office, offX, offY, zoom, editMode) => {
     if (editMode) return;
@@ -60,7 +63,7 @@
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     for (const ch of office.characters.values()) {
-      if (ch.currentTool) lastTool.set(ch.id, ch.currentTool);
+      if (ch.currentTool && !ch.asaActivity) lastTool.set(ch.id, ch.currentTool);
       if (ch.matrixEffect) continue;
       const waitingForYou = ch.bubbleType === 'waiting' && ch.waitingAwaitingInput;
       if (ch.bubbleType && !waitingForYou) continue; // pixel-agents is already drawing its own bubble
