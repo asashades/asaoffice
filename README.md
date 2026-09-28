@@ -22,7 +22,7 @@ sunflowers, a hen). No sprites are taken from Stardew Valley or any other game.
 | --- | --- |
 | `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: 6 characters, 19 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and a hen pet. |
 | `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and the same 6 characters, for the parts `pixel-agents` only loads from its own bundle. |
-| `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board). |
+| `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), and a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night). |
 | `layouts/stardew-office.json` | A ready-made office: a 6-desk workroom, fireplace lounge, and kitchenette. Import it via **Layout → Import**, or `npm run layout`. |
 | `tools/` | The sprite generator (`npm run generate`), plus setup, launcher, and tunnel scripts. |
 
@@ -169,11 +169,33 @@ calendar names are in that file; the stats are counts only, with no paths, promp
 - **Skip the calendar:** `OFFICE_CALENDAR=off npm run office` never touches Calendar; the Holo-board still works.
 - **A bare `npx pixel-agents`** doesn't run the feed, so the calendar and Holo-board panels stay empty.
 
+## Camera lock, notifications, task board, and day & night
+
+- **Camera lock (🔒 under the zoom buttons, on by default):** the view stays centred. Clicking a villager selects it
+  and shows its card without the camera chasing it, and trackpad scrolling or middle-drag doesn't pan. Zoom still
+  works with +/− and pinch. Click 🔓 for pixel-agents' free camera; the Layout editor is always free.
+- **Notifications (🔔):** when a villager needs your permission, or finishes a turn it worked on for 8 seconds or
+  more, you get a toast in the office (click it to select the villager), a short retro chime, a system notification
+  if the office window isn't in front, and a vibration on phones that support it. Turning 🔔 on asks the browser for
+  notification permission; 🔕 mutes everything. Browsers only play sound after you've clicked the page once.
+- **Task board:** click the cork board next to the calendar for a pinned "quest" per Claude session from the last
+  24 hours: its title, your last prompt, the project, today's tool calls and edited files, which villagers are on
+  that project right now, and its to-do list if the session keeps one (`TodoWrite`). A green badge counts the
+  villagers working right now.
+- **Day & night:** the office follows your clock: rosy mornings, golden late afternoons, purple dusk, and blue nights
+  with stars and a moon in the windows and warm light around the lanterns, the flickering fireplace and the screens
+  of working villagers. `&dayNight=off` in the URL turns it off (remembered); `__asaoffice.dayNight.preview(21)` in
+  the console previews a time, `preview(null)` goes back to the clock.
+
+Existing offices need the task board placed once, like the Holo-board: `npm run layout`, or **Layout → Task Board**.
+The task board reads the same feed as the Holo-board, which now also carries each recent session's title, last
+prompt, project folder name and to-dos (same token-hashed file, so the same privacy as the calendar).
+
 ## How the add-ons hook in
 
 `npm run overlay` copies `addon/` to `dist/webview/asaoffice/`, adds `<script>` tags for it to `index.html`
 (rebuilt from the original each time), and patches one spot in the minified bundle so that it calls
-`window.__asaoffice.afterRender(canvas, office, offsetX, offsetY, zoom, editMode)` after each frame.
+`window.__asaoffice.afterRender(canvas, office, offsetX, offsetY, zoom, editMode, panRef)` after each frame.
 `addon/core.js` fans that out to the add-ons, turns canvas clicks into furniture clicks, and draws the panels.
 Villagers move with pixel-agents' own `walkToTile`, and everything else is drawn on the same canvas or as DOM
 panels on top. The patch looks for an exact anchor in the 1.4.1 bundle. If a future release changes it,

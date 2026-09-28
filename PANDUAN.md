@@ -90,6 +90,22 @@ Keamanan → Kalender**, nyalain Asa Office (atau Terminal), terus matiin dan ny
 Kalau Holo-board belum ada di kantor kamu, jalanin `npm run layout` (layout lama otomatis di-backup), atau klik
 **Layout**, cari **Holo-board**, terus tempel di dinding mana aja.
 
+## Kamera, notifikasi, papan tugas, dan siang-malam 🌙
+
+- **🔒 Kunci kamera** (di bawah tombol + / −, nyala dari awal): tampilan kantor diam di tengah. Klik villager cuma
+  buka kartunya, kameranya gak ikut lari. Scroll trackpad juga gak geser kantor. Zoom tetap bisa pakai + / −.
+  Mau bebas lagi? Klik 🔒 sampai jadi 🔓.
+- **🔔 Notifikasi**: pas villager butuh izin atau selesai kerja, muncul pesan kecil di atas kantor (klik buat langsung
+  milih villager-nya), bunyi "ting", notifikasi Mac kalau jendelanya lagi ketutup, dan HP bergetar. Waktu pertama
+  diklik, browser nanya izin notifikasi: klik **Izinkan**. Klik lagi jadi 🔕 buat diem.
+- **Papan tugas** (papan gabus di sebelah kalender): klik buat lihat tiap sesi Claude 24 jam terakhir: judulnya,
+  permintaan terakhirmu, proyeknya, berapa tool dan file hari ini, dan villager mana yang lagi ngerjain. Angka hijau
+  di papannya = jumlah villager yang lagi kerja.
+- **Siang-malam**: kantornya ikut jam kamu. Sore jadi oranye, magrib ungu, malam gelap dengan bintang di jendela,
+  lentera dan perapian nyala. Mau matiin? Tambahin `&dayNight=off` di ujung link kantor.
+
+Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layout**, cari **Task Board**, tempel di dinding.
+
 ## Kalau ada masalah
 
 | Masalah | Solusi |
