@@ -6,6 +6,7 @@
 //   - furniture clicks: __asaoffice.onFurnitureClick('COZY_CALENDAR', fn) fires when that item is clicked.
 //   - panels: __asaoffice.panel.open({ theme, title, render }) shows one modal panel at a time.
 //   - data: __asaoffice.fetchData() reads the JSON that `npm run office` writes (calendar + stats).
+//   - messages: __asaoffice.onMessage(fn) sees every message the server sends the office (parsed JSON).
 (() => {
   'use strict';
   const ns = (window.__asaoffice = window.__asaoffice || {});
@@ -33,6 +34,29 @@
   ns.t = (strings) => strings[ns.lang] ?? strings.en;
   ns.VILLAGERS = ['Asa', 'Rowan', 'Clem', 'Theo', 'Mabel', 'Juno'];
   ns.villagerName = (ch) => ns.VILLAGERS[(ch?.palette ?? 0) % ns.VILLAGERS.length];
+
+  // ── Server messages: the add-ons load before the office bundle, so wrapping WebSocket here lets them read
+  // the same typed messages the office gets (agentToolStart, agentStatus, …) without touching the bundle. ──
+  const messageHandlers = [];
+  ns.onMessage = (fn) => messageHandlers.push(fn);
+  const NativeWebSocket = window.WebSocket;
+  if (NativeWebSocket && !NativeWebSocket.__asaoffice) {
+    class TappedWebSocket extends NativeWebSocket {
+      constructor(...args) {
+        super(...args);
+        this.addEventListener('message', (e) => {
+          if (!messageHandlers.length || typeof e.data !== 'string') return;
+          let msg;
+          try { msg = JSON.parse(e.data); } catch { return; }
+          for (const fn of messageHandlers) {
+            try { fn(msg); } catch (err) { console.error('[asaoffice]', err); }
+          }
+        });
+      }
+    }
+    TappedWebSocket.__asaoffice = true;
+    window.WebSocket = TappedWebSocket;
+  }
 
   // ── Frame hook ──
   const frameHandlers = [];

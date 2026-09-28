@@ -95,8 +95,8 @@ const layout = {
   tiles,
   tileColors,
   furniture,
-  // petType indexes the loaded pet list: bundled Claudio (0), Gitcat (1), then this pack's hen (2).
-  pets: [{ id: 'asaoffice-hen', petType: 2 }],
+  // petType indexes the loaded pet list: bundled Claudio (0), Gitcat (1), then this pack's cat Oyen (2) and hen (3).
+  pets: [{ id: 'asaoffice-cat', petType: 2 }],
 };
 
 fs.mkdirSync(path.join(root, 'layouts'), { recursive: true });

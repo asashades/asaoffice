@@ -10,7 +10,7 @@ from your phone through a tunnel.
 ![The office running pixel-agents 1.4.1 with this pack](docs/office.png)
 
 The pack is **original pixel art**, drawn by `tools/` in a Stardew Valley–*inspired* style (warm wood, gingham,
-sunflowers, a hen). No sprites are taken from Stardew Valley or any other game.
+sunflowers, an orange office cat and a hen). No sprites are taken from Stardew Valley or any other game.
 
 | Villagers (walk · type · read, 3 directions) | Furniture |
 | --- | --- |
@@ -20,7 +20,7 @@ sunflowers, a hen). No sprites are taken from Stardew Valley or any other game.
 
 | Path | What it is |
 | --- | --- |
-| `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: 6 characters, 19 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and a hen pet. |
+| `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: 6 characters, 21 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and two pets: Oyen the cat (the layout's default) and Clucky the hen. |
 | `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and the same 6 characters, for the parts `pixel-agents` only loads from its own bundle. |
 | `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), [idle activities and expressions](#idle-activities-and-expressions), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night), and a [Pomodoro timer](#pomodoro) on the wall clock. |
 | `layouts/stardew-office.json` | A ready-made office: a 6-desk workroom, fireplace lounge, and kitchenette. Import it via **Layout → Import**, or `npm run layout`. |
@@ -142,7 +142,7 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
 
 - **Idle activities:** besides chatting, a villager that has been idle for a while may take a coffee break by a barrel
   or crate, sit and read on a free sofa seat, browse the bookshelf, warm up at the fireplace (more often in the
-  evening), look out of a window, water a plant, or pet Clucky. An amber badge shows the activity and the villager
+  evening), look out of a window, water a plant, or pet the office pet. A small speech bubble says what it's doing and the villager
   card says what it's doing. If its session gets a task, it drops everything (and gets up from the sofa) and
   pixel-agents walks it back to its desk. Sofa seats assigned to an agent are never used, and a villager is never in
   a chat and an activity at once. `&idleActivities=off` turns them off; `__asaoffice.activities.start('sofa')` starts
@@ -185,12 +185,16 @@ calendar names are in that file; the stats are counts only, with no paths, promp
 
 ## Camera lock, notifications, task board, and day & night
 
-- **Status icons instead of labels:** pixel-agents' label panels (tool status, folder, context bar) are hidden, even
+- **Status bubbles instead of labels:** pixel-agents' label panels (tool status, folder, context bar) are hidden, even
   with **Settings → Always Show Labels** on, because they pile up when many agents work. A working villager gets a
-  small badge for what it's doing (✎ edit, 🔍 read/search, >_ command, 🌐 web, 👥 sub-agent, ⚙ other) and a blue "…"
-  while it waits for your reply; pixel-agents' own permission bubble stays. Click the villager for details: the card
-  now also shows the session it's working on (title and your last prompt, matched by project folder).
-  `&labels=full` in the URL brings the original labels back (remembered).
+  small speech bubble above its head (not over it) saying what it's doing, with a matching icon: "Ngedit app.ts",
+  "Jalanin: npm test", "Nyari kode", "Subtugas: …" (English with `&chatLang=en`). The text comes from the same
+  `agentToolStart` messages the office receives: `addon/core.js` wraps `WebSocket` before the bundle loads and hands
+  every parsed message to `__asaoffice.onMessage`. A blue "Nunggu balasanmu" bubble shows while it waits for your
+  reply; pixel-agents' own permission bubble stays. Idle activities and Pomodoro breaks use the same bubbles. Click
+  the villager for details: the card also shows the session it's working on (title and your last prompt, matched by
+  project folder). `&labels=icons` switches to icon-only badges and `&labels=full` brings the original labels back
+  (both remembered; `&labels=bubbles` returns to bubbles).
 
 - **Camera lock (🔒 under the zoom buttons, on by default):** the view stays centred. Clicking a villager selects it
   and shows its card without the camera chasing it, and trackpad scrolling or middle-drag doesn't pan. Zoom still
@@ -218,7 +222,7 @@ Click the pendulum clock on the wall to open the timer. **Start focus** runs 25 
 preset), and the time left shows in a small tag under the clock: red while you focus, green on a break. When focus
 ends you get the notification chime and toast (muted by 🔕 like the rest), a 🍅 is counted for today, and a break starts
 on its own: 5 minutes, or 15 after every fourth round. During the break every villager whose session is idle walks
-to the lounge and hangs around the tea table (falling back to the fireplace or sofa), with a small coffee badge, and
+to the lounge and hangs around the tea table (falling back to the fireplace or sofa), with a "Break" bubble, and
 the ones that arrive may chat. Idle activities pause, and villagers that are working keep working. When the break
 ends you get another chime and choose when to start the next round. Pause, resume, "take a break now", skip and stop
 are in the same panel.
@@ -253,8 +257,10 @@ anything in `addon/`, run `npm run overlay` and reload the page.
 
 - **Layout resets:** if a future `pixel-agents` release ships a default layout with a higher `layoutRevision`, it
   replaces `~/.pixel-agents/layout.json`. Keep an export, or just run `npm run layout` again.
-- **Hen pet index:** the layout's pet uses `petType: 2`, which is right after the two bundled pets in 1.4.1. If a
-  release adds bundled pets, re-add the hen from the Layout editor's pet tool.
+- **Pet index:** pixel-agents numbers pets in load order: its own Claudio (0) and Gitcat (1), then this pack's
+  folders alphabetically, so Oyen the cat is 2 and Clucky the hen is 3. The layout's pet uses `petType: 2`, and an
+  older layout that had the hen at 2 now shows the cat there. If a release adds bundled pets, re-add Oyen from the
+  Layout editor's pet tool.
 - **Duplicate faces:** with the overlay on, the six villagers exist twice: once as bundled, once from the pack.
   Agents 7–12 reuse faces before any hue-shifting kicks in. It's harmless.
 - **Out of scope:** Google Antigravity support (it would need a new `HookProvider`), commanding agents from the
