@@ -449,6 +449,28 @@ function taskboard2x2() {
   return s.outline(OUT);
 }
 
+// A wall-mounted wooden mailbox with a red flag; the addon's mailbox (task results, daily report) opens on click.
+function mailbox() {
+  const s = new Sprite(16, 32);
+  // post plate on the wall
+  s.rect(6, 12, 4, 6, C.w4);
+  // box body with a rounded top
+  s.rect(2, 4, 12, 9, C.w2).hline(3, 3, 10, C.w2).hline(4, 2, 8, C.w1);
+  s.hline(2, 4, 12, C.w1);
+  s.rect(2, 11, 12, 2, C.w3);
+  for (let x = 4; x < 13; x += 3) s.vline(x, 5, 6, C.w3); // planks
+  // letter slot + a letter peeking out
+  s.rect(4, 7, 8, 2, C.w5);
+  s.rect(6, 6, 4, 2, C.cream).set(9, 6, C.creamS);
+  // red flag, up
+  s.vline(14, 3, 8, C.metal);
+  s.rect(14, 3, 1, 1, C.metal);
+  s.rect(13, 1, 3, 3, C.red).set(13, 3, C.redS);
+  // little name plate
+  s.rect(5, 10, 6, 1, C.gold);
+  return s.outline(OUT);
+}
+
 function fireplace() {
   const s = new Sprite(32, 32);
   const r = rng(21);
@@ -691,6 +713,7 @@ export function buildFurniture() {
   single('COZY_CALENDAR', 'Wall Calendar', 'wall', stampItem('calendar', 16, 32, { r: C.redS, R: C.red, C: C.cream, c: C.creamS, k: C.w4 }, 3), [1, 2], { wall: true });
   single('COZY_HOLOBOARD', 'Holo-board', 'wall', holoboard2x2(), [2, 2], { wall: true });
   single('COZY_TASKBOARD', 'Task Board', 'wall', taskboard2x2(), [2, 2], { wall: true });
+  single('COZY_MAILBOX', 'Mailbox', 'wall', mailbox(), [1, 2], { wall: true });
   single('COZY_FIREPLACE', 'Stone Fireplace', 'decor', fireplace(), [2, 2], { bg: 1 });
   single('COZY_SUNFLOWER', 'Potted Sunflower', 'decor', stampItem('sunflower', 16, 32, pot, 13), [1, 2], { bg: 1 });
   single('COZY_FERN', 'Potted Fern', 'decor', stampItem('fern', 16, 32, pot, 16), [1, 2], { bg: 1 });

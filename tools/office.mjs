@@ -4,6 +4,8 @@
 //   cd ~/code/my-project && npm --prefix ~/asaoffice run office
 //   extra flags pass through:  npm run office -- --no-terminal
 //   OFFICE_CALENDAR=off        never read macOS Calendar
+//   OFFICE_TASKS=off           don't accept tasks from the office (mailbox stays read-only)
+//   OFFICE_TASK_PORT=3101      port of the local task API (default office port + 1)
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,6 +33,9 @@ startOfficeData({
   pid: child.pid,
   port,
   calendar: process.env.OFFICE_CALENDAR !== 'off',
+  tasks: process.env.OFFICE_TASKS !== 'off',
+  taskPort: process.env.OFFICE_TASK_PORT ? Number(process.env.OFFICE_TASK_PORT) : undefined,
+  workspace,
 }).then((stop) => { stopData = stop; });
 // SIGHUP too: closing the Terminal window should also stop the server and remove the data file.
 for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => child.kill(sig === 'SIGHUP' ? 'SIGTERM' : sig));

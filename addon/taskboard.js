@@ -9,13 +9,13 @@
   const h = ns.h;
   const S = ns.t({
     id: {
-      title: 'Papan Tugas', empty: 'Belum ada pekerjaan dalam 24 jam terakhir.', untitled: 'Sesi tanpa judul',
+      title: 'Papan Tugas', newTask: '✉️ Kirim tugas baru', empty: 'Belum ada pekerjaan dalam 24 jam terakhir.', untitled: 'Sesi tanpa judul',
       tools: (n) => `${n} tool hari ini`, files: (n) => `${n} file diubah`, ago: (m) => (m < 1 ? 'barusan' : m < 60 ? `${m} menit lalu` : `${Math.floor(m / 60)} jam lalu`),
       working: 'sedang bekerja', idle: 'santai', done: (a, b) => `${a}/${b} selesai`,
       nodata: 'Data belum ada. Jalankan kantor lewat app Asa Office atau `npm run office`, lalu tunggu sebentar.',
     },
     en: {
-      title: 'Task Board', empty: 'No work in the last 24 hours.', untitled: 'Untitled session',
+      title: 'Task Board', newTask: '✉️ Send a new task', empty: 'No work in the last 24 hours.', untitled: 'Untitled session',
       tools: (n) => `${n} tools today`, files: (n) => `${n} files edited`, ago: (m) => (m < 1 ? 'just now' : m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ago`),
       working: 'working', idle: 'relaxing', done: (a, b) => `${a}/${b} done`,
       nodata: 'No data yet. Start the office with the Asa Office app or `npm run office` and give it a moment.',
@@ -85,6 +85,10 @@
   }
 
   function render(body) {
+    if (ns.mailbox) {
+      body.append(h('div', { style: { display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' } },
+        h('button', { type: 'button', class: 'asa-btn primary', onclick: () => ns.mailbox.compose() }, S.newTask)));
+    }
     if (!ns.data) return body.append(h('div', {}, S.nodata));
     const tasks = ns.data.tasks ?? [];
     if (tasks.length === 0) return body.append(h('div', { class: 'asa-muted' }, S.empty));

@@ -10,6 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { ClaudeStats } from './claude-stats.mjs';
+import { startTaskServer } from './task-server.mjs';
 
 const STATS_EVERY_MS = 60_000;
 const SPAWNS_EVERY_MS = 4_000; // sub-agents are often short-lived, so their staff identity is looked up quickly
@@ -58,10 +59,12 @@ function readCalendar(script, mayRequest) {
 }
 
 /**
- * Starts the writer for the server child `pid` on `port`. Returns a stop() that removes the file.
- * Options: calendar (default true) — set OFFICE_CALENDAR=off to never touch Calendar.
+ * Starts the writer for the server child `pid` on `port`, and the office task API (task-server.mjs). Returns a
+ * stop() that removes the file and stops running tasks.
+ * Options: calendar (default true) — set OFFICE_CALENDAR=off to never touch Calendar; tasks (default true) —
+ * OFFICE_TASKS=off; taskPort (default port + 1); workspace (always allowed as a task folder).
  */
-export async function startOfficeData({ root, webviewDir, pid, port, calendar = true, log = console.log }) {
+export async function startOfficeData({ root, webviewDir, pid, port, calendar = true, tasks = true, taskPort, workspace, log = console.log }) {
   const token = await waitForToken(pid, port);
   if (!token) {
     log('[asaoffice] office data: server token not found; calendar and Holo-board stay empty.');
@@ -79,7 +82,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
 
   const stats = new ClaudeStats();
   const data = {
-    version: 1, generatedAt: null, stats: null, tasks: [], subagents: {}, staff: [],
+    version: 1, generatedAt: null, stats: null, tasks: [], subagents: {}, staff: [], mail: [], taskAgents: {}, taskServer: null,
     calendar: { status: calendar ? 'loading' : 'off', events: [] },
   };
   // Staff roster, with which members are installed as Claude Code subagents (npm run staff).
@@ -115,13 +118,24 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
     }
   };
   let lastSpawns = -1;
+  let taskApi = null;
   const refreshSpawns = () => {
     try {
       stats.scan();
-      if (stats.spawnsVersion === lastSpawns) return;
-      lastSpawns = stats.spawnsVersion;
-      data.subagents = stats.spawns();
-      write();
+      let changed = false;
+      if (stats.spawnsVersion !== lastSpawns) {
+        lastSpawns = stats.spawnsVersion;
+        data.subagents = stats.spawns();
+        changed = true;
+      }
+      if (taskApi) {
+        const map = taskApi.agentMap();
+        if (JSON.stringify(map) !== JSON.stringify(data.taskAgents)) {
+          data.taskAgents = map;
+          changed = true;
+        }
+      }
+      if (changed) write();
     } catch { /* the minute refresh reports errors */ }
   };
   let firstCalendar = true;
@@ -142,6 +156,24 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
   };
 
   refreshStats();
+  if (tasks) {
+    try {
+      taskApi = await startTaskServer({
+        root, token, officePort: Number(port), port: taskPort ?? Number(port) + 1,
+        projects: () => stats.projects(), extraDirs: [workspace], log,
+        onChange: () => {
+          data.mail = taskApi?.letters() ?? [];
+          data.taskAgents = taskApi?.agentMap() ?? {};
+          write();
+        },
+      });
+      data.taskServer = { port: taskApi.port };
+      data.mail = taskApi.letters();
+      write();
+    } catch (err) {
+      log(`[asaoffice] tasks: couldn't start (${err.message}); the mailbox is read-only.`);
+    }
+  }
   const timers = [setInterval(refreshStats, STATS_EVERY_MS), setInterval(refreshSpawns, SPAWNS_EVERY_MS)];
   if (calendar) {
     refreshCalendar();
@@ -152,6 +184,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
   return () => {
     stopped = true;
     timers.forEach(clearInterval);
+    taskApi?.stop();
     fs.rmSync(file, { force: true });
   };
 }

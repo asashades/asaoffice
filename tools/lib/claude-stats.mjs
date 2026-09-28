@@ -104,7 +104,10 @@ export class ClaudeStats {
     const today = localDay(new Date());
     if (sess) {
       sess.lastAt = Math.max(sess.lastAt, ts.getTime());
-      if (rec.cwd && !rec.isSidechain) sess.project = path.basename(rec.cwd);
+      if (rec.cwd && !rec.isSidechain) {
+        sess.project = path.basename(rec.cwd);
+        sess.cwd = rec.cwd;
+      }
       if (sess.day !== today) Object.assign(sess, { day: today, tools: 0, files: new Set() });
     }
     const countForSession = sess && localDay(ts) === today;
@@ -166,6 +169,15 @@ export class ClaudeStats {
         filesToday: s.day === today ? s.files.size : 0,
         todos: s.todos && s.todosAt >= since ? s.todos : null,
       }));
+  }
+
+  /** Folders Claude Code worked in recently, most recent first: [{ name, cwd }]. Tasks may only run in these. */
+  projects(limit = 15) {
+    const seen = new Map();
+    for (const s of [...this.sessions.values()].sort((a, b) => b.lastAt - a.lastAt)) {
+      if (s.cwd && !seen.has(s.cwd)) seen.set(s.cwd, { name: path.basename(s.cwd), cwd: s.cwd });
+    }
+    return [...seen.values()].slice(0, limit);
   }
 
   /** Recent sub-agent spawns: { toolUseId: subagent_type }. */

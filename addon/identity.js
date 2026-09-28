@@ -32,7 +32,13 @@
   };
 
   /** Staff entry for a villager (sub-agent spawned as staff, or an Agent Teams teammate named after one), or null. */
-  ns.staffOf = (ch) => (ch ? (ch.isSubagent ? subs.get(ch.id)?.staff ?? null : staffByName(ch.agentName)) : null);
+  /** A main session started from the office mailbox as a staff member (`claude -p --agent …`), from the data feed. */
+  const taskStaff = (ch) => {
+    const agent = ns.data?.taskAgents?.[ch.id]?.agent;
+    return agent ? staffByAgent(agent) : null;
+  };
+  const mainStaff = (ch) => taskStaff(ch) ?? staffByName(ch.agentName);
+  ns.staffOf = (ch) => (ch ? (ch.isSubagent ? subs.get(ch.id)?.staff ?? null : mainStaff(ch)) : null);
   ns.staffRole = (m) => pick(m?.role);
   ns.staffDuty = (m) => pick(m?.duty);
   ns.portraitUrl = (ch) => `./asaoffice/characters/char_${(((ch?.palette ?? 0) % COUNT) + COUNT) % COUNT}.png`;
@@ -64,7 +70,7 @@
 
   // ── Faces for ordinary sessions ──
   function assignMains(office, reserved) {
-    const mains = [...office.characters.values()].filter((c) => !c.isSubagent && !staffByName(c.agentName)).sort((a, b) => a.id - b.id);
+    const mains = [...office.characters.values()].filter((c) => !c.isSubagent && !mainStaff(c)).sort((a, b) => a.id - b.id);
     for (const id of assigned.keys()) if (!office.characters.has(id)) assigned.delete(id);
     const free = [...Array(COUNT).keys()].filter((p) => !reserved.has(p));
     const used = new Map(); // palette -> count
@@ -137,9 +143,9 @@
     }
     resolveSubs(office);
     assignMains(office, reserved);
-    // Agent Teams teammates named after a staff member wear that villager's face too.
+    // Staff sessions started from the mailbox, and Agent Teams teammates named after a staff member, wear that villager's face too.
     for (const ch of office.characters.values()) {
-      const staff = !ch.isSubagent && staffByName(ch.agentName);
+      const staff = !ch.isSubagent && mainStaff(ch);
       if (staff && ch.palette !== staff.palette) { ch.palette = staff.palette; ch.hueShift = 0; }
     }
   });
