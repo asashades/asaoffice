@@ -1,6 +1,26 @@
 {
-  "_comment": "Office staff: each entry is a Claude Code subagent (staff/agents/<agent>.md) played by one villager. palette = the villager's sprite (6–11 = villagers 7–12). `npm run staff` installs the agents into ~/.claude/agents/. access = what the member may do when you send it a task from the office mailbox (read, web, edit, git, test); anything else is refused automatically.",
+  "_comment": "Office staff: each entry is a Claude Code subagent (staff/agents/<agent>.md) played by one villager. palette = the villager's sprite (6–11 = villagers 7–12, 12 = Shades). director: the office director (Shades) — always in the office, plans before working and reports to you as \"Komisaris\". `npm run staff` installs the agents into ~/.claude/agents/. access = what the member may do when you send it a task from the office mailbox (read, web, edit, git, test); anything else is refused automatically.",
   "staff": [
+    {
+      "agent": "shades-director",
+      "name": "Shades",
+      "palette": 12,
+      "director": true,
+      "role": {
+        "id": "Direktur (CEO)",
+        "en": "Director (CEO)"
+      },
+      "duty": {
+        "id": "Nerima tugas dari Komisaris (kamu), bikin rencana, ngatur tim, terus nulis \"Laporan untuk Komisaris\" yang singkat dan jujur.",
+        "en": "Takes tasks from the Commissioner (you), plans them, runs the team and writes a short, honest \"Report for the Commissioner\"."
+      },
+      "access": [
+        "read",
+        "web",
+        "edit",
+        "test"
+      ]
+    },
     {
       "agent": "wren-tester",
       "name": "Wren",

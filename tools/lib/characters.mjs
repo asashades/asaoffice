@@ -63,6 +63,12 @@ const HEAD = {
 };
 
 // ── Hair / hat overlays (stamped after body + head; may run past row 12) ──
+const SUNGLASSES = {
+  down: check('shades.down', [...Array(8).fill('................'), '....GGGGGGGG....', '....GgG..GgG....']),
+  up: [],
+  right: check('shades.right', [...Array(8).fill('................'), '.......GGGGGG...', '..........GgG...']),
+};
+
 const STYLE = {
   short: { down: [], up: [], right: [] },
   long: {
@@ -353,7 +359,7 @@ const FRAMES = {
 };
 
 function palette(c) {
-  const bib = c.overalls ? c.pants : c.shirt;
+  const bib = c.bib ?? (c.overalls ? c.pants : c.shirt);
   return {
     H: c.hair,
     h: shade(c.hair, 0.72),
@@ -376,20 +382,31 @@ function palette(c) {
     K: '#8a4b2d',
     W: '#f4ead2',
     w: '#c9b48e',
+    G: '#1a1a24', // sunglasses
+    g: '#6a7a9a',
   };
 }
 
 export function renderCharacter(c) {
   const pal = palette(c);
+  // A suit: the shirt front (bib) only shows from the front; back and side are all jacket.
+  const jacket = c.suit ? { ...pal, U: pal.T, u: pal.t } : pal;
   const sheet = new Sprite(W * 7, H * 3);
   ['down', 'up', 'right'].forEach((dir, row) => {
     FRAMES[dir].forEach(([pose, headY, bodyY, flip], f) => {
       const fr = new Sprite(W, H);
-      let body = new Sprite(W, H).stamp(BODY[dir][pose], pal, 0, bodyY);
+      let body = new Sprite(W, H).stamp(BODY[dir][pose], dir === 'down' ? pal : jacket, 0, bodyY);
       if (flip) body = body.flipX();
+      // A tie down the shirt front (facing the viewer, not while holding a book).
+      if (c.tie && dir === 'down' && !pose.startsWith('read')) {
+        for (let y = 1; y <= 5; y++) body.hline(7, bodyY + y, 2, c.tie);
+        body.set(7, bodyY + 6, shade(c.tie, 0.8));
+        body.hline(7, bodyY + 1, 2, shade(c.tie, 0.8));
+      }
       fr.blit(body, 0, 0);
       fr.stamp(HEAD[dir], pal, 0, headY);
       fr.stamp(STYLE[c.style][dir], pal, 0, headY);
+      if (c.sunglasses) fr.stamp(SUNGLASSES[dir], pal, 0, headY);
       fr.outline(0.36);
       sheet.blit(fr, f * W, row * H);
     });
@@ -412,4 +429,6 @@ export const CHARACTERS = [
   { name: 'Gus', style: 'beanie', skin: '#e8b48f', hair: '#8a8078', shirt: '#6a7fb0', pants: '#5a4a3a', shoes: '#3a2a22', hat: '#8a5a3a', accent: '#e8c04a' },
   { name: 'Iris', style: 'ponytail', skin: '#f0c7a3', hair: '#7a4ab0', shirt: '#f2ead6', pants: '#4f79b8', shoes: '#3d2d3a', accent: '#6ea84e' },
   { name: 'Bayu', style: 'short', skin: '#b87c55', hair: '#c05a2a', shirt: '#3f6fa8', pants: '#7a5a3a', overalls: true, shoes: '#2e2420', accent: '#e8e0c8' },
+  // Villager 13: Shades, the director (palette 12). Always in the office, even without a Claude session.
+  { name: 'Shades', style: 'short', sunglasses: true, suit: true, skin: '#e0a27a', hair: '#1c1a22', shirt: '#2f3a56', bib: '#f2ead6', tie: '#c8403c', pants: '#2a3350', shoes: '#1c1a22', accent: '#e8c04a' },
 ];

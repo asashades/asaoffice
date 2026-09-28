@@ -1,4 +1,4 @@
-// Installs addon/ (idle chat, villager card, calendar, Holo-board, Pomodoro, mailbox) into the installed pixel-agents webview: copies the scripts to
+// Installs addon/ (idle chat, villager card, calendar, Holo-board, Pomodoro, mailbox, director) into the installed pixel-agents webview: copies the scripts to
 // dist/webview/asaoffice/, adds <script> tags to index.html, and patches one spot in the bundle
 // so it calls window.__asaoffice.afterRender(...) after each frame. Originals go to the same
 // .asaoffice-backup folder the art overlay uses. Only the installed copy in node_modules changes.
@@ -7,7 +7,7 @@ import path from 'node:path';
 
 // Load order matters: core.js first (settings, frame hook, panels), then identity.js (who each villager is:
 // names, palettes, staff), then the add-ons. Day-night goes before the add-ons that draw on top of it
-// (speech bubbles, Holo-board, badges).
+// (speech bubbles, Holo-board, badges). The director (Shades) comes after the status bubbles, whose drawing it reuses.
 const SCRIPTS = [
   'core.js',
   'identity.js',
@@ -15,6 +15,7 @@ const SCRIPTS = [
   'camera.js',
   'notify.js',
   'status-icons.js',
+  'director.js',
   'idle-activities.js',
   'expressions.js',
   'idle-chat-lines.js',
@@ -85,7 +86,7 @@ export function applyWebviewAddon(root, dist, backup) {
   fs.mkdirSync(portraits, { recursive: true });
   const sources = [
     ...[0, 1, 2, 3, 4, 5].map((i) => path.join(root, 'overlay', 'characters', `char_${i}.png`)),
-    ...[0, 1, 2, 3, 4, 5].map((i) => path.join(root, 'stardew-pack', 'assets', 'characters', `char_${i}.png`)),
+    ...[0, 1, 2, 3, 4, 5, 6].map((i) => path.join(root, 'stardew-pack', 'assets', 'characters', `char_${i}.png`)),
   ];
   sources.forEach((src, palette) => { if (fs.existsSync(src)) fs.copyFileSync(src, path.join(portraits, `char_${palette}.png`)); });
   return `office addon installed: ${SCRIPTS.length - 1} add-ons (${path.relative(root, out)})`;

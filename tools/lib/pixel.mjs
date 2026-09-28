@@ -44,8 +44,9 @@ export class Sprite {
   }
 
   set(x, y, c) {
-    if (x < 0 || y < 0 || x >= this.w || y >= this.h) return;
+    if (x < 0 || y < 0 || x >= this.w || y >= this.h) return this;
     this.px[y * this.w + x] = c === null ? null : typeof c === 'string' ? hex(c) : c;
+    return this;
   }
 
   rect(x, y, w, h, c) {

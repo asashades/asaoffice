@@ -110,7 +110,7 @@
   ns.onFrame((canvas, office, offX, offY, zoom, editMode) => {
     if (editMode) return;
     let working = 0;
-    for (const c of office.characters.values()) if (c.isActive && !c.isSubagent) working++;
+    for (const c of office.characters.values()) if (c.isActive && !c.isSubagent && !c.asaNpc) working++;
     if (!working) return;
     const ctx = canvas.getContext('2d');
     ctx.save();

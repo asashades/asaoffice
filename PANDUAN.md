@@ -145,20 +145,22 @@ Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layo
 - Timer-nya disimpan di browser, jadi refresh halaman gak bikin ilang. Tapi timer di Mac dan di HP jalan sendiri-sendiri.
 - Bunyinya ikut tombol 🔔. Mau Pomodoro dimatiin? Tambahin `&pomodoro=off` di ujung link kantor.
 
-## 12 villager, asisten, dan karyawan kantor 👥
+## 13 villager, asisten, dan karyawan kantor 👥
 
-- **12 villager beda**: Asa, Rowan, Clem, Theo, Mabel, Juno, Wren, Pip, Sari, Gus, Iris, dan Bayu. Tiap sesi Claude dapet
+- **13 villager beda**: Asa, Rowan, Clem, Theo, Mabel, Juno, Wren, Pip, Sari, Gus, Iris, Bayu, dan **Shades** si
+  direktur (yang ini khusus, sesi biasa gak bakal dapet mukanya). Tiap sesi Claude dapet
   muka sendiri. Kalau sesinya lebih banyak dari muka yang ada, muka yang sama dipakai lagi tapi warnanya beda dan
   namanya dikasih nomor ("Asa 2"), jadi gak ada kembaran persis.
 - **Asisten (sub-agent)**: pas Claude manggil sub-agent, muncul villager kecil yang mirip induknya tapi warnanya beda,
   namanya misalnya **"Asa · Asisten"**. Balon induknya bilang "Nunggu asisten", dan balon si asisten nunjukin tugasnya.
-- **Karyawan kantor** (opsional, kayak "karyawan" di Hermes): 6 persona dengan jobdesc masing-masing. Pasang sekali:
+- **Karyawan kantor** (opsional, kayak "karyawan" di Hermes): 7 persona dengan jobdesc masing-masing. Pasang sekali:
   ```
   cd ~/asaoffice
   npm run staff
   ```
   | Villager | Jabatan | Tugasnya |
   | --- | --- | --- |
+  | Shades | Direktur (CEO) | Nerima tugas dari kamu (Komisaris), bikin rencana, ngatur tim, terus lapor |
   | Wren | Tester (QA) | Jalanin test, nulis test yang kurang, ngelaporin bug |
   | Pip | Reviewer kode | Meriksa perubahan kode, gak ngedit, cuma ngasih catatan |
   | Sari | Penulis dokumentasi | Nulis dan ngerapihin README, panduan, changelog |
@@ -198,6 +200,39 @@ Sekarang kamu bisa **nyuruh Claude langsung dari kantor**, gak perlu buka Termin
 - Tugas ini pakai akun Claude Code kamu yang biasa, jadi ikut kepake kuotanya.
 - Kotak suratnya belum ada di dinding? Jalanin `npm run layout`, atau klik **Layout**, cari **Mailbox**, terus
   tempel di dinding.
+
+**Cara kerja** (pilih pas ngirim tugas, mirip mode di Claude Code):
+
+| Pilihan | Artinya |
+| --- | --- |
+| 📝 **Rencana dulu** | Dia cuma baca-baca dulu terus nulis rencana. Suratnya nunggu kamu: **✅ Setujui** (baru dia kerjain), **✏️ Revisi** (tulis apa yang mau diubah, dia bikin rencana baru), atau **❌ Tolak**. Default buat Shades. |
+| ⚡ **Langsung jalan** | Langsung dikerjain. Default buat karyawan lain. |
+| 👀 **Cuma laporan** | Cuma baca dan ngecek, gak ngubah apa pun. |
+
+## Shades, direktur kantor 🕶️
+
+Shades (kacamata item, jas biru tua, dasi merah) **selalu ada di kantor**, walaupun lagi gak ada sesi Claude sama
+sekali. Ruangannya di pojok kanan bawah: meja direktur, kursi merah, lantai parket. Kalau lagi gak ada tugas, dia
+kerja di mejanya, baca-baca, sesekali jalan-jalan dan ngobrol sama yang lain.
+
+**Cara nyuruh Shades:**
+1. Pastiin karyawan udah dipasang (`npm run staff`), terus restart kantor.
+2. Buka **kotak surat → ✉️ Tugas baru**. Shades udah kepilih otomatis.
+3. Pilih **Cara kerja** (default *Rencana dulu*) dan **Gaya kerja Shades**:
+   - **💰 Hemat** (default): Shades kerja sendirian di **satu** sesi, jadi kuotanya irit. Tapi kantornya tetap rame:
+     pas mulai ada **rapat singkat di sofa** sama tim yang dibutuhin, terus tiap Shades baca kode, Iris (atau Gus pas
+     lagi bikin rencana) ikut duduk di meja baca-baca; pas ngetes Wren yang sibuk, pas ngecek git Pip, pas nulis
+     dokumen Sari, pas ngedit kode Bayu. Balon Shades bilang lagi "Ngarahin Wren" dan seterusnya. Timnya pulang
+     sendiri sekitar setengah menit setelah tugas beres.
+   - **👥 Delegasi beneran**: Shades beneran manggil karyawan sebagai subagent, satu-satu. Lebih "asli", tapi kuotanya
+     lebih boros.
+4. Kalau rencananya udah siap, Shades bilang **"Rencana siap — cek surat"** dan ada angka merah di kotak surat. Baca,
+   terus klik **✅ Setujui**, **✏️ Revisi**, atau **❌ Tolak**.
+5. Hasil akhirnya datang sebagai surat **📜 Laporan untuk Komisaris** (kamu komisarisnya 😎): ringkasan, siapa ngerjain
+   apa, hasil dan buktinya, hal yang perlu kamu putusin, dan langkah berikutnya.
+
+Catatan: Shades ngerjain satu tugas sekali waktu. Kalau dia lagi sibuk, tunggu tugasnya beres dulu. Ruang direkturnya
+gak muncul di kantor lama? Jalanin `npm run layout` (layout lama dibackup dulu).
 
 ## Kalau ada masalah
 

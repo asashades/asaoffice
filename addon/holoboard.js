@@ -66,7 +66,7 @@
     });
 
   function activeAgents(office) {
-    const main = [...(office?.characters?.values() ?? [])].filter((c) => !c.isSubagent);
+    const main = [...(office?.characters?.values() ?? [])].filter((c) => !c.isSubagent && !c.asaNpc);
     return [main.filter((c) => c.isActive).length, main.length];
   }
 

@@ -175,6 +175,7 @@
     }
     return status;
   };
+  ns.translateStatus = translate;
 
   const tools = new Map(); // agent id -> { status, toolName, toolId, open: Set<toolId> }
   const subStatus = new Map(); // `${parentId}:${parentToolId}` -> latest tool status of that sub-agent
@@ -248,13 +249,20 @@
     for (const ch of list) {
       if (ch.currentTool && !ch.asaActivity) lastTool.set(ch.id, ch.currentTool);
       if (ch.matrixEffect) continue;
+      // The office's own cast (director.js: Shades and the staff acting out his work) says what it likes.
+      const cast = ns.castBubble?.(ch) ?? null;
+      if (cast === false) continue;
       const waitingForYou = ch.bubbleType === 'waiting' && ch.waitingAwaitingInput;
       if (ch.bubbleType && !waitingForYou) continue; // pixel-agents is already drawing its own bubble
       let glyph = null;
       let color = COLOR.working;
       let text = null;
       let quiet = false;
-      if (waitingForYou) {
+      if (cast) {
+        glyph = GLYPH[KIND[cast.kind] ?? cast.kind] ?? GLYPH.other;
+        color = cast.waiting ? COLOR.waiting : COLOR.working;
+        text = cast.text;
+      } else if (waitingForYou) {
         glyph = GLYPH.waiting;
         color = COLOR.waiting;
         text = S.waiting;
@@ -283,7 +291,7 @@
       else {
         speech(ctx, cx, bottom, ch.isSubagent ? zoom * 0.85 : zoom, {
           glyph, color, text, t: phase, alpha: ch.isSubagent ? 0.9 : 1, avoid,
-          key: `status:${ch.id}`, hold: focused(ch), quiet,
+          key: `status:${ch.id}`, hold: focused(ch) || !!cast?.hold, quiet,
         });
       }
     }

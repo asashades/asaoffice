@@ -29,6 +29,14 @@
       reportTokens: (i, o) => `Token: ${i} masuk, ${o} keluar.`, reportModel: (m) => `Model paling sering: ${m}.`,
       reportTasks: (n) => `Tugas dari kotak surat: ${n} selesai.`, reportStreak: (n) => `Streak kerja: ${n} hari 🔥`,
       reportNone: 'Kemarin kantor sepi, gak ada sesi Claude. Selamat istirahat! 🌻', cost: (c) => `biaya ±$${c.toFixed(2)}`,
+      awaiting: '📝 Nunggu persetujuan', rejected: '❌ Ditolak', mode: 'Cara kerja',
+      modes: { plan: '📝 Rencana dulu — kamu setujui dulu', auto: '⚡ Langsung jalan', report: '👀 Cuma laporan — gak ngubah apa-apa' },
+      modeShort: { plan: 'rencana dulu', auto: 'langsung jalan', report: 'cuma laporan' },
+      style: 'Gaya kerja Shades',
+      styles: { solo: '💰 Hemat — Shades kerja sendiri, timnya akting', delegate: '👥 Delegasi beneran — manggil staf satu-satu (lebih boros kuota)' },
+      approve: '✅ Setujui', revise: '✏️ Revisi', reject: '❌ Tolak', revisePh: 'Apa yang perlu diubah dari rencananya?',
+      planReady: (n) => `${n}: rencananya siap, nunggu persetujuanmu`, planLabel: '📝 Rencana', reportLabel: '📜 Laporan untuk Komisaris',
+      directorBusy: 'Shades lagi ngerjain tugas lain. Tunggu selesai dulu ya.',
     },
     en: {
       title: 'Mailbox', compose: '✉️ New task', back: '← Back', empty: 'No letters yet. Send your first task with the button above!',
@@ -49,6 +57,14 @@
       reportTokens: (i, o) => `Tokens: ${i} in, ${o} out.`, reportModel: (m) => `Most used model: ${m}.`,
       reportTasks: (n) => `Tasks from the mailbox: ${n} done.`, reportStreak: (n) => `Work streak: ${n} days 🔥`,
       reportNone: 'The office was quiet yesterday, no Claude sessions. Enjoy the rest! 🌻', cost: (c) => `cost ≈ $${c.toFixed(2)}`,
+      awaiting: '📝 Waiting for approval', rejected: '❌ Rejected', mode: 'How to work',
+      modes: { plan: '📝 Plan first — you approve it', auto: '⚡ Just do it', report: "👀 Report only — doesn't change anything" },
+      modeShort: { plan: 'plan first', auto: 'just do it', report: 'report only' },
+      style: "Shades' way of working",
+      styles: { solo: '💰 Thrifty — Shades works alone, the team acts it out', delegate: '👥 Real delegation — calls staff one at a time (uses more quota)' },
+      approve: '✅ Approve', revise: '✏️ Revise', reject: '❌ Reject', revisePh: 'What should change in the plan?',
+      planReady: (n) => `${n}: the plan is ready for your approval`, planLabel: '📝 Plan', reportLabel: '📜 Report for the Commissioner',
+      directorBusy: 'Shades is on another task. Wait for it to finish.',
     },
   });
 
@@ -77,6 +93,8 @@
   .asa-msg.you { background: #e6f0d8; border-color: #9ab87a; align-self: flex-end; max-width: 85%; }
   .asa-msg small { display: block; opacity: 0.6; font-size: 11px; margin-bottom: 3px; }
   .asa-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .asa-msg.plan { border-color: #4a8ac8; box-shadow: inset 3px 0 0 #4a8ac8; }
+  .asa-msg em { display: block; font-style: normal; font-weight: bold; margin-bottom: 4px; }
   `;
 
   // ── Task API (local only) ──
@@ -141,7 +159,7 @@
   // ── Panel ──
   let view = { name: 'list' };
   let panel = null;
-  let draft = { agent: '', cwd: '', prompt: '' };
+  let draft = { agent: null, cwd: '', prompt: '' }; // agent null: not picked yet (the director if he's on staff)
   let options = null;
   let notice = '';
 
@@ -174,10 +192,13 @@
     const m = staffFor(l);
     body.append(h('div', { style: { display: 'flex', gap: '10px', alignItems: 'center' } }, face(l),
       h('div', {}, h('div', { style: { fontSize: '17px' } }, who(l)),
-        h('div', { class: 'asa-muted' }, [m ? ns.staffRole(m) : null, l.project, l.createdAt ? timeOf(l.createdAt) : l.day].filter(Boolean).join(' · ')))));
+        h('div', { class: 'asa-muted' }, [m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.createdAt ? timeOf(l.createdAt) : l.day].filter(Boolean).join(' · ')))));
     if (l.report) return body.append(h('div', { class: 'asa-thread' }, h('div', { class: 'asa-msg' }, l.text)));
+    const director = isDirector(l.agent);
+    const label = (msg) => (msg.from === 'you' ? null : msg.kind === 'plan' ? S.planLabel : director && msg.kind ? S.reportLabel : null);
     body.append(h('div', { class: 'asa-thread' }, (l.thread ?? []).map((msg) =>
-      h('div', { class: `asa-msg ${msg.from === 'you' ? 'you' : ''}` }, h('small', {}, `${msg.from === 'you' ? S.you : who(l)} · ${timeOf(msg.at)}`), msg.text))));
+      h('div', { class: `asa-msg ${msg.from === 'you' ? 'you' : ''} ${msg.kind === 'plan' ? 'plan' : ''}` },
+        h('small', {}, `${msg.from === 'you' ? S.you : who(l)} · ${timeOf(msg.at)}`), label(msg) ? h('em', {}, label(msg)) : null, msg.text))));
     if (l.error) body.append(h('div', { class: 'asa-warn' }, l.error));
     if (l.cost) body.append(h('div', { class: 'asa-note' }, S.cost(l.cost)));
     if (notice) body.append(h('div', { class: 'asa-warn' }, notice));
@@ -185,17 +206,27 @@
       body.append(h('div', { class: 'asa-actions' }, h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('POST', `/api/tasks/${l.id}/stop`)) }, `⏹ ${S.stop}`)));
       return;
     }
-    const box = h('textarea', { placeholder: S.replyPh, rows: '3' });
+    const awaiting = l.status === 'awaiting';
+    const box = h('textarea', { placeholder: awaiting ? S.revisePh : S.replyPh, rows: '3' });
     const form = h('div', { class: 'asa-form' }, box);
-    const send = h('button', { type: 'button', class: 'asa-btn primary' }, S.reply);
+    // The next run is a new session for the office: tell the director add-on so Shades takes it over at once.
+    const resumed = () => { if (director) ns.director?.expect({ cwd: l.cwd }); };
+    const send = h('button', { type: 'button', class: `asa-btn${awaiting ? '' : ' primary'}` }, awaiting ? S.revise : S.reply);
     send.onclick = () => {
       const text = box.value.trim();
-      if (!text) return;
+      if (!text) return box.focus();
       send.disabled = true;
-      act(() => api('POST', `/api/tasks/${l.id}/reply`, { text }));
+      act(async () => { await api('POST', `/api/tasks/${l.id}/reply`, { text }); resumed(); });
     };
-    body.append(form, h('div', { class: 'asa-actions' }, send,
-      h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('DELETE', `/api/tasks/${l.id}`), { name: 'list' }) }, S.archive)));
+    const archive = h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('DELETE', `/api/tasks/${l.id}`), { name: 'list' }) }, S.archive);
+    if (awaiting) {
+      const approve = h('button', { type: 'button', class: 'asa-btn primary' }, S.approve);
+      approve.onclick = () => { approve.disabled = true; act(async () => { await api('POST', `/api/tasks/${l.id}/approve`); resumed(); }); };
+      const reject = h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('POST', `/api/tasks/${l.id}/reject`)) }, S.reject);
+      body.append(h('div', { class: 'asa-actions' }, approve, reject), form, h('div', { class: 'asa-actions' }, send, archive));
+      return;
+    }
+    body.append(form, h('div', { class: 'asa-actions' }, send, archive));
   }
 
   function composeView(body) {
@@ -212,18 +243,30 @@
     const pick = (v) => (v && typeof v === 'object' ? v[ns.lang] ?? v.en : v);
     const whoSel = h('select', {}, h('option', { value: '' }, S.general),
       options.staff.map((m) => h('option', { value: m.agent }, `${m.name} — ${pick(m.role)}`)));
+    if (draft.agent === null) draft.agent = options.staff.find((m) => m.director)?.agent ?? '';
     whoSel.value = draft.agent;
     const projSel = h('select', {}, options.projects.map((p) => h('option', { value: p.cwd, title: p.cwd }, p.name)));
     projSel.value = draft.cwd;
     const text = h('textarea', { placeholder: S.placeholder, rows: '5' });
     text.value = draft.prompt;
     const note = h('div', { class: 'asa-note' });
+    const modeSel = h('select', {}, Object.entries(S.modes).map(([v, label]) => h('option', { value: v }, label)));
+    const styleSel = h('select', {}, Object.entries(S.styles).map(([v, label]) => h('option', { value: v }, label)));
+    styleSel.value = draft.style ?? 'solo';
+    const styleRow = h('div', {}, h('label', {}, S.style), styleSel);
+    const member = () => options.staff.find((x) => x.agent === whoSel.value);
     const updateNote = () => {
-      const m = options.staff.find((x) => x.agent === whoSel.value);
+      const m = member();
       const access = m?.access ?? options.general?.access ?? ['read'];
       note.textContent = S.canDo(access.map((a) => S.access[a] ?? a).join(', '));
+      styleRow.style.display = m?.director ? '' : 'none';
     };
-    whoSel.onchange = () => { draft.agent = whoSel.value; updateNote(); };
+    // The director plans first by default; everyone else just does it (as before). Your pick sticks per person.
+    const defaultMode = () => draft.modes?.[whoSel.value] ?? (member()?.director ? 'plan' : 'auto');
+    modeSel.value = defaultMode();
+    modeSel.onchange = () => { draft.modes = { ...draft.modes, [whoSel.value]: modeSel.value }; };
+    styleSel.onchange = () => { draft.style = styleSel.value; };
+    whoSel.onchange = () => { draft.agent = whoSel.value; modeSel.value = defaultMode(); updateNote(); };
     projSel.onchange = () => { draft.cwd = projSel.value; };
     text.oninput = () => { draft.prompt = text.value; };
     updateNote();
@@ -233,12 +276,17 @@
       send.disabled = true;
       send.textContent = S.sending;
       try {
-        const { letter } = await api('POST', '/api/tasks', { agent: whoSel.value || null, cwd: projSel.value, prompt: text.value.trim() });
+        const director = !!member()?.director;
+        const { letter } = await api('POST', '/api/tasks', {
+          agent: whoSel.value || null, cwd: projSel.value, prompt: text.value.trim(), mode: modeSel.value,
+          style: director ? styleSel.value : undefined,
+        });
+        if (director) ns.director?.expect({ cwd: letter.cwd, prompt: text.value.trim(), meeting: true });
         draft.prompt = '';
         await ns.refreshData();
         go({ name: 'letter', id: letter.id });
       } catch (err) {
-        notice = err.message === 'busy' ? S.busy : err.message === 'noApi' ? S.noApi : `${S.failed} (${err.message})`;
+        notice = errorText(err);
         send.disabled = false;
         send.textContent = S.send;
         rerender();
@@ -246,18 +294,21 @@
     };
     body.append(h('div', { class: 'asa-form' },
       h('label', {}, S.who), whoSel, note,
+      h('label', {}, S.mode), modeSel, styleRow,
       h('label', {}, S.project), projSel,
       h('label', {}, S.task), text));
     if (notice) body.append(h('div', { class: 'asa-warn' }, notice));
     body.append(h('div', { class: 'asa-actions' }, send));
   }
 
+  const errorText = (err) => ({ busy: S.busy, noApi: S.noApi, 'director busy': S.directorBusy })[err.message] ?? `${S.failed} (${err.message})`;
+  const isDirector = (agent) => !!(ns.data?.staff ?? []).find((m) => m.agent === agent)?.director;
   async function act(fn, next) {
     notice = '';
     try {
       await fn();
     } catch (err) {
-      notice = err.message === 'busy' ? S.busy : err.message === 'noApi' ? S.noApi : `${S.failed} (${err.message})`;
+      notice = errorText(err);
     }
     await ns.refreshData();
     if (next) view = next;
@@ -320,10 +371,11 @@
       if (prev === 'running' && l.status !== 'running') {
         const name = l.name ?? S.general;
         const first = (l.thread?.[0]?.text ?? '').slice(0, 40);
+        const ok = l.status === 'done' || l.status === 'awaiting';
         ns.notify?.message?.({
-          icon: l.status === 'done' ? '📬' : '⚠️',
-          title: l.status === 'done' ? S.finished(name, first) : S.failedTask(name),
-          body: S.openBox, kind: l.status === 'done' ? 'done' : 'permission',
+          icon: l.status === 'awaiting' ? '📝' : ok ? '📬' : '⚠️',
+          title: l.status === 'awaiting' ? S.planReady(name) : ok ? S.finished(name, first) : S.failedTask(name),
+          body: S.openBox, kind: ok ? 'done' : 'permission',
         });
       }
       lastStatus.set(l.id, l.status);
