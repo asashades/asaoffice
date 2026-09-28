@@ -22,6 +22,7 @@ sunflowers, a hen). No sprites are taken from Stardew Valley or any other game.
 | --- | --- |
 | `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: 6 characters, 19 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and a hen pet. |
 | `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and the same 6 characters, for the parts `pixel-agents` only loads from its own bundle. |
+| `addon/` | Idle chat: villagers whose sessions are idle walk over to each other and chat in speech bubbles. See [Idle chat](#idle-chat). |
 | `layouts/stardew-office.json` | A ready-made office: a 6-desk workroom, fireplace lounge, and kitchenette. Import it via **Layout → Import**, or `npm run layout`. |
 | `tools/` | The sprite generator (`npm run generate`), plus setup, launcher, and tunnel scripts. |
 
@@ -39,7 +40,7 @@ npm run setup      # register the pack, apply the overlay, install the layout (r
 `npm run setup` runs three steps you can also run on their own:
 
 - `npm run register` adds `stardew-pack/` to `~/.pixel-agents/config.json`. That's the same as **Settings → Add Asset Directory**.
-- `npm run overlay` copies `overlay/` into this repo's installed copy of `pixel-agents` and backs up the originals. Undo it with `npm run overlay:restore`.
+- `npm run overlay` copies `overlay/` into this repo's installed copy of `pixel-agents`, installs the idle-chat addon, and backs up the originals. Undo it with `npm run overlay:restore`.
 - `npm run layout` backs up `~/.pixel-agents/layout.json`, then installs the Stardew layout.
 
 ### Phase 1: run it and watch a real session
@@ -103,6 +104,33 @@ The script reads the running server's token from `~/.pixel-agents/servers/`. It 
   whenever you restart the office.
 - If you run your own tunnel command, **don't rewrite the Host header** (no `--http-host-header` or
   `--host-header=rewrite`). `pixel-agents` only accepts WebSocket connections whose `Origin` matches `Host`.
+
+## Idle chat
+
+When a session is idle, its villager doesn't only sit at the desk or wander alone. Every few seconds, two
+villagers that have been idle for 10 seconds or more may walk to a free spot, face each other, and chat in pixel
+speech bubbles. If either one gets a task, it breaks off mid-sentence ("Waduh, ada tugas. Duluan ya!") and
+`pixel-agents` walks it back to its desk as usual. Each villager then waits 45–120 seconds before chatting again,
+and no chats happen while the Layout editor is open.
+
+The lines are scripted, so they cost no tokens and work the same through the tunnel. They pick up real context
+from each session: the last tool it used (edits, searches, Bash, web, sub-agents, to-dos), its project folder
+(including whether both work on the same one), how full its context window is, and the time of day and weekday.
+
+- **Language:** Indonesian by default. Add `&chatLang=en` to the office URL for English (it's remembered).
+- **Turn it off:** add `&idleChat=off` to the URL (remembered; `&idleChat=on` turns it back on), or install
+  without it: `node tools/apply-overlay.mjs --no-idle-chat`.
+- **Edit the dialogue:** change `addon/idle-chat-lines.js`, run `npm run overlay`, and reload the page.
+  Timing and frequency are in `CFG` at the top of `addon/idle-chat.js`.
+- **Console:** `__asaoffice.idleChat.start()` starts a chat right away between any two idle villagers, and
+  `__asaoffice.idleChat.conversations` lists the chats in progress.
+
+How it hooks in: `npm run overlay` copies `addon/` to `dist/webview/asaoffice/`, adds two `<script>` tags to
+`index.html`, and patches one spot in the minified bundle so that it calls
+`window.__asaoffice.afterRender(canvas, office, offsetX, offsetY, zoom, editMode)` after each frame. The addon
+moves villagers with pixel-agents' own `walkToTile` and draws bubbles on the same canvas. The patch looks for an
+exact anchor in the 1.4.1 bundle. If a future release changes it, `npm run overlay` skips idle chat with a
+warning and the rest of the overlay still applies.
 
 ## Acceptance checklist
 
