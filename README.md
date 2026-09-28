@@ -22,7 +22,7 @@ sunflowers, a hen). No sprites are taken from Stardew Valley or any other game.
 | --- | --- |
 | `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: 6 characters, 19 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and a hen pet. |
 | `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and the same 6 characters, for the parts `pixel-agents` only loads from its own bundle. |
-| `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), [idle activities and expressions](#idle-activities-and-expressions), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), and a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night). |
+| `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), [idle activities and expressions](#idle-activities-and-expressions), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night), and a [Pomodoro timer](#pomodoro) on the wall clock. |
 | `layouts/stardew-office.json` | A ready-made office: a 6-desk workroom, fireplace lounge, and kitchenette. Import it via **Layout → Import**, or `npm run layout`. |
 | `tools/` | The sprite generator (`npm run generate`), plus setup, launcher, and tunnel scripts. |
 
@@ -211,6 +211,21 @@ calendar names are in that file; the stats are counts only, with no paths, promp
 Existing offices need the task board placed once, like the Holo-board: `npm run layout`, or **Layout → Task Board**.
 The task board reads the same feed as the Holo-board, which now also carries each recent session's title, last
 prompt, project folder name and to-dos (same token-hashed file, so the same privacy as the calendar).
+
+## Pomodoro
+
+Click the pendulum clock on the wall to open the timer. **Start focus** runs 25 minutes (or 50 with the 50/10
+preset), and the time left shows in a small tag under the clock: red while you focus, green on a break. When focus
+ends you get the notification chime and toast (muted by 🔕 like the rest), a 🍅 is counted for today, and a break starts
+on its own: 5 minutes, or 15 after every fourth round. During the break every villager whose session is idle walks
+to the lounge and hangs around the tea table (falling back to the fireplace or sofa), with a small coffee badge, and
+the ones that arrive may chat. Idle activities pause, and villagers that are working keep working. When the break
+ends you get another chime and choose when to start the next round. Pause, resume, "take a break now", skip and stop
+are in the same panel.
+
+The timer is kept in the browser (localStorage), so a reload picks it up where it was, but the Mac and the phone each
+run their own. `&pomodoro=off` in the URL turns it off (remembered). In the console, `__asaoffice.pomodoro.start()`,
+`.skip()` and `.state` help with testing.
 
 ## How the add-ons hook in
 

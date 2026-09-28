@@ -122,6 +122,18 @@ Kalau Holo-board belum ada di kantor kamu, jalanin `npm run layout` (layout lama
 
 Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layout**, cari **Task Board**, tempel di dinding.
 
+## Pomodoro 🍅
+
+- **Klik jam dinding** (jam bandul di sebelah jendela), terus klik **▶ Mulai fokus**. Timer 25 menit jalan, dan
+  sisa waktunya muncul di label kecil di bawah jam: merah = fokus, hijau = istirahat.
+- Pas fokus selesai, bunyi "ting" + muncul pesan, terus **istirahat 5 menit** mulai otomatis (tiap ronde ke-4 jadi
+  15 menit). Selama istirahat, villager yang lagi santai **ngumpul di lounge** dekat meja teh, ada ikon kopi di atas
+  kepalanya, dan kadang ngobrol. Villager yang lagi kerja tetap kerja.
+- Istirahat kelar, bunyi lagi. Klik jam buat mulai ronde berikutnya kapan pun kamu siap.
+- Di panel jam ada tombol **Jeda**, **Istirahat sekarang**, **Lewati**, **Berhenti**, dan pilihan durasi **25/5** atau **50/10**.
+- Timer-nya disimpan di browser, jadi refresh halaman gak bikin ilang. Tapi timer di Mac dan di HP jalan sendiri-sendiri.
+- Bunyinya ikut tombol 🔔. Mau Pomodoro dimatiin? Tambahin `&pomodoro=off` di ujung link kantor.
+
 ## Kalau ada masalah
 
 | Masalah | Solusi |
