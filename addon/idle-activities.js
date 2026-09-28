@@ -1,6 +1,6 @@
 // asaoffice idle activities: villagers whose sessions are idle don't only chat. Now and then one gets up
 // for a coffee break, read on the sofa, browse the bookshelf, warm up at the fireplace,
-// look out of a window, water a plant, or pet Clucky — with a small amber badge showing what it's doing.
+// look out of a window, water a plant, or pet the office pet — with a small speech bubble saying what it's doing.
 // A villager that gets a task drops everything and pixel-agents walks it back to its desk.
 //   ?idleActivities=off|on (remembered)   console: __asaoffice.activities.start('sofa') / .current
 (() => {
@@ -9,8 +9,8 @@
   let enabled = ns.setting('idleActivities', ['on', 'off'], 'on') === 'on';
 
   const S = ns.t({
-    id: { coffee: 'Rehat ngopi', sofa: 'Baca buku di sofa', books: 'Lihat-lihat rak buku', fire: 'Menghangatkan diri', window: 'Memandang ke luar', plant: 'Menyiram tanaman', pet: 'Mengelus Clucky' },
-    en: { coffee: 'Coffee break', sofa: 'Reading on the sofa', books: 'Browsing the bookshelf', fire: 'Warming up by the fire', window: 'Looking outside', plant: 'Watering a plant', pet: 'Petting Clucky' },
+    id: { coffee: 'Rehat ngopi', sofa: 'Baca buku di sofa', books: 'Lihat-lihat rak buku', fire: 'Menghangatkan diri', window: 'Memandang ke luar', plant: 'Menyiram tanaman', pet: (n) => `Mengelus ${n}` },
+    en: { coffee: 'Coffee break', sofa: 'Reading on the sofa', books: 'Browsing the bookshelf', fire: 'Warming up by the fire', window: 'Looking outside', plant: 'Watering a plant', pet: (n) => `Petting ${n}` },
   });
   const CFG = { minIdleSec: 12, checkEverySec: 3, chance: 0.3, cooldownSec: [60, 150], approachTimeoutSec: 25 };
   const DIR = { DOWN: 0, LEFT: 1, RIGHT: 2, UP: 3 };
@@ -216,6 +216,8 @@
     if (job.t >= job.duration) finish(office, job);
   }
 
+  const label = (job) => (job.kind === 'pet' ? S.pet(job.pet?.name || 'pet') : S[job.kind]);
+
   function draw(canvas, office, offX, offY, zoom) {
     if (!ns.drawBadge) return;
     const ctx = canvas.getContext('2d');
@@ -227,7 +229,14 @@
       const ch = office.characters.get(job.id);
       if (!ch || ch.bubbleType) continue;
       const lift = ch.state === 'type' ? 10 : 0;
-      ns.drawBadge(ctx, offX + ch.x * zoom, offY + (ch.y + lift - 25) * zoom, zoom, job.glyph, COLOR, t * 0.6 + job.id);
+      const x = offX + ch.x * zoom;
+      if (ns.drawSpeech) {
+        ns.drawSpeech(ctx, x, offY + (ch.y + lift - 28) * zoom, zoom, {
+          glyph: job.glyph, color: COLOR, text: label(job), t: t * 0.6 + job.id,
+          key: `activity:${job.id}`, hold: ns.bubbleFocused?.(ch),
+        });
+      }
+      else ns.drawBadge(ctx, x, offY + (ch.y + lift - 25) * zoom, zoom, job.glyph, COLOR, t * 0.6 + job.id);
     }
     ctx.restore();
   }
@@ -270,7 +279,7 @@
   ns.activities = {
     isBusy: (id) => jobs.has(id),
     /** Human-readable activity of villager `id` (only once it's there), else null. */
-    describe: (id) => { const j = jobs.get(id); return j && j.phase === 'doing' ? S[j.kind] : null; },
+    describe: (id) => { const j = jobs.get(id); return j && j.phase === 'doing' ? label(j) : null; },
     get current() { return [...jobs.values()].map((j) => ({ id: j.id, kind: j.kind, phase: j.phase })); },
     /** Start an activity now for any idle villager (optionally a given kind), ignoring timers. */
     start(kind) {

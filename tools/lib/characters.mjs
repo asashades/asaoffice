@@ -405,4 +405,11 @@ export const CHARACTERS = [
   { name: 'Theo', style: 'beanie', skin: '#9b6446', hair: '#2b1e1c', shirt: '#e8b93f', pants: '#4f7f5c', overalls: true, shoes: '#3a2620', hat: '#c8503c', accent: '#f2ead6' },
   { name: 'Mabel', style: 'bun', skin: '#f0c7a3', hair: '#b9b2b8', shirt: '#b7a0d8', pants: '#4f6a4a', shoes: '#4a3a3a', accent: '#8a5aa8' },
   { name: 'Juno', style: 'short', skin: '#c68a62', hair: '#3f8f8a', shirt: '#e88a4a', pants: '#3a4a6a', shoes: '#2e2a3a', accent: '#f0d070' },
+  // Villagers 7–12 (loaded from stardew-pack as palettes 6–11). They double as the staff roster (staff/roster.json).
+  { name: 'Wren', style: 'short', skin: '#8a5a3c', hair: '#1f1a1c', shirt: '#4fa3a0', pants: '#6b4a34', overalls: true, shoes: '#3a2620', accent: '#f2d070' },
+  { name: 'Pip', style: 'strawhat', skin: '#f6d2b0', hair: '#e8c35a', shirt: '#e07a9a', pants: '#5a8a4a', overalls: true, shoes: '#4a3a2a', hat: '#e9c46a', accent: '#5a8ac8' },
+  { name: 'Sari', style: 'long', skin: '#d9a27a', hair: '#2b1e1c', shirt: '#c8503c', pants: '#34405e', shoes: '#2e2a3a', accent: '#f0c85a' },
+  { name: 'Gus', style: 'beanie', skin: '#e8b48f', hair: '#8a8078', shirt: '#6a7fb0', pants: '#5a4a3a', shoes: '#3a2a22', hat: '#8a5a3a', accent: '#e8c04a' },
+  { name: 'Iris', style: 'ponytail', skin: '#f0c7a3', hair: '#7a4ab0', shirt: '#f2ead6', pants: '#4f79b8', shoes: '#3d2d3a', accent: '#6ea84e' },
+  { name: 'Bayu', style: 'short', skin: '#b87c55', hair: '#c05a2a', shirt: '#3f6fa8', pants: '#7a5a3a', overalls: true, shoes: '#2e2420', accent: '#e8e0c8' },
 ];

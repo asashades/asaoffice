@@ -5,10 +5,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-// Load order matters: core.js first (settings, frame hook, panels), then the add-ons.
-// Day-night goes before the add-ons that draw on top of it (speech bubbles, Holo-board, badges).
+// Load order matters: core.js first (settings, frame hook, panels), then identity.js (who each villager is:
+// names, palettes, staff), then the add-ons. Day-night goes before the add-ons that draw on top of it
+// (speech bubbles, Holo-board, badges).
 const SCRIPTS = [
   'core.js',
+  'identity.js',
   'daynight.js',
   'camera.js',
   'notify.js',
@@ -77,6 +79,14 @@ export function applyWebviewAddon(root, dist, backup) {
   const out = path.join(webview, 'asaoffice');
   fs.mkdirSync(out, { recursive: true });
   for (const s of SCRIPTS) fs.copyFileSync(path.join(root, 'addon', s), path.join(out, s));
+  // Portraits for the villager card, numbered by palette: 0–5 from the overlay, 6–11 from the pack.
+  const portraits = path.join(out, 'characters');
+  fs.mkdirSync(portraits, { recursive: true });
+  const sources = [
+    ...[0, 1, 2, 3, 4, 5].map((i) => path.join(root, 'overlay', 'characters', `char_${i}.png`)),
+    ...[0, 1, 2, 3, 4, 5].map((i) => path.join(root, 'stardew-pack', 'assets', 'characters', `char_${i}.png`)),
+  ];
+  sources.forEach((src, palette) => { if (fs.existsSync(src)) fs.copyFileSync(src, path.join(portraits, `char_${palette}.png`)); });
   return `office addon installed: ${SCRIPTS.length - 1} add-ons (${path.relative(root, out)})`;
 }
 

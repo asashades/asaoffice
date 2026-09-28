@@ -5,6 +5,8 @@
 //                prompts or project names)
 //   tasks()    — the task board: each session active in the last day with its title, last prompt,
 //                project folder name, today's tool calls and edited files, and its TodoWrite list if any
+//   spawns()   — { toolUseId: subagent_type } for Agent/Task calls in the last few hours, so the office can
+//                tell which staff member (staff/roster.json) a freshly spawned sub-agent is
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -18,6 +20,7 @@ const KIND = {
 };
 const KINDS = ['edit', 'search', 'command', 'web', 'agent', 'other'];
 const CHUNK = 4 * 1024 * 1024;
+const SPAWN_TTL_MS = 6 * 3600_000;
 
 export function localDay(date) {
   const p = (n) => String(n).padStart(2, '0');
@@ -31,6 +34,8 @@ export class ClaudeStats {
     this.files = new Map(); // path -> { offset, rest: Buffer }
     this.perDay = new Map(); // day -> { tools, edit..., sessions: Set, files: Set, hours: number[24] }
     this.sessions = new Map(); // sessionId -> { title, aiTitle, project, lastAt, todos, todosAt }
+    this.spawnMap = new Map(); // tool_use id -> { type, at }
+    this.spawnsVersion = 0;
   }
 
   session(id) {
@@ -115,6 +120,11 @@ export class ClaudeStats {
         sess.tools++;
         if (kind === 'edit' && typeof b.input?.file_path === 'string') sess.files.add(b.input.file_path);
       }
+      if ((b.name === 'Agent' || b.name === 'Task') && typeof b.id === 'string' && typeof b.input?.subagent_type === 'string' &&
+          ts.getTime() >= Date.now() - SPAWN_TTL_MS && !this.spawnMap.has(b.id)) {
+        this.spawnMap.set(b.id, { type: b.input.subagent_type.slice(0, 80), at: ts.getTime() });
+        this.spawnsVersion++;
+      }
       if (b.name === 'TodoWrite' && sess && !rec.isSidechain && Array.isArray(b.input?.todos) && ts.getTime() >= sess.todosAt) {
         sess.todosAt = ts.getTime();
         sess.todos = b.input.todos.map((t) => ({
@@ -156,6 +166,12 @@ export class ClaudeStats {
         filesToday: s.day === today ? s.files.size : 0,
         todos: s.todos && s.todosAt >= since ? s.todos : null,
       }));
+  }
+
+  /** Recent sub-agent spawns: { toolUseId: subagent_type }. */
+  spawns(now = Date.now()) {
+    for (const [id, s] of this.spawnMap) if (now - s.at > SPAWN_TTL_MS) this.spawnMap.delete(id);
+    return Object.fromEntries([...this.spawnMap].map(([id, s]) => [id, s.type]));
   }
 
   readNew(file, cutoffMs) {

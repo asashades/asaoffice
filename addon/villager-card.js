@@ -29,6 +29,8 @@
     background-size: 336px 288px; background-position: -48px -6px; background-color: #dca05f; border: 2px solid #744122; }
   .asa-card-name { font-size: 18px; }
   .asa-card-status { font-size: 13px; margin-top: 2px; }
+  .asa-card-role { font-size: 13px; color: #973a2f; margin-top: 1px; }
+  .asa-card-duty { font-size: 12px; font-style: italic; opacity: 0.8; padding: 0 0 8px; }
   .asa-dot { display: inline-block; width: 8px; height: 8px; margin-right: 5px; vertical-align: 1px; }
   .asa-card-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 3px 0;
     border-top: 1px dashed #c9a877; }
@@ -47,7 +49,7 @@
   const locale = ns.lang === 'id' ? 'id-ID' : 'en-US';
   const meta = new Map(); // id -> { lastTool, firstSeen, idleSince }
   // Warm the portrait images so the first card doesn't open with an empty frame.
-  for (let i = 0; i < 6; i++) new Image().src = `./assets/characters/char_${i}.png`;
+  for (let i = 0; i < ns.VILLAGERS.length; i++) new Image().src = ns.portraitUrl({ palette: i });
   let card = null; // { id, el, parts }
   let lastUpdate = 0;
 
@@ -93,8 +95,10 @@
       document.head.appendChild(h('style', { id: 'asa-card-css' }, css));
     }
     const portrait = h('div', { class: 'asa-portrait' });
-    portrait.style.backgroundImage = `url(./assets/characters/char_${(ch.palette ?? 0) % 6}.png)`;
+    portrait.style.backgroundImage = `url(${ns.portraitUrl(ch)})`;
     const name = h('div', { class: 'asa-card-name' });
+    const role = h('div', { class: 'asa-card-role' });
+    const duty = h('div', { class: 'asa-card-duty' });
     const dot = h('i', { class: 'asa-dot' });
     const statusText = h('span');
     const taskTitle = h('b');
@@ -102,7 +106,7 @@
     const task = h('div', { class: 'asa-card-task' }, taskTitle, taskPrompt);
     const parts = {
       task, taskTitle, taskPrompt,
-      name,
+      name, role, duty, portrait,
       dot,
       statusText,
       project: row(S.project),
@@ -123,7 +127,8 @@
       'div',
       { class: 'asa-card', role: 'status' },
       closeBtn,
-      h('div', { class: 'asa-card-top' }, portrait, h('div', {}, name, h('div', { class: 'asa-card-status' }, dot, statusText))),
+      h('div', { class: 'asa-card-top' }, portrait, h('div', {}, name, role, h('div', { class: 'asa-card-status' }, dot, statusText))),
+      duty,
       task,
       parts.project.el,
       parts.tool.el,
@@ -142,9 +147,15 @@
     const p = card.parts;
     const m = meta.get(ch.id);
     const parent = ch.isSubagent ? office.characters.get(ch.parentAgentId) : null;
-    p.name.textContent = `${ns.villagerName(ch)}${ch.agentName ? ` (${ch.agentName})` : ''}`;
+    const staff = ns.staffOf(ch);
+    p.name.textContent = `${ns.villagerName(ch)}${ch.agentName && !staff ? ` (${ch.agentName})` : ''}`;
+    p.role.textContent = staff ? `${ns.staffRole(staff)}${parent ? ` · ${ns.subagentCaller(ch)}` : ''}` : '';
+    p.role.style.display = staff ? '' : 'none';
+    p.duty.textContent = staff ? ns.staffDuty(staff) : '';
+    p.duty.style.display = staff ? '' : 'none';
+    p.portrait.style.backgroundImage = `url(${ns.portraitUrl(ch)})`; // faces can change once identities resolve
     const [text, color] = status(office, ch);
-    p.statusText.textContent = parent ? `${S.subagent} ${ns.villagerName(parent)} · ${text}` : text;
+    p.statusText.textContent = parent && !staff ? `${S.subagent} ${ns.villagerName(parent)} · ${text}` : text;
     p.dot.style.background = color;
     p.project.value.textContent = ch.folderName || S.none;
     // Best match from the task board feed: the most recently active session in this villager's folder.

@@ -10,9 +10,9 @@ from your phone through a tunnel.
 ![The office running pixel-agents 1.4.1 with this pack](docs/office.png)
 
 The pack is **original pixel art**, drawn by `tools/` in a Stardew Valley–*inspired* style (warm wood, gingham,
-sunflowers, a hen). No sprites are taken from Stardew Valley or any other game.
+sunflowers, an orange office cat and a hen). No sprites are taken from Stardew Valley or any other game.
 
-| Villagers (walk · type · read, 3 directions) | Furniture |
+| Twelve villagers (walk · type · read, 3 directions each) | Furniture |
 | --- | --- |
 | ![characters](docs/characters.png) | ![furniture](docs/furniture.png) |
 
@@ -20,9 +20,10 @@ sunflowers, a hen). No sprites are taken from Stardew Valley or any other game.
 
 | Path | What it is |
 | --- | --- |
-| `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: 6 characters, 19 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and a hen pet. |
-| `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and the same 6 characters, for the parts `pixel-agents` only loads from its own bundle. |
+| `stardew-pack/` | External asset directory for **Settings → Add Asset Directory**: villagers 7–12 (Wren, Pip, Sari, Gus, Iris, Bayu), 21 furniture items (desk, chair, retro PC with on/off animation, sofa, fireplace, window, bookshelf, plants…), and two pets: Oyen the cat (the layout's default) and Clucky the hen. |
+| `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and villagers 1–6 (Asa, Rowan, Clem, Theo, Mabel, Juno) in place of the bundled characters, for the parts `pixel-agents` only loads from its own bundle. |
 | `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), [idle activities and expressions](#idle-activities-and-expressions), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night), and a [Pomodoro timer](#pomodoro) on the wall clock. |
+| `staff/` | The [office staff](#office-staff): six Claude Code subagents with job descriptions (`staff/agents/*.md`), each played by a villager (`staff/roster.json`). Install with `npm run staff`. |
 | `layouts/stardew-office.json` | A ready-made office: a 6-desk workroom, fireplace lounge, and kitchenette. Import it via **Layout → Import**, or `npm run layout`. |
 | `tools/` | The sprite generator (`npm run generate`), plus setup, launcher, and tunnel scripts. |
 
@@ -42,6 +43,8 @@ npm run setup      # register the pack, apply the overlay, install the layout (r
 - `npm run register` adds `stardew-pack/` to `~/.pixel-agents/config.json`. That's the same as **Settings → Add Asset Directory**.
 - `npm run overlay` copies `overlay/` into this repo's installed copy of `pixel-agents`, installs the idle-chat addon, and backs up the originals. Undo it with `npm run overlay:restore`.
 - `npm run layout` backs up `~/.pixel-agents/layout.json`, then installs the Stardew layout.
+
+Optionally, `npm run staff` hires the [office staff](#office-staff): six Claude Code subagents with their own jobs.
 
 ### Phase 1: run it and watch a real session
 
@@ -142,7 +145,7 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
 
 - **Idle activities:** besides chatting, a villager that has been idle for a while may take a coffee break by a barrel
   or crate, sit and read on a free sofa seat, browse the bookshelf, warm up at the fireplace (more often in the
-  evening), look out of a window, water a plant, or pet Clucky. An amber badge shows the activity and the villager
+  evening), look out of a window, water a plant, or pet the office pet. A small speech bubble says what it's doing and the villager
   card says what it's doing. If its session gets a task, it drops everything (and gets up from the sofa) and
   pixel-agents walks it back to its desk. Sofa seats assigned to an agent are never used, and a villager is never in
   a chat and an activity at once. `&idleActivities=off` turns them off; `__asaoffice.activities.start('sofa')` starts
@@ -185,12 +188,21 @@ calendar names are in that file; the stats are counts only, with no paths, promp
 
 ## Camera lock, notifications, task board, and day & night
 
-- **Status icons instead of labels:** pixel-agents' label panels (tool status, folder, context bar) are hidden, even
+- **Status bubbles instead of labels:** pixel-agents' label panels (tool status, folder, context bar) are hidden, even
   with **Settings → Always Show Labels** on, because they pile up when many agents work. A working villager gets a
-  small badge for what it's doing (✎ edit, 🔍 read/search, >_ command, 🌐 web, 👥 sub-agent, ⚙ other) and a blue "…"
-  while it waits for your reply; pixel-agents' own permission bubble stays. Click the villager for details: the card
-  now also shows the session it's working on (title and your last prompt, matched by project folder).
-  `&labels=full` in the URL brings the original labels back (remembered).
+  small speech bubble above its head (not over it) saying what it's doing, with a matching icon: "Ngedit app.ts",
+  "Jalanin: npm test", "Nyari kode", "Subtugas: …" (English with `&chatLang=en`). The text comes from the same
+  `agentToolStart` messages the office receives: `addon/core.js` wraps `WebSocket` before the bundle loads and hands
+  every parsed message to `__asaoffice.onMessage`. A blue "Nunggu balasanmu" bubble shows while it waits for your
+  reply; pixel-agents' own permission bubble stays. A session that's active with no tool running says "Mikir…"
+  (thinking), and when there are more working sessions than desks, the ones seated on a sofa get a laptop icon and
+  "Dari sofa: …" so they don't look like they're relaxing.
+  Bubbles are brief so the office stays clean: one pops up when what it says changes (a new tool, a new activity),
+  stays about four seconds and fades out. "Mikir…" between tools doesn't pop one up by itself. Hover or select a
+  villager to see its bubble again. `&bubbles=always` keeps them up (remembered; `&bubbles=brief` switches back). Idle activities and Pomodoro breaks use the same bubbles. Click
+  the villager for details: the card also shows the session it's working on (title and your last prompt, matched by
+  project folder). `&labels=icons` switches to icon-only badges and `&labels=full` brings the original labels back
+  (both remembered; `&labels=bubbles` returns to bubbles).
 
 - **Camera lock (🔒 under the zoom buttons, on by default):** the view stays centred. Clicking a villager selects it
   and shows its card without the camera chasing it, and trackpad scrolling or middle-drag doesn't pan. Zoom still
@@ -218,7 +230,7 @@ Click the pendulum clock on the wall to open the timer. **Start focus** runs 25 
 preset), and the time left shows in a small tag under the clock: red while you focus, green on a break. When focus
 ends you get the notification chime and toast (muted by 🔕 like the rest), a 🍅 is counted for today, and a break starts
 on its own: 5 minutes, or 15 after every fourth round. During the break every villager whose session is idle walks
-to the lounge and hangs around the tea table (falling back to the fireplace or sofa), with a small coffee badge, and
+to the lounge and hangs around the tea table (falling back to the fireplace or sofa), with a "Break" bubble, and
 the ones that arrive may chat. Idle activities pause, and villagers that are working keep working. When the break
 ends you get another chime and choose when to start the next round. Pause, resume, "take a break now", skip and stop
 are in the same panel.
@@ -226,6 +238,47 @@ are in the same panel.
 The timer is kept in the browser (localStorage), so a reload picks it up where it was, but the Mac and the phone each
 run their own. `&pomodoro=off` in the URL turns it off (remembered). In the console, `__asaoffice.pomodoro.start()`,
 `.skip()` and `.state` help with testing.
+
+## Villager identities
+
+Every villager has a face and a name of its own (`addon/identity.js`):
+
+- **Twelve villagers.** Palettes 0–5 are Asa, Rowan, Clem, Theo, Mabel and Juno (the overlay's replacements for
+  pixel-agents' six bundled characters). Palettes 6–11 are Wren, Pip, Sari, Gus, Iris and Bayu, loaded from the pack.
+  Sessions get distinct faces while there are enough. After that a face repeats with a different hue and a number
+  ("Asa 2"), so you never see an identical twin.
+- **Sub-agents.** pixel-agents gives a sub-agent its parent's exact look. Here it keeps the parent's face with a
+  shifted hue and is called "Asa · Asisten", or "Asa · Explore" for a named subagent type. The parent's bubble says
+  "Nunggu asisten" while the sub-agent's bubble shows its own task and tools.
+- Faces and names are applied in the browser each frame (`ch.palette` / `ch.hueShift`), so the server is untouched.
+
+## Office staff
+
+`npm run staff` installs six Claude Code subagents into `~/.claude/agents/`, each with a job description
+(`staff/agents/*.md`) and a villager (`staff/roster.json`):
+
+| Villager | Subagent | Job |
+| --- | --- | --- |
+| Wren | `wren-tester` | Runs the tests, writes missing ones, reports bugs with repro steps |
+| Pip | `pip-reviewer` | Reviews diffs for bugs and security problems (read-only) |
+| Sari | `sari-writer` | Writes and tidies READMEs, guides, comments and changelogs |
+| Gus | `gus-planner` | Breaks big jobs into steps and writes the plan (read-only) |
+| Iris | `iris-researcher` | Researches the web and the code and summarizes with sources |
+| Bayu | `bayu-debugger` | Finds a bug's root cause, fixes it minimally and proves it |
+
+Any Claude Code session on the Mac can then hand them work ("minta Wren ngetes perubahan ini", "suruh Pip review
+diff-nya"), and Claude also calls them on its own when a task matches their description. When one is spawned, the
+office shows that villager instead of a generic helper, and its card shows the role, who called it, and its job.
+While staff are installed, ordinary sessions never get a staff member's face.
+
+How it's matched: `npm run office` rescans the session transcripts every 4 seconds for `Agent`/`Task` tool calls and
+publishes `{ tool_use id: subagent_type }` in its data feed. pixel-agents names each sub-agent by the same tool_use
+id, so `identity.js` can tell which staff member it is. Agent Teams teammates named after a staff member (for example
+`wren-tester` or `Wren`) get that villager too.
+
+Unlike an always-on agent platform, the staff don't run by themselves: they work when a session, Dispatch or a
+scheduled Routine calls them. Edit a file in `staff/agents/` and run `npm run staff` again to change a job
+description (a copy you edited in `~/.claude/agents/` is backed up first). `npm run staff -- --remove` removes them.
 
 ## How the add-ons hook in
 
@@ -253,9 +306,11 @@ anything in `addon/`, run `npm run overlay` and reload the page.
 
 - **Layout resets:** if a future `pixel-agents` release ships a default layout with a higher `layoutRevision`, it
   replaces `~/.pixel-agents/layout.json`. Keep an export, or just run `npm run layout` again.
-- **Hen pet index:** the layout's pet uses `petType: 2`, which is right after the two bundled pets in 1.4.1. If a
-  release adds bundled pets, re-add the hen from the Layout editor's pet tool.
-- **Duplicate faces:** with the overlay on, the six villagers exist twice: once as bundled, once from the pack.
-  Agents 7–12 reuse faces before any hue-shifting kicks in. It's harmless.
+- **Pet index:** pixel-agents numbers pets in load order: its own Claudio (0) and Gitcat (1), then this pack's
+  folders alphabetically, so Oyen the cat is 2 and Clucky the hen is 3. The layout's pet uses `petType: 2`, and an
+  older layout that had the hen at 2 now shows the cat there. If a release adds bundled pets, re-add Oyen from the
+  Layout editor's pet tool.
+- **Faces without the overlay:** without `npm run overlay`, palettes 0–5 are pixel-agents' own characters, and
+  the add-ons (names, staff) aren't installed at all.
 - **Out of scope:** Google Antigravity support (it would need a new `HookProvider`), commanding agents from the
   office, and multi-machine sync.

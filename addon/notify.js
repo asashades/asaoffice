@@ -107,7 +107,7 @@
       const n = new Notification(title, {
         body: kind === 'permission' ? S.permissionBody : S.doneBody,
         tag: `asaoffice-${ch.id}-${kind}`,
-        icon: `./assets/characters/char_${(ch.palette ?? 0) % 6}.png`,
+        icon: ns.portraitUrl?.(ch),
       });
       n.onclick = () => { window.focus(); select(ch.id); n.close(); };
     } catch { /* e.g. mobile browsers that only allow notifications from a service worker */ }

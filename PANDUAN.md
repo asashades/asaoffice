@@ -78,12 +78,16 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
 
 - **Pas santai**, villager gak cuma ngobrol: kadang rehat ngopi, duduk baca buku di sofa, lihat-lihat rak buku,
   menghangatkan diri di perapian (lebih sering pas sore/malam), memandang ke jendela, nyiram tanaman, atau ngelus
-  Clucky. Ada ikon kecil oranye di atas kepalanya. Begitu dapet tugas, dia langsung balik ke meja.
+  Oyen si kucing oren 🐱. Ada balon kecil di atas kepalanya yang bilang dia lagi ngapain. Begitu dapet tugas, dia
+  langsung balik ke meja.
 - **Ekspresi**:
   - 💤 **zzz** = context-nya udah 80% penuh. Saatnya `/compact`.
   - 💧 **keringetan** = udah kerja 15 menit nonstop, atau nungguin izinmu lebih dari 1 menit.
   - ✨ **lompat senang** = baru selesai ngerjain tugas.
 - Mau dimatiin? Tambahin `&idleActivities=off` atau `&expressions=off` di ujung link kantor.
+- **Pet kantor** sekarang **Oyen si kucing oren** 🐱. Kantor lama yang dulu ada ayamnya otomatis jadi Oyen setelah
+  `git pull`, `npm run overlay`, dan kantornya di-restart. Clucky si ayam masih ada: klik **Layout**, pilih alat pet, terus
+  tambahin dia kalau kangen.
 
 ## Kartu villager, kalender, dan Holo-board 🗓️
 
@@ -103,10 +107,17 @@ Kalau Holo-board belum ada di kantor kamu, jalanin `npm run layout` (layout lama
 
 ## Kamera, notifikasi, papan tugas, dan siang-malam 🌙
 
-- **Simbol kecil di atas villager**: label besar di atas kepala villager udah diganti simbol mungil biar kantor gak
-  penuh: ✎ lagi edit, 🔍 lagi baca/cari, >_ jalanin command, 🌐 buka web, 👥 pakai sub-agent, ⚙ lainnya, dan "…" biru
-  kalau dia nungguin balasanmu. **Klik villager-nya** buat lihat detail, termasuk dia lagi ngerjain apa dan
-  permintaan terakhirmu. Kangen label lama? Tambahin `&labels=full` di ujung link kantor.
+- **Balon status di atas villager** 💬: villager yang lagi kerja punya balon chat kecil di atas kepalanya (gak nutupin
+  muka) yang bilang dia lagi ngapain, misalnya "Ngedit app.ts", "Jalanin: npm test", "Nyari kode", atau
+  "Subtugas: …". Kalau dia lagi mikir (gak pakai tool), balonnya bilang "Mikir…". Kalau sesinya lebih banyak dari meja,
+  sisanya kerja dari sofa pakai ikon laptop 💻 ("Dari sofa: …"). Kalau dia lagi nungguin balasanmu, balonnya biru:
+  "Nunggu balasanmu".
+  Biar kantor tetap bersih, **balonnya cuma muncul sebentar** (sekitar 4 detik) tiap ada yang berubah, misalnya pas
+  ganti tool atau mulai aktivitas baru, terus ngilang pelan-pelan. Mau lihat lagi? Arahin kursor ke villager-nya,
+  atau klik dia. Lebih suka balon yang selalu kelihatan? Tambahin `&bubbles=always` di ujung link kantor. Balik ke
+  mode sebentar pakai `&bubbles=brief`. **Klik villager-nya** buat
+  lihat detail, termasuk permintaan terakhirmu. Lebih suka ikon aja? Tambahin `&labels=icons` di ujung link kantor.
+  Kangen label lama? Pakai `&labels=full`. Balik ke balon pakai `&labels=bubbles`.
 
 - **🔒 Kunci kamera** (di bawah tombol + / −, nyala dari awal): tampilan kantor diam di tengah. Klik villager cuma
   buka kartunya, kameranya gak ikut lari. Scroll trackpad juga gak geser kantor. Zoom tetap bisa pakai + / −.
@@ -127,12 +138,41 @@ Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layo
 - **Klik jam dinding** (jam bandul di sebelah jendela), terus klik **▶ Mulai fokus**. Timer 25 menit jalan, dan
   sisa waktunya muncul di label kecil di bawah jam: merah = fokus, hijau = istirahat.
 - Pas fokus selesai, bunyi "ting" + muncul pesan, terus **istirahat 5 menit** mulai otomatis (tiap ronde ke-4 jadi
-  15 menit). Selama istirahat, villager yang lagi santai **ngumpul di lounge** dekat meja teh, ada ikon kopi di atas
+  15 menit). Selama istirahat, villager yang lagi santai **ngumpul di lounge** dekat meja teh, ada balon "Istirahat" di atas
   kepalanya, dan kadang ngobrol. Villager yang lagi kerja tetap kerja.
 - Istirahat kelar, bunyi lagi. Klik jam buat mulai ronde berikutnya kapan pun kamu siap.
 - Di panel jam ada tombol **Jeda**, **Istirahat sekarang**, **Lewati**, **Berhenti**, dan pilihan durasi **25/5** atau **50/10**.
 - Timer-nya disimpan di browser, jadi refresh halaman gak bikin ilang. Tapi timer di Mac dan di HP jalan sendiri-sendiri.
 - Bunyinya ikut tombol 🔔. Mau Pomodoro dimatiin? Tambahin `&pomodoro=off` di ujung link kantor.
+
+## 12 villager, asisten, dan karyawan kantor 👥
+
+- **12 villager beda**: Asa, Rowan, Clem, Theo, Mabel, Juno, Wren, Pip, Sari, Gus, Iris, dan Bayu. Tiap sesi Claude dapet
+  muka sendiri. Kalau sesinya lebih banyak dari muka yang ada, muka yang sama dipakai lagi tapi warnanya beda dan
+  namanya dikasih nomor ("Asa 2"), jadi gak ada kembaran persis.
+- **Asisten (sub-agent)**: pas Claude manggil sub-agent, muncul villager kecil yang mirip induknya tapi warnanya beda,
+  namanya misalnya **"Asa · Asisten"**. Balon induknya bilang "Nunggu asisten", dan balon si asisten nunjukin tugasnya.
+- **Karyawan kantor** (opsional, kayak "karyawan" di Hermes): 6 persona dengan jobdesc masing-masing. Pasang sekali:
+  ```
+  cd ~/asaoffice
+  npm run staff
+  ```
+  | Villager | Jabatan | Tugasnya |
+  | --- | --- | --- |
+  | Wren | Tester (QA) | Jalanin test, nulis test yang kurang, ngelaporin bug |
+  | Pip | Reviewer kode | Meriksa perubahan kode, gak ngedit, cuma ngasih catatan |
+  | Sari | Penulis dokumentasi | Nulis dan ngerapihin README, panduan, changelog |
+  | Gus | Perencana | Mecah kerjaan besar jadi langkah-langkah, gak ngedit kode |
+  | Iris | Peneliti | Nyari info di web dan kode, ngerangkum pakai sumber |
+  | Bayu | Pemburu bug | Nyari akar masalah, benerin, terus buktiin udah beres |
+
+  Abis itu restart kantor, terus buka sesi `claude` baru. Cara nyuruhnya tinggal ngomong biasa ke Claude, misalnya
+  *"minta Wren ngetes perubahan ini"* atau *"suruh Pip review diff-nya"*. Claude juga bisa manggil mereka sendiri
+  kalau tugasnya cocok. Pas dipanggil, villager-nya muncul di kantor, dan kartunya nunjukin jabatan, jobdesc, dan
+  siapa yang manggil.
+- Mereka gak kerja sendiri 24 jam: mereka kerja pas dipanggil sama kamu, Claude, Dispatch, atau jadwal Routine.
+- Mau ubah jobdesc? Edit file di `staff/agents/`, terus jalanin `npm run staff` lagi. Mau copot semua?
+  `npm run staff -- --remove`.
 
 ## Kalau ada masalah
 

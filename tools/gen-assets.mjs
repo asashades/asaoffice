@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { CHARACTERS, renderCharacter } from './lib/characters.mjs';
 import { buildFurniture } from './lib/furniture.mjs';
+import { renderCat } from './lib/cat.mjs';
 import { renderChicken } from './lib/pet.mjs';
 import { Sprite } from './lib/pixel.mjs';
 import { FLOORS, reskinWall } from './lib/tiles.mjs';
@@ -18,11 +19,12 @@ const overlay = path.join(root, 'overlay');
 
 for (const dir of [pack, overlay]) fs.rmSync(dir, { recursive: true, force: true });
 
+// Twelve different villagers: 1–6 replace pixel-agents' six bundled characters (overlay, palettes 0–5) and
+// 7–12 load from the pack as extra characters (palettes 6–11), so no two palettes share a face.
 CHARACTERS.forEach((c, i) => {
   const sheet = renderCharacter(c);
-  sheet.save(path.join(pack, 'characters', `char_${i}.png`));
-  // Same sprites for the optional overlay, so bundled characters can be replaced 1:1.
-  sheet.save(path.join(overlay, 'characters', `char_${i}.png`));
+  if (i < 6) sheet.save(path.join(overlay, 'characters', `char_${i}.png`));
+  else sheet.save(path.join(pack, 'characters', `char_${i - 6}.png`));
 });
 
 for (const item of buildFurniture()) {
@@ -32,9 +34,16 @@ for (const item of buildFurniture()) {
   for (const [name, sprite] of Object.entries(item.files)) sprite.save(path.join(dir, `${name}.png`));
 }
 
-const petDir = path.join(pack, 'pets', 'hen');
-renderChicken().save(path.join(petDir, 'pet.png'));
-fs.writeFileSync(path.join(petDir, 'manifest.json'), JSON.stringify({ id: 'hen', name: 'Clucky' }, null, 2) + '\n');
+// pixel-agents sorts external pets by folder name, after its own two: cat → petType 2, hen → petType 3.
+const PETS = [
+  ['cat', { id: 'cat', name: 'Oyen' }, renderCat],
+  ['hen', { id: 'hen', name: 'Clucky' }, renderChicken],
+];
+for (const [dir, manifest, render] of PETS) {
+  const petDir = path.join(pack, 'pets', dir);
+  render().save(path.join(petDir, 'pet.png'));
+  fs.writeFileSync(path.join(petDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+}
 
 FLOORS.forEach((make, i) => make().save(path.join(overlay, 'floors', `floor_${i}.png`)));
 
@@ -43,4 +52,4 @@ const pristine = path.join(bundledAssetsDir(root), '..', '.asaoffice-backup', 'a
 const wallSrc = fs.existsSync(pristine) ? pristine : path.join(bundledAssetsDir(root), 'walls', 'wall_0.png');
 reskinWall(Sprite.load(wallSrc)).save(path.join(overlay, 'walls', 'wall_0.png'));
 
-console.log(`Generated ${CHARACTERS.length} characters, ${buildFurniture().length} furniture items, 1 pet, ${FLOORS.length} floors, 1 wall set.`);
+console.log(`Generated ${CHARACTERS.length} characters, ${buildFurniture().length} furniture items, ${PETS.length} pets, ${FLOORS.length} floors, 1 wall set.`);
