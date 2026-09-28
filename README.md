@@ -148,8 +148,8 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
   shows how many events are on today.
 - **Holo-board:** the holographic screen above the fireplace shows today's tool-call count and the last 12
   hours. Click it for the dashboard: tool calls against your 14-day best, edits and files touched, reads and
-  searches, commands, web, sub-agents, sessions, agents active right now, activity by hour, the last 14 days,
-  and your daily streak.
+  searches, commands, web, sub-agents, sessions, agents active right now, today's tokens (output, input and how
+  much came from cache) and model mix, activity by hour, the last 14 days, and your daily streak.
 
 Existing offices need the Holo-board placed once: run `npm run layout` (it backs up your current layout first),
 or open **Layout**, find **Holo-board** among the wall items, and put it anywhere on a wall.
@@ -170,6 +170,13 @@ calendar names are in that file; the stats are counts only, with no paths, promp
 - **A bare `npx pixel-agents`** doesn't run the feed, so the calendar and Holo-board panels stay empty.
 
 ## Camera lock, notifications, task board, and day & night
+
+- **Status icons instead of labels:** pixel-agents' label panels (tool status, folder, context bar) are hidden, even
+  with **Settings → Always Show Labels** on, because they pile up when many agents work. A working villager gets a
+  small badge for what it's doing (✎ edit, 🔍 read/search, >_ command, 🌐 web, 👥 sub-agent, ⚙ other) and a blue "…"
+  while it waits for your reply; pixel-agents' own permission bubble stays. Click the villager for details: the card
+  now also shows the session it's working on (title and your last prompt, matched by project folder).
+  `&labels=full` in the URL brings the original labels back (remembered).
 
 - **Camera lock (🔒 under the zoom buttons, on by default):** the view stays centred. Clicking a villager selects it
   and shows its card without the camera chasing it, and trackpad scrolling or middle-drag doesn't pan. Zoom still

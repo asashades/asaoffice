@@ -81,7 +81,7 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
 - **Klik kalender di dinding** → kalender bulan ini, lengkap sama acara dari aplikasi **Calendar** di Mac.
   Klik tanggalnya buat lihat agenda hari itu. Angka merah di kalender = jumlah acara hari ini.
 - **Klik layar hologram di atas perapian (Holo-board)** → dashboard kerja Claude hari ini: jumlah tool call,
-  file yang diedit, command, sesi, jam tersibuk, grafik 14 hari, dan streak harian 🔥.
+  file yang diedit, command, sesi, pemakaian token dan model, jam tersibuk, grafik 14 hari, dan streak harian 🔥.
 
 Pertama kali nyalain kantor, Mac bakal nanya **"Asa Office ingin mengakses kalender"** (atau "Terminal", kalau
 kamu nyalain lewat Terminal). Klik **Izinkan** biar acara kamu muncul. Kelewat? Buka **System Settings → Privasi &
@@ -91,6 +91,11 @@ Kalau Holo-board belum ada di kantor kamu, jalanin `npm run layout` (layout lama
 **Layout**, cari **Holo-board**, terus tempel di dinding mana aja.
 
 ## Kamera, notifikasi, papan tugas, dan siang-malam 🌙
+
+- **Simbol kecil di atas villager**: label besar di atas kepala villager udah diganti simbol mungil biar kantor gak
+  penuh: ✎ lagi edit, 🔍 lagi baca/cari, >_ jalanin command, 🌐 buka web, 👥 pakai sub-agent, ⚙ lainnya, dan "…" biru
+  kalau dia nungguin balasanmu. **Klik villager-nya** buat lihat detail, termasuk dia lagi ngerjain apa dan
+  permintaan terakhirmu. Kangen label lama? Tambahin `&labels=full` di ujung link kantor.
 
 - **🔒 Kunci kamera** (di bawah tombol + / −, nyala dari awal): tampilan kantor diam di tengah. Klik villager cuma
   buka kartunya, kameranya gak ikut lari. Scroll trackpad juga gak geser kantor. Zoom tetap bisa pakai + / −.
