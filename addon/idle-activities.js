@@ -245,7 +245,7 @@
     }
     for (const id of meta.keys()) if (!office.characters.has(id)) meta.delete(id);
 
-    if (!enabled || editMode) {
+    if (!enabled || editMode || ns.pomodoro?.isBreak) { // Pomodoro break: everyone idle heads to the lounge instead
       for (const job of [...jobs.values()]) finish(office, job, { cooldown: false });
       return;
     }

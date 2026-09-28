@@ -83,14 +83,14 @@
   @keyframes asa-toast-in { from { transform: translateY(-12px); opacity: 0; } to { transform: none; opacity: 1; } }
   `;
   let box = null;
-  function toast(kind, ch, title) {
+  function toast(kind, ch, title, icon) {
     if (!box) {
       document.head.appendChild(h('style', {}, css));
       box = h('div', { class: 'asa-toasts', 'aria-live': 'polite' });
       document.body.appendChild(box);
     }
-    const el = h('div', { class: `asa-toast ${kind}`, role: 'status' }, kind === 'permission' ? '✋' : '✅', h('div', {}, title, ch.folderName ? h('small', {}, ` · ${ch.folderName}`) : null));
-    el.onclick = () => { select(ch.id); el.remove(); };
+    const el = h('div', { class: `asa-toast ${kind}`, role: 'status' }, icon ?? (kind === 'permission' ? '✋' : '✅'), h('div', {}, title, ch?.folderName ? h('small', {}, ` · ${ch.folderName}`) : null));
+    el.onclick = () => { if (ch) select(ch.id); el.remove(); };
     box.appendChild(el);
     while (box.children.length > 3) box.firstChild.remove();
     setTimeout(() => el.remove(), kind === 'permission' ? 12000 : 6000);
@@ -149,5 +149,19 @@
     for (const id of seen.keys()) if (!office.characters.has(id)) seen.delete(id);
   });
 
-  ns.notify = { test: (kind = 'permission') => { const ch = ns.view?.office?.characters.values().next().value; if (ch) announce(kind, ch); } };
+  ns.notify = {
+    test: (kind = 'permission') => { const ch = ns.view?.office?.characters.values().next().value; if (ch) announce(kind, ch); },
+    /** Office-wide message (e.g. the Pomodoro timer): toast + chime + system notification, muted by 🔕. */
+    message({ icon, title, body = '', kind = 'done' }) {
+      if (!enabled) return;
+      toast(kind, null, title, icon);
+      chime(kind);
+      navigator.vibrate?.([60, 40, 60]);
+      if (!('Notification' in window) || Notification.permission !== 'granted' || (!document.hidden && document.hasFocus())) return;
+      try {
+        const n = new Notification(title, { body, tag: `asaoffice-${title}` });
+        n.onclick = () => { window.focus(); n.close(); };
+      } catch { /* service-worker-only browsers */ }
+    },
+  };
 })();
