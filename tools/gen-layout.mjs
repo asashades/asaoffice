@@ -83,6 +83,9 @@ add('COZY_CRATE', 20, 13);
 add('COZY_FERN', 14, 12);
 add('COZY_LANTERN', 16, 12);
 
+// Added later, so earlier uids stay stable: Holo-board above the fireplace (click it for today's stats)
+add('COZY_HOLOBOARD', 17, 0);
+
 const layout = {
   version: 1,
   cols: COLS,

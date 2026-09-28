@@ -1,11 +1,12 @@
-// Installs addon/ (idle chat) into the installed pixel-agents webview: copies the scripts to
+// Installs addon/ (idle chat, villager card, calendar, Holo-board) into the installed pixel-agents webview: copies the scripts to
 // dist/webview/asaoffice/, adds <script> tags to index.html, and patches one spot in the bundle
 // so it calls window.__asaoffice.afterRender(...) after each frame. Originals go to the same
 // .asaoffice-backup folder the art overlay uses. Only the installed copy in node_modules changes.
 import fs from 'node:fs';
 import path from 'node:path';
 
-const SCRIPTS = ['idle-chat-lines.js', 'idle-chat.js'];
+// Load order matters: core.js first (settings, frame hook, panels), then the add-ons.
+const SCRIPTS = ['core.js', 'idle-chat-lines.js', 'idle-chat.js', 'villager-card.js', 'calendar.js', 'holoboard.js'];
 const HTML_MARKER = '<!-- asaoffice addon -->';
 const JS_MARKER = '/*asaoffice-hook*/';
 // pixel-agents 1.4.1 render callback: right after drawing, it stores the frame's offsets.
@@ -35,24 +36,25 @@ export function applyWebviewAddon(root, dist, backup) {
   let js = fs.readFileSync(bundle, 'utf8');
   if (!js.includes(JS_MARKER)) {
     if (js.split(ANCHOR).length !== 2) {
-      throw new Error('render hook anchor not found (pixel-agents version changed?); idle chat not installed');
+      throw new Error('render hook anchor not found (pixel-agents version changed?); office addon not installed');
     }
     backupOnce(dist, backup, bundle);
     fs.writeFileSync(bundle, js.replace(ANCHOR, HOOK));
   }
 
+  // Always rebuild index.html from the original, so the script list follows SCRIPTS.
   const htmlFile = path.join(webview, 'index.html');
-  const html = fs.readFileSync(htmlFile, 'utf8');
-  if (!html.includes(HTML_MARKER)) {
-    backupOnce(dist, backup, htmlFile);
-    const tags = SCRIPTS.map((s) => `<script src="./asaoffice/${s}"></script>`).join('\n    ');
-    fs.writeFileSync(htmlFile, html.replace('<script type="module"', `${HTML_MARKER}\n    ${tags}\n    <script type="module"`));
-  }
+  const savedHtml = path.join(backup, path.relative(dist, htmlFile));
+  if (!fs.readFileSync(htmlFile, 'utf8').includes(HTML_MARKER)) backupOnce(dist, backup, htmlFile);
+  if (!fs.existsSync(savedHtml)) throw new Error('original index.html backup missing; run `npm install` to reset pixel-agents');
+  const tags = SCRIPTS.map((s) => `<script src="./asaoffice/${s}"></script>`).join('\n    ');
+  const original = fs.readFileSync(savedHtml, 'utf8');
+  fs.writeFileSync(htmlFile, original.replace('<script type="module"', `${HTML_MARKER}\n    ${tags}\n    <script type="module"`));
 
   const out = path.join(webview, 'asaoffice');
   fs.mkdirSync(out, { recursive: true });
   for (const s of SCRIPTS) fs.copyFileSync(path.join(root, 'addon', s), path.join(out, s));
-  return `idle chat installed (${path.relative(root, out)})`;
+  return `office addon installed: idle chat, villager card, calendar, Holo-board (${path.relative(root, out)})`;
 }
 
 export function restoreWebviewAddon(dist, backup) {

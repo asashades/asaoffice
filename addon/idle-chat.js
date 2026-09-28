@@ -2,9 +2,8 @@
 // in speech bubbles, instead of only sitting or wandering alone. Anyone who gets a task leaves
 // mid-sentence, and pixel-agents' own logic walks them back to their desk.
 //
-// `npm run overlay` copies this into pixel-agents' webview and patches one line of the bundle to call
-// window.__asaoffice.afterRender(canvas, office, offsetX, offsetY, zoom, editMode) after each frame
-// is drawn. `office` is pixel-agents' OfficeState; offsets and zoom are in device pixels.
+// Runs on core.js's frame hook: (canvas, office, offsetX, offsetY, zoom, editMode) after each frame is
+// drawn. `office` is pixel-agents' OfficeState; offsets and zoom are in device pixels.
 //
 // Settings (URL param, remembered in localStorage): ?idleChat=off|on  ?chatLang=id|en
 // Console: __asaoffice.idleChat.start()  .setEnabled(false)  .setLang('en')  .conversations
@@ -13,7 +12,6 @@
   const ns = (window.__asaoffice = window.__asaoffice || {});
 
   const DIR = { DOWN: 0, LEFT: 1, RIGHT: 2, UP: 3 };
-  const VILLAGERS = ['Asa', 'Rowan', 'Clem', 'Theo', 'Mabel', 'Juno'];
   const TOOL_KIND = {
     Edit: 'edit', MultiEdit: 'edit', Write: 'edit', NotebookEdit: 'edit',
     Read: 'read',
@@ -36,27 +34,8 @@
   };
   const COLORS = { fill: '#fff6dc', border: '#5a3a22', text: '#3b2414', shadow: 'rgba(40, 24, 12, 0.28)' };
 
-  const store = {
-    get(key) {
-      try { return localStorage.getItem(`asaoffice.${key}`); } catch { return null; }
-    },
-    set(key, value) {
-      try { localStorage.setItem(`asaoffice.${key}`, value); } catch { /* private mode */ }
-    },
-  };
-  function setting(key, allowed, fallback) {
-    let fromUrl = null;
-    try { fromUrl = new URLSearchParams(location.search).get(key); } catch { /* ignore */ }
-    if (allowed.includes(fromUrl)) {
-      store.set(key, fromUrl);
-      return fromUrl;
-    }
-    const saved = store.get(key);
-    return allowed.includes(saved) ? saved : fallback;
-  }
-
-  let enabled = setting('idleChat', ['on', 'off'], 'on') === 'on';
-  let lang = setting('chatLang', ['id', 'en'], 'id');
+  let enabled = ns.setting('idleChat', ['on', 'off'], 'on') === 'on';
+  let lang = ns.lang;
 
   const meta = new Map(); // agent id -> { idleSince, cooldownUntil, lastTool }
   const convos = [];
@@ -99,7 +78,7 @@
     const tool = meta.get(ch.id)?.lastTool;
     const ctx = ch.maxContextTokens > 0 && ch.contextTokens > 0 ? Math.round((ch.contextTokens / ch.maxContextTokens) * 100) : null;
     return {
-      name: VILLAGERS[(ch.palette ?? 0) % VILLAGERS.length],
+      name: ns.villagerName(ch),
       project: ch.folderName || null,
       tool: (tool && TOOL_KIND[tool]) || null,
       ctx,
@@ -374,13 +353,18 @@
     }
   }
 
-  ns.afterRender = afterRender;
+  ns.onFrame(afterRender);
   ns.idleChat = {
     config: CFG,
     get conversations() { return convos.map((c) => ({ a: c.a, b: c.b, phase: c.phase, line: c.lines[c.line]?.text ?? null })); },
     /** Start a chat now between any two idle villagers (ignores idle time, cooldown and chance). */
     start: () => (office ? !!maybeStart(true) : false),
-    setEnabled(on) { enabled = !!on; store.set('idleChat', enabled ? 'on' : 'off'); },
-    setLang(value) { if (ns.chatLines?.[value]) { lang = value; store.set('chatLang', value); } },
+    /** Id of the villager `id` is chatting with (or walking over to), else null. */
+    partnerOf(id) {
+      const c = convos.find((x) => x.a === id || x.b === id);
+      return c ? (c.a === id ? c.b : c.a) : null;
+    },
+    setEnabled(on) { enabled = !!on; ns.store.set('idleChat', enabled ? 'on' : 'off'); },
+    setLang(value) { if (ns.chatLines?.[value]) { lang = value; ns.lang = value; ns.store.set('chatLang', value); } },
   };
 })();
