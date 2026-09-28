@@ -194,7 +194,9 @@ calendar names are in that file; the stats are counts only, with no paths, promp
   "Jalanin: npm test", "Nyari kode", "Subtugas: …" (English with `&chatLang=en`). The text comes from the same
   `agentToolStart` messages the office receives: `addon/core.js` wraps `WebSocket` before the bundle loads and hands
   every parsed message to `__asaoffice.onMessage`. A blue "Nunggu balasanmu" bubble shows while it waits for your
-  reply; pixel-agents' own permission bubble stays. Idle activities and Pomodoro breaks use the same bubbles. Click
+  reply; pixel-agents' own permission bubble stays. A session that's active with no tool running says "Mikir…"
+  (thinking), and when there are more working sessions than desks, the ones seated on a sofa get a laptop icon and
+  "Dari sofa: …" so they don't look like they're relaxing. Idle activities and Pomodoro breaks use the same bubbles. Click
   the villager for details: the card also shows the session it's working on (title and your last prompt, matched by
   project folder). `&labels=icons` switches to icon-only badges and `&labels=full` brings the original labels back
   (both remembered; `&labels=bubbles` returns to bubbles).

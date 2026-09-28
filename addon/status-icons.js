@@ -24,11 +24,13 @@
     agent: ['.##.##.', '.##.##.', '.......', '###.###', '###.###', '###.###', '.......'],
     other: ['...#...', '.#####.', '.##.##.', '###.###', '.##.##.', '.#####.', '...#...'],
     waiting: ['.......', '.......', '.......', '#.#.#..', '.......', '.......', '.......'],
+    think: ['.......', '.......', '.......', '#.#.#..', '.......', '.......', '.......'],
+    laptop: ['.......', '.#####.', '.#...#.', '.#...#.', '.#####.', '#######', '.......'],
   };
   const COLOR = { working: '#4f9a45', waiting: '#4a8ac8' };
   const S = ns.t({
-    id: { waiting: 'Nunggu balasanmu', edit: 'Ngedit', search: 'Nyari', command: 'Jalanin command', web: 'Buka web', agent: 'Sub-agent', other: 'Kerja', waitingFor: (n) => `Nunggu ${n}`, helper: 'asisten', task: (d) => `Tugas: ${d}` },
-    en: { waiting: 'Waiting for you', edit: 'Editing', search: 'Searching', command: 'Running a command', web: 'On the web', agent: 'Sub-agent', other: 'Working', waitingFor: (n) => `Waiting for ${n}`, helper: 'a helper', task: (d) => `Task: ${d}` },
+    id: { waiting: 'Nunggu balasanmu', edit: 'Ngedit', search: 'Nyari', command: 'Jalanin command', web: 'Buka web', agent: 'Sub-agent', other: 'Kerja', think: 'Mikir…', sofa: (t) => `Dari sofa: ${t}`, waitingFor: (n) => `Nunggu ${n}`, helper: 'asisten', task: (d) => `Tugas: ${d}` },
+    en: { waiting: 'Waiting for you', edit: 'Editing', search: 'Searching', command: 'Running a command', web: 'On the web', agent: 'Sub-agent', other: 'Working', think: 'Thinking…', sofa: (t) => `From the sofa: ${t}`, waitingFor: (n) => `Waiting for ${n}`, helper: 'a helper', task: (d) => `Task: ${d}` },
   });
   const MAX_CHARS = 26;
 
@@ -192,6 +194,12 @@
     return s ? translate(s) : null;
   };
 
+  function onSofa(office, ch) {
+    if (!ch.seatId || ch.state !== 'type' || ch.asaActivity) return false;
+    const uid = String(ch.seatId).split(':')[0];
+    return office.getLayout().furniture.some((f) => f.uid === uid && f.type.startsWith('COZY_SOFA'));
+  }
+
   const lastTool = new Map();
   ns.onFrame((canvas, office, offX, offY, zoom, editMode) => {
     if (editMode) return;
@@ -215,9 +223,19 @@
         color = COLOR.waiting;
         text = S.waiting;
       } else if (ch.isActive) {
-        const kind = KIND[ch.currentTool ?? lastTool.get(ch.id) ?? tools.get(ch.id)?.toolName] ?? 'other';
-        glyph = GLYPH[kind];
-        text = (ch.isSubagent ? subText(office, ch) : parentText(office, ch) ?? ns.statusText(ch.id)) || S[kind];
+        const cur = tools.get(ch.id);
+        // Active but no tool running: the model is thinking or writing its reply.
+        const thinking = !ch.isSubagent && !ch.currentTool && !(cur?.open.size > 0);
+        const kind = KIND[ch.currentTool ?? lastTool.get(ch.id) ?? cur?.toolName] ?? 'other';
+        glyph = thinking ? GLYPH.think : GLYPH[kind];
+        text = thinking
+          ? S.think
+          : (ch.isSubagent ? subText(office, ch) : parentText(office, ch) ?? ns.statusText(ch.id)) || S[kind];
+        // More sessions than desks: the extras work from a sofa seat, with a laptop.
+        if (onSofa(office, ch)) {
+          glyph = GLYPH.laptop;
+          text = S.sofa(text);
+        }
       }
       if (!glyph) continue;
       const lift = ch.state === 'type' ? 10 : 0;
