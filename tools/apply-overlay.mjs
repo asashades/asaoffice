@@ -1,9 +1,11 @@
 // Optional: swap pixel-agents' bundled-only art (floors, walls, base characters) for the
-// Stardew versions in overlay/, and install the idle-chat addon (addon/). External asset
+// Stardew versions in overlay/, and install the office addon (addon/: idle chat, villager card,
+// calendar, Holo-board). External asset
 // directories can't do either, so this patches the *installed copy* in node_modules — never
 // the pixel-agents source.
 //   node tools/apply-overlay.mjs                 apply (backs up originals once)
-//   node tools/apply-overlay.mjs --no-idle-chat  art only; also removes a previously installed addon
+//   node tools/apply-overlay.mjs --no-addon      art only; also removes a previously installed addon
+//                                                (--no-idle-chat is an older alias)
 //   node tools/apply-overlay.mjs --restore       put the originals back
 import fs from 'node:fs';
 import path from 'node:path';
@@ -17,7 +19,7 @@ const dist = pixelAgentsDist(root);
 const overlay = path.join(root, 'overlay');
 const backup = path.join(dist, '.asaoffice-backup');
 const restore = process.argv.includes('--restore');
-const idleChat = !process.argv.includes('--no-idle-chat');
+const addon = !process.argv.includes('--no-addon') && !process.argv.includes('--no-idle-chat');
 
 // The server reads dist/assets; dist/webview/assets is the webview's copy — patch both.
 const targets = [path.join(dist, 'assets'), path.join(dist, 'webview', 'assets')].filter((d) => fs.existsSync(d));
@@ -50,14 +52,14 @@ for (const target of targets) {
   }
 }
 
-if (restore || !idleChat) {
+if (restore || !addon) {
   const n = restoreWebviewAddon(dist, backup);
   if (restore) changed += n;
 } else {
   try {
     console.log(applyWebviewAddon(root, dist, backup));
   } catch (err) {
-    console.warn(`Skipped idle chat: ${err.message}`);
+    console.warn(`Skipped the office addon: ${err.message}`);
   }
 }
 

@@ -21,7 +21,26 @@ perintah, paste di Terminal (⌘V), terus tekan **Enter**.
    brew install cloudflared
    ```
 
-## Tiap hari: 3 tab Terminal
+## Paling gampang: app Asa Office 🏡
+
+Sekali aja, bikin app-nya:
+```
+cd ~/asaoffice
+npm run app
+```
+Terus buka **Asa Office** lewat Spotlight (⌘ Spasi, ketik `Asa Office`). Biar gampang, klik kanan ikonnya di Dock →
+**Options → Keep in Dock**.
+
+- **Klik ikonnya** → kantor nyala sendiri di background, terus kebuka di jendela sendiri. Gak perlu Terminal,
+  gak perlu copy link.
+- Jendelanya ketutup? Klik lagi ikon Asa Office di Dock.
+- **Mau matiin kantor?** Klik kanan ikon Asa Office di Dock → **Quit** (atau ⌘Q).
+- Pertama kali, Mac bakal nanya **"Asa Office ingin mengakses kalender"**. Klik **Izinkan**.
+- Pindahin folder `asaoffice` atau update Node.js? Jalanin `npm run app` lagi.
+
+Tab 2 (ngobrol sama Claude) tetap pakai Terminal atau Claude Desktop seperti biasa.
+
+## Cara manual: 3 tab Terminal
 
 Buka tab baru di Terminal pakai **⌘T**. Semua tab-nya harus tetap kebuka selama kamu pakai.
 
@@ -55,6 +74,22 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
 - Mau obrolannya pakai bahasa Inggris? Tambahin `&chatLang=en` di ujung link kantor.
 - Mau dimatiin? Tambahin `&idleChat=off` di ujung link kantor. Nyalain lagi pakai `&idleChat=on`.
 
+## Kartu villager, kalender, dan Holo-board 🗓️
+
+- **Klik villager** → muncul kartu di pojok kanan atas: namanya, lagi ngapain (kerja pakai tool apa, nunggu
+  izin, ngobrol sama siapa, atau santai), proyeknya, tool terakhir, dan isi context-nya. Klik lagi buat nutup.
+- **Klik kalender di dinding** → kalender bulan ini, lengkap sama acara dari aplikasi **Calendar** di Mac.
+  Klik tanggalnya buat lihat agenda hari itu. Angka merah di kalender = jumlah acara hari ini.
+- **Klik layar hologram di atas perapian (Holo-board)** → dashboard kerja Claude hari ini: jumlah tool call,
+  file yang diedit, command, sesi, jam tersibuk, grafik 14 hari, dan streak harian 🔥.
+
+Pertama kali nyalain kantor, Mac bakal nanya **"Asa Office ingin mengakses kalender"** (atau "Terminal", kalau
+kamu nyalain lewat Terminal). Klik **Izinkan** biar acara kamu muncul. Kelewat? Buka **System Settings → Privasi &
+Keamanan → Kalender**, nyalain Asa Office (atau Terminal), terus matiin dan nyalain lagi kantornya.
+
+Kalau Holo-board belum ada di kantor kamu, jalanin `npm run layout` (layout lama otomatis di-backup), atau klik
+**Layout**, cari **Holo-board**, terus tempel di dinding mana aja.
+
 ## Kalau ada masalah
 
 | Masalah | Solusi |
@@ -63,6 +98,8 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
 | Karakter gak muncul | Buka **Settings**, pastiin **Instant Detection (Hooks)** dan **Watch All Sessions** udah ON. Terus di tab Claude ketik `/exit`, jalanin `claude` lagi, dan kasih dia tugas baca file. |
 | `Stop hook error: … SuperIsland …` | Ini dari aplikasi lain, bukan dari kantor pixel, dan gak ganggu apa-apa. Cara ngilanginnya: minta Claude hapus hook SuperIsland di `~/.claude/settings.json` (suruh dia backup file-nya dulu). |
 | Abis restart kantor, karakternya ilang | Normal. Karakter baru muncul lagi setelah sesi Claude-nya ngapa-ngapain. Kasih tugas atau kirim pesan di sesi itu. Jangan lupa buka link **baru** dari tab 1, soalnya token-nya ganti tiap restart. |
+| Kalender atau Holo-board kosong | Kantornya harus dinyalain pakai app Asa Office atau `npm --prefix ~/asaoffice run office` (tab 1). Tunggu semenit, terus klik lagi. Pesan di panel kalender bakal ngasih tahu kalau izin Kalender belum dikasih. |
+| App Asa Office gak mau kebuka | Lihat catatannya di `~/Library/Logs/asaoffice/office.log`, atau jalanin `npm run app` lagi. |
 | Link di HP gak kebuka lagi | Link-nya ganti tiap kali tunnel dinyalain ulang. Jalanin lagi tab 3, lalu scan QR yang baru. |
 | Tampilannya balik ke kantor abu-abu | Abis `npm install`, jalanin `npm run overlay`, terus restart tab 1. |
 

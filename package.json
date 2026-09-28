@@ -17,7 +17,8 @@
     "office": "node tools/office.mjs",
     "tunnel": "node tools/tunnel.mjs",
     "preview": "node tools/preview.mjs",
-    "layout": "node tools/install-layout.mjs"
+    "layout": "node tools/install-layout.mjs",
+    "app": "node tools/install-app.mjs"
   },
   "devDependencies": {
     "pngjs": "^7.0.0"

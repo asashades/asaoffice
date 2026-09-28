@@ -412,6 +412,21 @@ function painting2x2() {
   return s.outline(OUT);
 }
 
+// A slim holographic wall display. The addon animates the screen and shows live stats on it.
+function holoboard2x2() {
+  const s = new Sprite(32, 32);
+  const H = { bezel: '#2f3542', bezelL: '#4a5263', screen: '#0c2533', glow: '#5ff3ff', glowD: '#2aa7bd', dim: '#1b4a5c' };
+  s.rect(2, 4, 28, 19, H.bezel).hline(2, 4, 28, H.bezelL);
+  s.rect(4, 6, 24, 15, H.screen);
+  s.hline(6, 8, 9, H.glow).hline(6, 10, 14, H.glowD).hline(6, 12, 6, H.glowD);
+  for (const [x, h] of [[18, 3], [20, 5], [22, 4], [24, 6]]) s.rect(x, 19 - h, 1, h, H.glowD);
+  for (let y = 7; y < 21; y += 2) s.hline(4, y, 24, H.dim);
+  s.set(26, 7, H.glow);
+  // Emitter bar under the screen
+  s.rect(10, 23, 12, 2, H.bezelL).hline(12, 25, 8, H.glowD).hline(14, 26, 4, H.glow);
+  return s.outline(OUT);
+}
+
 function fireplace() {
   const s = new Sprite(32, 32);
   const r = rng(21);
@@ -652,6 +667,7 @@ export function buildFurniture() {
   single('COZY_PAINTING', 'Farm Painting', 'wall', painting2x2(), [2, 2], { wall: true });
   single('COZY_CLOCK', 'Pendulum Clock', 'wall', stampItem('clock', 16, 32, { W: C.w3, w: C.w4, C: C.cream, k: C.ink, Y: C.gold, y: C.goldS }, 1), [1, 2], { wall: true });
   single('COZY_CALENDAR', 'Wall Calendar', 'wall', stampItem('calendar', 16, 32, { r: C.redS, R: C.red, C: C.cream, c: C.creamS, k: C.w4 }, 3), [1, 2], { wall: true });
+  single('COZY_HOLOBOARD', 'Holo-board', 'wall', holoboard2x2(), [2, 2], { wall: true });
   single('COZY_FIREPLACE', 'Stone Fireplace', 'decor', fireplace(), [2, 2], { bg: 1 });
   single('COZY_SUNFLOWER', 'Potted Sunflower', 'decor', stampItem('sunflower', 16, 32, pot, 13), [1, 2], { bg: 1 });
   single('COZY_FERN', 'Potted Fern', 'decor', stampItem('fern', 16, 32, pot, 16), [1, 2], { bg: 1 });
