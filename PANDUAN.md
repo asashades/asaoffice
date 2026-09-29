@@ -193,6 +193,11 @@ Sekarang kamu bisa **nyuruh Claude langsung dari kantor**, gak perlu buka Termin
 
 **Ngikutin progres:** selama tugas jalan, suratnya nunjukin apa yang lagi dikerjain ("⏳ Baca app.js", "⏳ Jalanin: npm test"). Di tiap surat ada tombol **📋 Salin perintah Terminal**: tempel di Terminal buat lanjut ngobrol di sesi yang sama. Tugas dari kotak surat jalan di belakang layar, jadi **gak muncul di daftar sesi Claude Desktop**. Ngikutinnya lewat kantor dan kotak surat. Pakai jatah akun `claude` di Mac kamu (Pro), kecuali ada `ANTHROPIC_API_KEY` yang aktif. Cek: `echo $ANTHROPIC_API_KEY` (kosong = aman).
 
+**Biar gak bingung sesi yang mana:**
+- Tiap surat dapet **judul otomatis** dari kalimat pertama tugasmu. Mau ganti? Ketik langsung di kotak judul dalam surat.
+- Di kotak surat ada dua tab. **📮 Surat** buat surat-suratmu, lengkap dengan kotak cari dan filter (status, proyek, orang). **🗂 Semua sesi** nunjukin semua sesi Claude Code di Mac ini 30 hari terakhir, baik dari Terminal, Desktop, maupun kotak surat. Ada judul, folder, pesan terakhir, dan kapan terakhir aktif ("● lagi jalan" kalau aktif dalam 90 detik terakhir). Klik **📋 Salin** buat dapet perintah lanjut di Terminal.
+- **Daftar proyek** di form tugas diambil dari folder yang dipakai Claude Code di Mac kamu dalam 45 hari terakhir (maksimal 15, plus folder workspace kantor), sekarang lengkap sama path-nya.
+
 **Batasan biar aman:**
 - Tugas cuma boleh ngelakuin hal sesuai jabatannya. Pip dan Gus cuma baca. Wren dan Bayu boleh ngedit dan jalanin
   test. Command lain ditolak otomatis, jadi Claude gak bakal nanya-nanya izin di tengah jalan.

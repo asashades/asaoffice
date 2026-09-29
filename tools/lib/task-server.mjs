@@ -67,6 +67,12 @@ export function allowedTools(access) {
   return [...set].flatMap((a) => TOOLS[a] ?? []);
 }
 
+/** A short letter title from the task text (the first line, cut at a word). */
+const titleOf = (prompt) => {
+  const line = String(prompt).split('\n').find((l) => l.trim())?.replace(/\s+/g, ' ').trim() ?? '';
+  return line.length > 50 ? `${line.slice(0, 49).replace(/\s+\S*$/, '')}…` : line;
+};
+
 /** What a tool call is doing, phrased like pixel-agents' own status lines (the office translates them). */
 export function progressOf(block) {
   const i = block.input ?? {};
@@ -283,7 +289,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (!safeEqual(req.headers.authorization ?? '', `Bearer ${token}`)) return send(res, 401, { error: 'token' }, origin);
 
     const url = new URL(req.url, 'http://x');
-    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject))?$/.exec(url.pathname);
+    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject|rename))?$/.exec(url.pathname);
     try {
       if (req.method === 'GET' && url.pathname === '/api/options') {
         const r = roster();
@@ -311,7 +317,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const letter = {
           id: crypto.randomUUID().slice(0, 8), agent, name: member?.name ?? null, cwd: dir.cwd, project: dir.name,
           sessionId: crypto.randomUUID(), status: 'running', read: true, createdAt: new Date().toISOString(),
-          mode, style, phase: mode === 'plan' ? 'plan' : 'work',
+          title: titleOf(prompt), mode, style, phase: mode === 'plan' ? 'plan' : 'work',
           thread: [{ from: 'you', text: prompt, at: new Date().toISOString() }],
         };
         letters.unshift(letter);
@@ -350,6 +356,13 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         letter.thread.push({ from: 'you', text: '✅ Disetujui, silakan jalan.', at, kind: 'approve' });
         letter.phase = 'work';
         run(letter, 'Komisaris menyetujui rencananya. Kerjakan sekarang sesuai rencana, cek hasilnya, lalu tulis Laporan untuk Komisaris.', { resume: true });
+        return send(res, 200, { letter }, origin);
+      }
+      if (req.method === 'POST' && m?.[2] === 'rename') {
+        const title = String((await readBody(req)).title ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
+        if (!title) return send(res, 400, { error: 'title' }, origin);
+        letter.title = title;
+        save();
         return send(res, 200, { letter }, origin);
       }
       if (req.method === 'POST' && m?.[2] === 'read') {

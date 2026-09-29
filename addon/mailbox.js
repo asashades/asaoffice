@@ -40,6 +40,11 @@
       progress: (t) => `⏳ ${t}`, starting: '⏳ Lagi mulai…', writing: 'Nulis jawaban',
       copyCmd: '📋 Salin perintah Terminal', copied: '✅ Tersalin! Tempel di Terminal',
       copyNote: 'Buat lanjut ngobrol di sesi yang sama dari Terminal.',
+      tabLetters: '📮 Surat', tabSessions: '🗂 Semua sesi', search: 'Cari judul, proyek, atau isi…',
+      fAll: 'Semua', fRunning: '⏳ Jalan', fAwaiting: '📝 Nunggu', fDone: '✅ Selesai', allProjects: 'Semua proyek', allWho: 'Semua orang',
+      noMatch: 'Gak ada yang cocok.', noSessions: 'Belum ada sesi Claude Code di Mac ini.', live: '● lagi jalan', ago: (m) => (m < 1 ? 'barusan' : m < 60 ? `${m} mnt lalu` : m < 1440 ? `${Math.round(m / 60)} jam lalu` : `${Math.round(m / 1440)} hari lalu`),
+      fromMailbox: '📮 dari kotak surat', sessionsNote: 'Semua sesi Claude Code di Mac ini (Terminal, Desktop, dan kotak surat), 30 hari terakhir.',
+      rename: 'Judul surat', copySmall: '📋 Salin', copiedSmall: '✅',
     },
     en: {
       title: 'Mailbox', compose: '✉️ New task', back: '← Back', empty: 'No letters yet. Send your first task with the button above!',
@@ -71,6 +76,11 @@
       progress: (t) => `⏳ ${t}`, starting: '⏳ Starting…', writing: 'Writing the answer',
       copyCmd: '📋 Copy Terminal command', copied: '✅ Copied! Paste it in Terminal',
       copyNote: 'To keep talking in the same session from Terminal.',
+      tabLetters: '📮 Letters', tabSessions: '🗂 All sessions', search: 'Search title, project or text…',
+      fAll: 'All', fRunning: '⏳ Running', fAwaiting: '📝 Waiting', fDone: '✅ Finished', allProjects: 'All projects', allWho: 'Everyone',
+      noMatch: 'Nothing matches.', noSessions: 'No Claude Code sessions on this Mac yet.', live: '● running now', ago: (m) => (m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`),
+      fromMailbox: '📮 from the mailbox', sessionsNote: 'Every Claude Code session on this Mac (Terminal, Desktop and the mailbox), last 30 days.',
+      rename: 'Letter title', copySmall: '📋 Copy', copiedSmall: '✅',
     },
   });
 
@@ -99,6 +109,18 @@
   .asa-msg.you { background: #e6f0d8; border-color: #9ab87a; align-self: flex-end; max-width: 85%; }
   .asa-msg small { display: block; opacity: 0.6; font-size: 11px; margin-bottom: 3px; }
   .asa-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .asa-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .asa-tabs .asa-btn.on { background: #744122; color: #fff6dc; }
+  .asa-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .asa-filters input, .asa-filters select { font: inherit; font-size: 13px; padding: 4px 6px; background: #fffbe9; color: #3a2117;
+    border: 2px solid #744122; box-sizing: border-box; min-width: 0; }
+  .asa-filters input { flex: 1 1 100%; }
+  .asa-filters select { flex: 1 1 120px; }
+  .asa-chip { font: inherit; font-size: 12px; padding: 3px 8px; background: #fffbe9; color: #3a2117; border: 2px solid #d9c49a; cursor: pointer; }
+  .asa-chip.on { border-color: #744122; background: #f4e6c4; }
+  .asa-live { color: #3f8a36; }
+  .asa-title-input { width: 100%; font: inherit; font-size: 14px; padding: 4px 6px; margin-top: 8px; background: #fffbe9; color: #3a2117;
+    border: 2px solid #d9c49a; box-sizing: border-box; }
   .asa-msg.plan { border-color: #4a8ac8; box-shadow: inset 3px 0 0 #4a8ac8; }
   .asa-msg em { display: block; font-style: normal; font-weight: bold; margin-bottom: 4px; }
   `;
@@ -183,24 +205,101 @@
     return !!ok;
   }
 
-  function listView(body) {
-    const top = h('div', { class: 'asa-mail-top' },
-      h('span', { class: 'asa-muted' }, ''),
-      h('button', { type: 'button', class: 'asa-btn primary', onclick: () => go({ name: 'compose' }) }, S.compose));
-    body.append(top);
-    const all = letters();
-    if (!all.length) return body.append(h('p', { class: 'asa-muted' }, S.empty));
-    body.append(h('div', { class: 'asa-letters' }, all.map((l) => {
-      const first = l.report ? S.report : l.thread?.[0]?.text ?? '';
+  // ── Letters and sessions lists ──
+  let tab = 'letters';
+  const filter = { status: 'all', project: '', who: '', q: '' };
+  const home = (p) => String(p ?? '').replace(/^\/(Users|home)\/[^/]+/, '~');
+  const letterTitle = (l) => l.title || (l.thread?.[0]?.text ?? '').split('\n')[0].slice(0, 50) || who(l);
+  const statusGroup = (l) => (l.status === 'running' ? 'running' : l.status === 'awaiting' ? 'awaiting' : 'done');
+  const has = (text, q) => String(text ?? '').toLowerCase().includes(q);
+
+  function letterRows(container) {
+    const q = filter.q.trim().toLowerCase();
+    const all = letters().filter((l) => {
+      if (l.report) return filter.status === 'all' && !filter.project && !filter.who && !q;
+      if (filter.status !== 'all' && statusGroup(l) !== filter.status) return false;
+      if (filter.project && l.cwd !== filter.project) return false;
+      if (filter.who && (l.agent ?? '') !== filter.who) return false;
+      return !q || [letterTitle(l), l.project, who(l), ...(l.thread ?? []).map((m) => m.text)].some((t) => has(t, q));
+    });
+    container.replaceChildren(...(all.length ? all.map((l) => {
       const status = l.report ? '' : S[l.status] ?? '';
-      const line = l.status === 'running' ? progressText(l) : first;
       return h('button', { type: 'button', class: `asa-letter${l.read || l.status === 'running' ? '' : ' unread'}`, onclick: () => go({ name: 'letter', id: l.id }) },
         face(l),
         h('div', { class: 'asa-letter-body' },
-          h('b', {}, `${who(l)}${l.project ? ` · ${l.project}` : ''}`),
-          h('div', {}, line)),
-        h('div', { class: 'asa-letter-status' }, status || (l.report ? l.day : '')));
-    })));
+          h('b', {}, l.report ? S.report : letterTitle(l)),
+          h('div', {}, l.report ? l.day : [who(l), l.project, l.createdAt ? timeOf(l.createdAt) : null].filter(Boolean).join(' · ')),
+          l.status === 'running' ? h('div', {}, progressText(l)) : null),
+        h('div', { class: 'asa-letter-status' }, status));
+    }) : [h('p', { class: 'asa-muted' }, letters().length ? S.noMatch : S.empty)]));
+  }
+
+  function sessionRows(container) {
+    const q = filter.q.trim().toLowerCase();
+    const byId = new Map((ns.data?.mail ?? []).map((l) => [l.sessionId, l]));
+    const rows = (ns.data?.sessions ?? []).filter((x) => (!filter.project || x.cwd === filter.project) &&
+      (!q || [x.title, x.prompt, x.project, x.cwd].some((t) => has(t, q))));
+    const now = Date.now();
+    container.replaceChildren(...(rows.length ? rows.map((x) => {
+      const letter = byId.get(x.id);
+      const mins = Math.max(0, Math.round((now - Date.parse(x.at)) / 60_000));
+      const live = now - Date.parse(x.at) < 90_000;
+      const btn = h('button', { type: 'button', class: 'asa-chip', title: terminalCommand({ cwd: x.cwd, sessionId: x.id }) }, S.copySmall);
+      btn.onclick = async (e) => {
+        e.stopPropagation();
+        if (await copyText(terminalCommand({ cwd: x.cwd, sessionId: x.id }))) {
+          btn.textContent = S.copiedSmall;
+          setTimeout(() => { btn.textContent = S.copySmall; }, 2000);
+        }
+      };
+      const row = h('div', { class: 'asa-letter', style: { cursor: letter ? 'pointer' : 'default' } },
+        h('div', { class: 'asa-face envelope' }, letter ? '📮' : '💬'),
+        h('div', { class: 'asa-letter-body' },
+          h('b', {}, (letter ? letterTitle(letter) : x.title) || x.project || x.id.slice(0, 8)),
+          h('div', { title: x.cwd ?? '' }, [x.project, x.cwd ? home(x.cwd) : null].filter(Boolean).join(' · ')),
+          h('div', {}, x.prompt && x.prompt !== x.title ? x.prompt : (letter ? S.fromMailbox : ''))),
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' } },
+          h('span', { class: `asa-letter-status${live ? ' asa-live' : ''}` }, live ? S.live : S.ago(mins)), x.cwd ? btn : null));
+      if (letter) row.onclick = () => go({ name: 'letter', id: letter.id });
+      return row;
+    }) : [h('p', { class: 'asa-muted' }, ns.data?.sessions?.length ? S.noMatch : S.noSessions)]));
+  }
+
+  function listView(body) {
+    body.append(h('div', { class: 'asa-mail-top' },
+      h('div', { class: 'asa-tabs' },
+        ['letters', 'sessions'].map((t) => h('button', { type: 'button', class: `asa-btn${tab === t ? ' on' : ''}`, onclick: () => { tab = t; filter.project = ''; filter.who = ''; rerender(); } },
+          t === 'letters' ? S.tabLetters : S.tabSessions))),
+      h('button', { type: 'button', class: 'asa-btn primary', onclick: () => go({ name: 'compose' }) }, S.compose)));
+    const rows = h('div', { class: 'asa-letters' });
+    const refill = () => (tab === 'letters' ? letterRows(rows) : sessionRows(rows));
+    const search = h('input', { type: 'search', placeholder: S.search, value: filter.q });
+    search.oninput = () => { filter.q = search.value; refill(); };
+    const filters = h('div', { class: 'asa-filters' }, search);
+    const select = (label, key, options) => {
+      const el = h('select', {}, h('option', { value: '' }, label), options.map(([v, t]) => h('option', { value: v }, t)));
+      el.value = filter[key];
+      el.onchange = () => { filter[key] = el.value; refill(); };
+      return el;
+    };
+    const projects = tab === 'letters'
+      ? [...new Map(letters().filter((l) => l.cwd).map((l) => [l.cwd, l.project])).entries()]
+      : [...new Map((ns.data?.sessions ?? []).filter((x) => x.cwd).map((x) => [x.cwd, `${x.project} — ${home(x.cwd)}`])).entries()];
+    if (tab === 'letters') {
+      const chips = h('div', { style: { display: 'flex', gap: '6px', flexWrap: 'wrap', flex: '1 1 100%' } },
+        [['all', S.fAll], ['running', S.fRunning], ['awaiting', S.fAwaiting], ['done', S.fDone]].map(([v, t]) => {
+          const c = h('button', { type: 'button', class: `asa-chip${filter.status === v ? ' on' : ''}` }, t);
+          c.onclick = () => { filter.status = v; chips.querySelectorAll('.asa-chip').forEach((el) => el.classList.toggle('on', el === c)); refill(); };
+          return c;
+        }));
+      const people = [...new Map(letters().filter((l) => !l.report).map((l) => [l.agent ?? '', who(l)])).entries()];
+      filters.append(chips, select(S.allProjects, 'project', projects), select(S.allWho, 'who', people));
+    } else {
+      filters.append(select(S.allProjects, 'project', projects));
+      body.append(h('div', { class: 'asa-note' }, S.sessionsNote));
+    }
+    body.append(filters, rows);
+    refill();
   }
 
   function letterView(body, id) {
@@ -215,6 +314,9 @@
       h('div', {}, h('div', { style: { fontSize: '17px' } }, who(l)),
         h('div', { class: 'asa-muted' }, [m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.createdAt ? timeOf(l.createdAt) : l.day].filter(Boolean).join(' · ')))));
     if (l.report) return body.append(h('div', { class: 'asa-thread' }, h('div', { class: 'asa-msg' }, l.text)));
+    const titleBox = h('input', { class: 'asa-title-input', value: letterTitle(l), maxlength: '80', title: S.rename, 'aria-label': S.rename });
+    titleBox.onchange = () => { if (titleBox.value.trim()) act(() => api('POST', `/api/tasks/${l.id}/rename`, { title: titleBox.value.trim() })); };
+    body.append(titleBox);
     const director = isDirector(l.agent);
     const label = (msg) => (msg.from === 'you' ? null : msg.kind === 'plan' ? S.planLabel : director && msg.kind ? S.reportLabel : null);
     body.append(h('div', { class: 'asa-thread' }, (l.thread ?? []).map((msg) =>
@@ -267,7 +369,7 @@
       options.staff.map((m) => h('option', { value: m.agent }, `${m.name} — ${pick(m.role)}`)));
     if (draft.agent === null) draft.agent = options.staff.find((m) => m.director)?.agent ?? '';
     whoSel.value = draft.agent;
-    const projSel = h('select', {}, options.projects.map((p) => h('option', { value: p.cwd, title: p.cwd }, p.name)));
+    const projSel = h('select', {}, options.projects.map((p) => h('option', { value: p.cwd, title: p.cwd }, `${p.name} — ${home(p.cwd)}`)));
     projSel.value = draft.cwd;
     const text = h('textarea', { placeholder: S.placeholder, rows: '5' });
     text.value = draft.prompt;
@@ -381,7 +483,7 @@
     ns.refreshData().then(rerender);
     // While open, keep running tasks' letters fresh (but don't wipe what you're typing).
     timer = setInterval(() => {
-      if (view.name === 'compose' || document.activeElement?.tagName === 'TEXTAREA') return;
+      if (view.name === 'compose' || ['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement?.tagName)) return;
       ns.refreshData().then(rerender);
     }, 4000);
   }

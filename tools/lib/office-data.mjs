@@ -82,7 +82,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
 
   const stats = new ClaudeStats();
   const data = {
-    version: 1, generatedAt: null, stats: null, tasks: [], subagents: {}, staff: [], mail: [], taskAgents: {}, taskServer: null,
+    version: 1, generatedAt: null, stats: null, tasks: [], sessions: [], subagents: {}, staff: [], mail: [], taskAgents: {}, taskServer: null,
     calendar: { status: calendar ? 'loading' : 'off', events: [] },
   };
   // Staff roster, with which members are installed as Claude Code subagents (npm run staff).
@@ -109,6 +109,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
     try {
       data.stats = stats.scan();
       data.tasks = stats.tasks();
+      data.sessions = stats.listSessions();
       data.subagents = stats.spawns();
       data.staff = readStaff();
       lastSpawns = stats.spawnsVersion;
@@ -126,6 +127,11 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
       if (stats.spawnsVersion !== lastSpawns) {
         lastSpawns = stats.spawnsVersion;
         data.subagents = stats.spawns();
+        changed = true;
+      }
+      const sessions = stats.listSessions();
+      if (JSON.stringify(sessions) !== JSON.stringify(data.sessions)) {
+        data.sessions = sessions;
         changed = true;
       }
       if (taskApi) {

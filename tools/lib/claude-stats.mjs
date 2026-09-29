@@ -5,6 +5,8 @@
 //                prompts or project names)
 //   tasks()    — the task board: each session active in the last day with its title, last prompt,
 //                project folder name, today's tool calls and edited files, and its TodoWrite list if any
+//   sessions() — every main session of the last weeks (also chat-only ones): id, title, first and last prompt,
+//                folder and how recently it was active, for the mailbox's "Semua sesi" tab
 //   spawns()   — { toolUseId: subagent_type } for Agent/Task calls in the last few hours, so the office can
 //                tell which staff member (staff/roster.json) a freshly spawned sub-agent is
 import fs from 'node:fs';
@@ -41,7 +43,7 @@ export class ClaudeStats {
   session(id) {
     let s = this.sessions.get(id);
     if (!s) {
-      s = { title: null, aiTitle: null, prompt: null, project: null, lastAt: 0, todos: null, todosAt: 0, day: null, tools: 0, files: new Set() };
+      s = { title: null, aiTitle: null, prompt: null, first: null, main: false, fileAt: 0, project: null, lastAt: 0, todos: null, todosAt: 0, day: null, tools: 0, files: new Set() };
       this.sessions.set(id, s);
     }
     return s;
@@ -139,6 +141,24 @@ export class ClaudeStats {
     }
   }
 
+  /** Folder and first prompt of a main transcript, found in its first few lines (chat-only sessions have no tool calls). */
+  peek(line, sessionId) {
+    const s = this.session(sessionId);
+    if (!s.cwd) {
+      const m = /"cwd":"((?:[^"\\]|\\.)*)"/.exec(line);
+      if (m) {
+        try { s.cwd = JSON.parse(`"${m[1]}"`); s.project = path.basename(s.cwd); } catch { /* odd path */ }
+      }
+    }
+    if (!s.first && line.includes('"type":"user"') && !line.includes('"isMeta":true') && !line.includes('"isSidechain":true')) {
+      try {
+        const c = JSON.parse(line).message?.content;
+        const text = (typeof c === 'string' ? c : (c ?? []).filter((b) => b?.type === 'text').map((b) => b.text).join(' ')).replace(/\s+/g, ' ').trim();
+        if (text && !text.startsWith('<')) s.first = text.length > 200 ? `${text.slice(0, 199)}…` : text;
+      } catch { /* not a message */ }
+    }
+  }
+
   handleTitle(line) {
     let rec;
     try { rec = JSON.parse(line); } catch { return; }
@@ -171,10 +191,23 @@ export class ClaudeStats {
       }));
   }
 
+  /** Main sessions active in the last `days`, most recent first. */
+  listSessions(limit = 40, days = 30) {
+    const since = Date.now() - days * 86_400_000;
+    return [...this.sessions.entries()]
+      .filter(([, s]) => s.main && Math.max(s.lastAt, s.fileAt) >= since)
+      .sort((a, b) => Math.max(b[1].lastAt, b[1].fileAt) - Math.max(a[1].lastAt, a[1].fileAt))
+      .slice(0, limit)
+      .map(([id, s]) => ({
+        id, title: s.title || s.aiTitle || s.first || null, prompt: s.prompt || s.first || null, project: s.project ?? null, cwd: s.cwd ?? null,
+        at: new Date(Math.max(s.lastAt, s.fileAt)).toISOString(),
+      }));
+  }
+
   /** Folders Claude Code worked in recently, most recent first: [{ name, cwd }]. Tasks may only run in these. */
   projects(limit = 15) {
     const seen = new Map();
-    for (const s of [...this.sessions.values()].sort((a, b) => b.lastAt - a.lastAt)) {
+    for (const s of [...this.sessions.values()].sort((a, b) => Math.max(b.lastAt, b.fileAt) - Math.max(a.lastAt, a.fileAt))) {
       if (s.cwd && !seen.has(s.cwd)) seen.set(s.cwd, { name: path.basename(s.cwd), cwd: s.cwd });
     }
     return [...seen.values()].slice(0, limit);
@@ -190,7 +223,12 @@ export class ClaudeStats {
     let st = this.files.get(file);
     if (!st) this.files.set(file, (st = { offset: 0, rest: Buffer.alloc(0) }));
     let size;
-    try { size = fs.statSync(file).size; } catch { this.files.delete(file); return; }
+    let mtime = 0;
+    // Main transcripts are <root>/<project>/<sessionId>.jsonl; sub-agent transcripts sit deeper.
+    const rel = path.relative(this.root, file).split(path.sep);
+    const sessionId = rel.length === 2 ? rel[1].replace(/\.jsonl$/, '') : null;
+    try { const stat = fs.statSync(file); size = stat.size; mtime = stat.mtimeMs; } catch { this.files.delete(file); return; }
+    if (sessionId) Object.assign(this.session(sessionId), { main: true, fileAt: Math.max(this.session(sessionId).fileAt, mtime) });
     if (size < st.offset) { st.offset = size; st.rest = Buffer.alloc(0); } // truncated/rewritten: skip ahead
     if (size === st.offset) return;
     const fd = fs.openSync(file, 'r');
@@ -203,7 +241,11 @@ export class ClaudeStats {
         let data = st.rest.length ? Buffer.concat([st.rest, buf.subarray(0, n)]) : buf.subarray(0, n);
         let start = 0;
         for (let nl = data.indexOf(10, start); nl !== -1; nl = data.indexOf(10, start)) {
-          if (nl > start) this.handleLine(data.toString('utf8', start, nl), cutoffMs);
+          if (nl > start) {
+            const line = data.toString('utf8', start, nl);
+            if (sessionId && (!this.session(sessionId).cwd || !this.session(sessionId).first)) this.peek(line, sessionId);
+            this.handleLine(line, cutoffMs);
+          }
           start = nl + 1;
         }
         st.rest = Buffer.from(data.subarray(start));
@@ -220,7 +262,7 @@ export class ClaudeStats {
     const cutoffMs = cutoff.getTime();
     for (const file of this.listTranscripts(this.root, cutoffMs)) this.readNew(file, cutoffMs);
     for (const key of this.perDay.keys()) if (key < localDay(cutoff)) this.perDay.delete(key);
-    for (const [id, s] of this.sessions) if (s.lastAt && s.lastAt < cutoffMs) this.sessions.delete(id);
+    for (const [id, s] of this.sessions) if (Math.max(s.lastAt, s.fileAt) < cutoffMs) this.sessions.delete(id);
     return this.snapshot(now);
   }
 
