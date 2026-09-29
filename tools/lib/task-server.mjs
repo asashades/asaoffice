@@ -67,6 +67,26 @@ export function allowedTools(access) {
   return [...set].flatMap((a) => TOOLS[a] ?? []);
 }
 
+/** What a tool call is doing, phrased like pixel-agents' own status lines (the office translates them). */
+export function progressOf(block) {
+  const i = block.input ?? {};
+  const base = (f) => (f ? path.basename(String(f)) : '');
+  switch (block.name) {
+    case 'Read': return `Reading ${base(i.file_path)}`.trim();
+    case 'Edit': case 'MultiEdit': return `Editing ${base(i.file_path)}`.trim();
+    case 'Write': return `Writing ${base(i.file_path)}`.trim();
+    case 'NotebookEdit': return 'Editing notebook';
+    case 'Bash': return `Running: ${String(i.command ?? '').replace(/\s+/g, ' ').slice(0, 60)}`;
+    case 'Grep': return 'Searching code';
+    case 'Glob': case 'LS': return 'Searching files';
+    case 'WebFetch': return 'Fetching web content';
+    case 'WebSearch': return 'Searching the web';
+    case 'Task': case 'Agent': return `Subtask: ${String(i.description ?? '').slice(0, 50)}`;
+    case 'TodoWrite': return 'Planning';
+    default: return block.name ? `Using ${block.name}` : null;
+  }
+}
+
 /** Finds the claude CLI even when started from the Mac app, whose PATH is minimal. */
 function findClaude() {
   if (process.env.CLAUDE_BIN) return process.env.CLAUDE_BIN;
@@ -177,9 +197,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     running.set(letter.id, child);
     letter.status = 'running';
     letter.error = null;
+    delete letter.progress;
     save();
 
     let buf = '';
+    let lastProgressSave = 0;
     let lastText = '';
     let result = null;
     let stderr = '';
@@ -192,8 +214,15 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         let msg;
         try { msg = JSON.parse(line); } catch { continue; }
         if (msg.type === 'assistant') {
-          const t = (msg.message?.content ?? []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
+          const blocks = msg.message?.content ?? [];
+          const t = blocks.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
           if (t) lastText = t;
+          const tool = blocks.filter((b) => b.type === 'tool_use').map(progressOf).filter(Boolean).pop();
+          const next = tool ?? (t ? 'Writing the answer' : null);
+          if (next && next !== letter.progress) {
+            letter.progress = next;
+            if (Date.now() - lastProgressSave > 1500) { lastProgressSave = Date.now(); save(); }
+          }
         } else if (msg.type === 'result') {
           result = msg;
         }
@@ -216,6 +245,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       letter.finishedAt = new Date().toISOString();
       letter.read = false;
       delete letter.stopped;
+      delete letter.progress;
       save();
       log(`[asaoffice] task ${letter.id} ${letter.status}`);
     });

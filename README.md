@@ -317,6 +317,13 @@ At most 3 tasks run at once, and each is stopped after 30 minutes. Letters are k
 `OFFICE_TASKS=off npm run office` turns sending off. Existing offices need the mailbox placed once: run
 `npm run layout`, or pick **Layout → Mailbox**.
 
+While a task runs, its letter shows live progress ("⏳ Baca app.js", "⏳ Jalanin: npm test", "⏳ Nulis jawaban"), read from
+the session's stream-json output. Every letter also has **📋 Salin perintah Terminal**, which copies
+`cd '<project>' && claude --resume <session id>` so you can keep talking in the same session from Terminal. Task
+sessions run headless (`claude -p`), so they don't appear in the Claude Desktop session list; the office is where
+you follow them. They use whatever account the `claude` command is logged in to (your Pro plan, unless an
+`ANTHROPIC_API_KEY` is set in the environment).
+
 **Approval modes** (the **Cara kerja** menu when you send a task), like Claude Code's own modes:
 
 | Mode | What happens |

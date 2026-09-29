@@ -37,6 +37,9 @@
       approve: '✅ Setujui', revise: '✏️ Revisi', reject: '❌ Tolak', revisePh: 'Apa yang perlu diubah dari rencananya?',
       planReady: (n) => `${n}: rencananya siap, nunggu persetujuanmu`, planLabel: '📝 Rencana', reportLabel: '📜 Laporan untuk Komisaris',
       directorBusy: 'Shades lagi ngerjain tugas lain. Tunggu selesai dulu ya.',
+      progress: (t) => `⏳ ${t}`, starting: '⏳ Lagi mulai…', writing: 'Nulis jawaban',
+      copyCmd: '📋 Salin perintah Terminal', copied: '✅ Tersalin! Tempel di Terminal',
+      copyNote: 'Buat lanjut ngobrol di sesi yang sama dari Terminal.',
     },
     en: {
       title: 'Mailbox', compose: '✉️ New task', back: '← Back', empty: 'No letters yet. Send your first task with the button above!',
@@ -65,6 +68,9 @@
       approve: '✅ Approve', revise: '✏️ Revise', reject: '❌ Reject', revisePh: 'What should change in the plan?',
       planReady: (n) => `${n}: the plan is ready for your approval`, planLabel: '📝 Plan', reportLabel: '📜 Report for the Commissioner',
       directorBusy: 'Shades is on another task. Wait for it to finish.',
+      progress: (t) => `⏳ ${t}`, starting: '⏳ Starting…', writing: 'Writing the answer',
+      copyCmd: '📋 Copy Terminal command', copied: '✅ Copied! Paste it in Terminal',
+      copyNote: 'To keep talking in the same session from Terminal.',
     },
   });
 
@@ -163,6 +169,20 @@
   let options = null;
   let notice = '';
 
+  const progressText = (l) => (l.progress ? S.progress(l.progress === 'Writing the answer' ? S.writing : ns.translateStatus?.(l.progress) ?? l.progress) : S.starting);
+  /** Shell command that continues this letter's session in Terminal. */
+  const terminalCommand = (l) => `cd '${String(l.cwd).replace(/'/g, `'\\''`)}' && claude --resume ${l.sessionId}`;
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch { /* fall back below */ }
+    const ta = h('textarea', { style: { position: 'fixed', opacity: '0' } });
+    ta.value = text;
+    document.body.append(ta);
+    ta.select();
+    const ok = document.execCommand?.('copy');
+    ta.remove();
+    return !!ok;
+  }
+
   function listView(body) {
     const top = h('div', { class: 'asa-mail-top' },
       h('span', { class: 'asa-muted' }, ''),
@@ -173,11 +193,12 @@
     body.append(h('div', { class: 'asa-letters' }, all.map((l) => {
       const first = l.report ? S.report : l.thread?.[0]?.text ?? '';
       const status = l.report ? '' : S[l.status] ?? '';
+      const line = l.status === 'running' ? progressText(l) : first;
       return h('button', { type: 'button', class: `asa-letter${l.read || l.status === 'running' ? '' : ' unread'}`, onclick: () => go({ name: 'letter', id: l.id }) },
         face(l),
         h('div', { class: 'asa-letter-body' },
           h('b', {}, `${who(l)}${l.project ? ` · ${l.project}` : ''}`),
-          h('div', {}, first)),
+          h('div', {}, line)),
         h('div', { class: 'asa-letter-status' }, status || (l.report ? l.day : '')));
     })));
   }
@@ -203,6 +224,7 @@
     if (l.cost) body.append(h('div', { class: 'asa-note' }, S.cost(l.cost)));
     if (notice) body.append(h('div', { class: 'asa-warn' }, notice));
     if (l.status === 'running') {
+      body.append(h('div', { class: 'asa-note' }, progressText(l)));
       body.append(h('div', { class: 'asa-actions' }, h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('POST', `/api/tasks/${l.id}/stop`)) }, `⏹ ${S.stop}`)));
       return;
     }
@@ -223,10 +245,10 @@
       const approve = h('button', { type: 'button', class: 'asa-btn primary' }, S.approve);
       approve.onclick = () => { approve.disabled = true; act(async () => { await api('POST', `/api/tasks/${l.id}/approve`); resumed(); }); };
       const reject = h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('POST', `/api/tasks/${l.id}/reject`)) }, S.reject);
-      body.append(h('div', { class: 'asa-actions' }, approve, reject), form, h('div', { class: 'asa-actions' }, send, archive));
+      body.append(h('div', { class: 'asa-actions' }, approve, reject), form, h('div', { class: 'asa-actions' }, send, archive), copyButton(l));
       return;
     }
-    body.append(form, h('div', { class: 'asa-actions' }, send, archive));
+    body.append(form, h('div', { class: 'asa-actions' }, send, archive), copyButton(l));
   }
 
   function composeView(body) {
@@ -303,6 +325,16 @@
 
   const errorText = (err) => ({ busy: S.busy, noApi: S.noApi, 'director busy': S.directorBusy })[err.message] ?? `${S.failed} (${err.message})`;
   const isDirector = (agent) => !!(ns.data?.staff ?? []).find((m) => m.agent === agent)?.director;
+  function copyButton(l) {
+    const btn = h('button', { type: 'button', class: 'asa-btn' }, S.copyCmd);
+    btn.onclick = async () => {
+      if (await copyText(terminalCommand(l))) {
+        btn.textContent = S.copied;
+        setTimeout(() => { btn.textContent = S.copyCmd; }, 3000);
+      }
+    };
+    return h('div', {}, h('div', { class: 'asa-actions' }, btn), h('div', { class: 'asa-note' }, S.copyNote));
+  }
   async function act(fn, next) {
     notice = '';
     try {
