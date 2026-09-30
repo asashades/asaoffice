@@ -119,10 +119,9 @@ Kantor kamu belum berubah setelah update? Jalanin `npm run layout` (layout lama 
 
 ## Kantor yang lebih luas 🏡
 
-Kantornya sekarang lebih besar (31×30 petak) dan ada halamannya:
-- **Ruang kerja terbuka dengan 4 divisi** (10 meja, **tanpa dinding pemisah**; bedanya cuma warna lantai dan tata mejanya): **Bullpen** (6 meja berbaris), **Studio** (2 meja saling belakang), **pojok Fokus** (meja sendiri-sendiri di balik sekat kain), dan **pojok Diskusi** (sofa, papan tulis easel, dan mesin fotokopi).
-- **Ruang meeting** di kanan atas: meja panjang dengan Shades duduk di ujungnya, dan dindingnya penuh papan (papan pengumuman, papan tugas, kotak surat, kalender). Rapat Shades sekarang di sini.
-- **Lounge** (perapian dan sofa) dengan **pintu depan**, plus **kantin** dan **toilet** yang kecil di sisi selatan.
+Kantornya sekarang memanjang (33×24 petak, denah lanskap) dan ada halamannya:
+- **Baris atas:** **area kerja terbuka** dengan 6 meja dalam 3 divisi (Teknis, Operasional, Administrasi; **tanpa dinding pemisah**, bedanya cuma warna lantai dan tata mejanya), **ruang meeting** (meja panjang, khusus buat rapat; dindingnya penuh papan pengumuman, papan tugas, kotak surat, kalender), dan **ruang direktur** (meja Shades, pojok privat, jendela lebar).
+- **Baris bawah:** **pantry** dan **toilet** yang kecil di kiri, **pojok santai** (sofa hijau, satu meja bundar, papan tulis) di tengah dengan **pintu depan** di bawahnya, dan **lounge tamu** dengan perapian di kanan.
 - **Jendela** cuma di dinding luar, gak ada lagi di dinding tengah.
 - **Luar:** jalan setapak batu, petak sayur dengan orang-orangan sawah, sumur, kolam, bangku, pohon apel, semak, bunga, dan pagar kayu. Kucing Oyen dan ayam Clucky boleh jalan-jalan sampai keluar.
 - Karena petanya lebih besar, karakter kelihatan lebih kecil. Pakai tombol zoom **+** atau klik villager biar kamera ngikutin dia.
@@ -259,7 +258,7 @@ Sekarang kamu bisa **nyuruh Claude langsung dari kantor**, gak perlu buka Termin
 ## Shades, direktur kantor 🕶️
 
 Shades (kacamata item, jas biru tua, dasi merah) **selalu ada di kantor**, walaupun lagi gak ada sesi Claude sama
-sekali. Ruangannya di pojok kanan bawah: meja direktur, kursi merah, lantai parket. Kalau lagi gak ada tugas, dia
+sekali. Ruangannya di pojok kanan atas: meja direktur, kursi merah, lantai parket. Kalau lagi gak ada tugas, dia
 kerja di mejanya, baca-baca, sesekali jalan-jalan dan ngobrol sama yang lain.
 
 **Cara nyuruh Shades:**
@@ -267,7 +266,7 @@ kerja di mejanya, baca-baca, sesekali jalan-jalan dan ngobrol sama yang lain.
 2. Buka **kotak surat → ✉️ Tugas baru**. Shades udah kepilih otomatis.
 3. Pilih **Cara kerja** (default *Rencana dulu*) dan **Gaya kerja Shades**:
    - **💰 Hemat** (default): Shades kerja sendirian di **satu** sesi, jadi kuotanya irit. Tapi kantornya tetap rame:
-     pas mulai ada **rapat singkat di sofa** sama tim yang dibutuhin, terus tiap Shades baca kode, Iris (atau Gus pas
+     pas mulai ada **rapat singkat di meja meeting** sama tim yang dibutuhin, terus tiap Shades baca kode, Iris (atau Gus pas
      lagi bikin rencana) ikut duduk di meja baca-baca; pas ngetes Wren yang sibuk, pas ngecek git Pip, pas nulis
      dokumen Sari, pas ngedit kode Bayu. Balon Shades bilang lagi "Ngarahin Wren" dan seterusnya. Timnya pulang
      sendiri sekitar setengah menit setelah tugas beres.

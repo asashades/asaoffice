@@ -24,7 +24,7 @@ sunflowers, an orange office cat and a hen). No sprites are taken from Stardew V
 | `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and villagers 1–6 (Asa, Rowan, Clem, Theo, Mabel, Juno) in place of the bundled characters, for the parts `pixel-agents` only loads from its own bundle. |
 | `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), [idle activities and expressions](#idle-activities-and-expressions), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night), and a [Pomodoro timer](#pomodoro) on the wall clock. |
 | `staff/` | The [office staff](#office-staff) (also the [mailbox](#mailbox-send-tasks-from-the-office)'s task runners): six Claude Code subagents with job descriptions (`staff/agents/*.md`), each played by a villager (`staff/roster.json`). Install with `npm run staff`. |
-| `layouts/stardew-office.json` | A ready-made 31×30 office with a garden around it: an **open-plan workroom** with 10 desks in four divisions that share one floor and are told apart only by floor tint and furniture (no walls): the Bullpen (six desks), the Studio (two desks back to back), the Focus corner (single desks behind fabric screens) and the Discussion corner (sofas, easel, copier); a **meeting room** (long table with Shades at its head, and the quest board, task board, mailbox and calendar on its wall); the fireplace lounge with the front door; a small toilet and canteen; and outside a stone path, vegetable beds, a well, a pond, trees and a fence. Windows are only on the outer walls. Import it via **Layout → Import**, or `npm run layout`. |
+| `layouts/stardew-office.json` | A ready-made 33×24 landscape office with a garden around it. Top band: an **open-plan work area** with six desks in three divisions that share one room and are told apart only by floor tint and furniture (no walls), a **meeting room** (one long table, only for meetings, with the quest board, task board, mailbox and calendar on its wall) and the **director's room** (Shades' desk, a private corner and a big window). Bottom band: a compact toilet and pantry, the breakout corner (green sofas round the tea table, whiteboard) with the front door, and a guest lounge with the fireplace. Outside: a stone path, vegetable beds, a well, a pond, trees and a fence. Windows are only on the outer walls. Import it via **Layout → Import**, or `npm run layout`. |
 | `tools/` | The sprite generator (`npm run generate`), plus setup, launcher, and tunnel scripts. |
 
 ## Quick start
@@ -394,14 +394,14 @@ in during the last 45 days (15 at most, plus the office workspace), shown with t
 
 Shades (sunglasses, navy suit, red tie) is always in the office, even when no Claude Code session is running
 (`addon/director.js`). He has his own corner: the director's desk and red executive chair on the parquet floor at
-the bottom right. With nothing to do he works at his desk, reads, and now and then gets up to walk around and chat.
+the top right. With nothing to do he works at his desk, reads, and now and then gets up to walk around and chat.
 
 Send him a task from the mailbox (he's preselected once `npm run staff` has installed him). He plans first by
 default, and his final message is a **Laporan untuk Komisaris** (a report for the Commissioner, which is you): a
 summary, what was done and by whom, results and proof, decisions you need to make, and next steps.
 
 - **Mode Hemat** (thrifty, the default): Shades does the whole task in **one** session. The staff act it out: a new
-  task starts with a short meeting at the meeting table (on the lounge sofas in older layouts) with the staff it needs (picked from the task's wording), then
+  task starts with a short meeting at the meeting table (on the lounge sofas in older layouts); he takes the head of the table and comes back to his own desk afterwards with the staff it needs (picked from the task's wording), then
   whenever Shades reads code, Iris (or Gus while he's planning) sits at a desk reading; tests make Wren busy, git
   makes Pip busy, docs Sari, and other edits and commands Bayu. Shades' bubble says who he's directing. The stand-ins
   go back to idling when there's nothing for them and leave about half a minute after the task. Only installed staff

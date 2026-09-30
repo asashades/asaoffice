@@ -232,7 +232,7 @@
     add('iris-researcher');
     return want.map((a) => staff.find((m) => m.agent === a)).filter(Boolean);
   }
-  /** Free chairs round the meeting table (Shades has his own at its head), nearest first; none if there's no meeting table. */
+  /** Free chairs round the meeting table (Shades takes the east head when he opens a task), nearest first; none if there's no meeting table. */
   function meetingSeats(office) {
     const tables = ns.findFurniture('COZY_MEETING_TABLE');
     if (!tables.length) return [];
@@ -249,11 +249,18 @@
   }
   function startMeeting(office, shades, prompt) {
     const atTable = ns.findFurniture('COZY_MEETING_TABLE').length > 0; // else the meeting is on the lounge sofas
-    const sofas = atTable ? meetingSeats(office) : freeSeats(office, (t) => t.startsWith('COZY_SOFA'));
+    let sofas = atTable ? meetingSeats(office) : freeSeats(office, (t) => t.startsWith('COZY_SOFA'));
+    // Shades takes the east head of the table (his own desk is elsewhere); the team fills the other chairs.
+    let shadesSeat = null;
+    if (atTable) {
+      const heads = [...sofas].sort((a, b) => office.seats.get(b).seatCol - office.seats.get(a).seatCol); // the east end
+      shadesSeat = heads[0] ?? sofas[0] ?? null;
+      sofas = sofas.filter((id) => id !== shadesSeat);
+    }
     const plan = directorLetters().some((l) => l.status === 'running' && l.phase === 'plan');
     const team = pickTeam(prompt, plan).slice(0, Math.min(MAX_ACTING, atTable ? sofas.length : sofas.length - 1));
     if (!team.length) return false;
-    if (atTable) moveTo(office, shades, execSeat(office));
+    if (atTable) moveTo(office, shades, shadesSeat);
     else moveTo(office, shades, sofas[0]);
     const ids = new Set([shades.id]);
     const lines = [{ id: shades.id, text: S.open }];
