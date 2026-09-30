@@ -25,6 +25,8 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 
+import * as vault from './vault.mjs';
+
 const MAX_RUNNING = 3;
 const MAX_PROMPT = 4000;
 const MAX_RESULT = 8000;
@@ -206,6 +208,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (phase === 'work' && member?.director && letter.style === 'delegate') tools.push(...DELEGATE_TOOLS);
     let system = PHASE_PROMPT[phase];
     if (member?.director) system += `\n${STYLE_PROMPT[letter.style === 'delegate' ? 'delegate' : 'solo']}`;
+    const notes = vault.contextNotes();
+    if (notes) system += `\n\n${notes}`;
     // The prompt goes in on stdin, so text that starts with "-" can never be read as a CLI option.
     const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'dontAsk',
       '--allowedTools', ...tools, '--append-system-prompt', system];
@@ -285,7 +289,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     let data = '';
     req.on('data', (c) => {
       data += c;
-      if (data.length > 16_384) { reject(new Error('too large')); req.destroy(); }
+      if (data.length > 260_000) { reject(new Error('too large')); req.destroy(); }
     });
     req.on('end', () => { try { resolve(data ? JSON.parse(data) : {}); } catch { reject(new Error('bad json')); } });
   });
@@ -316,6 +320,21 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           claude: !!findClaude(),
           running: running.size,
         }, origin);
+      }
+      // The bookshelf: notes in the Obsidian vault (see vault.mjs).
+      if (url.pathname === '/api/vault' && req.method === 'GET') {
+        return send(res, 200, { path: vault.ensureVault(), notes: vault.list(url.searchParams.get('q') ?? '') }, origin);
+      }
+      if (url.pathname === '/api/vault/note' && req.method === 'GET') {
+        const text = vault.read(url.searchParams.get('path'));
+        return text == null ? send(res, 404, { error: 'note' }, origin) : send(res, 200, { text }, origin);
+      }
+      if (url.pathname === '/api/vault/note' && req.method === 'POST') {
+        const body = await readBody(req);
+        return vault.write(body.path, body.text) ? send(res, 200, { ok: true }, origin) : send(res, 400, { error: 'note' }, origin);
+      }
+      if (url.pathname === '/api/vault/idea' && req.method === 'POST') {
+        return vault.addIdea((await readBody(req)).text) ? send(res, 200, { ok: true }, origin) : send(res, 400, { error: 'text' }, origin);
       }
       if (req.method === 'POST' && url.pathname === '/api/tasks') {
         const body = await readBody(req);
