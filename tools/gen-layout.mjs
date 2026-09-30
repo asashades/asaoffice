@@ -81,7 +81,7 @@ fill(7, 11, 7, 13, WALL, COLORS.wall);
 // ── Doorways ──
 fill(14, 9, 15, 10, WOOD, COLORS.wood); // work area ↔ the bottom band
 fill(16, 5, 16, 7, PARQUET, COLORS.meeting); // work area ↔ meeting room
-fill(24, 5, 24, 7, PARQUET, COLORS.director); // meeting room ↔ director's room
+fill(24, 6, 24, 7, PARQUET, COLORS.director); // meeting room ↔ director's room
 fill(9, 13, 9, 14, KITCHEN, COLORS.bath); // toilet ↔ pantry
 fill(23, 13, 23, 14, RUG, COLORS.rug); // breakout ↔ guest lounge
 fill(15, 16, 17, 17, FLAG, COLORS.path); // front door
@@ -136,10 +136,10 @@ add('COZY_FERN', 23, 3);
 add('COZY_LANTERN', 23, 7);
 
 // ── Director's room: Shades' desk, and a private corner ──
-add('COZY_EXEC_DESK_FRONT', 25, 3);
-add('COZY_PC_FRONT_OFF', 26, 3);
-add('COZY_EXEC_CHAIR_BACK', 26, 4); // Shades' seat
-add('COZY_MUG', 27, 3);
+add('COZY_EXEC_DESK_FRONT', 25, 4); // Shades sits behind it, facing south into the room
+add('COZY_PC_BACK', 26, 4);
+add('COZY_EXEC_CHAIR_FRONT', 26, 2); // Shades' seat (y 3)
+add('COZY_MUG', 27, 4);
 add('COZY_FERN', 28, 3);
 add('COZY_SOFA_BACK', 26, 7);
 add('COZY_LANTERN', 28, 7);
