@@ -140,7 +140,6 @@ add('COZY_EXEC_DESK_FRONT', 25, 4); // Shades sits behind it, facing south into 
 add('COZY_PC_BACK', 26, 4);
 add('COZY_EXEC_CHAIR_FRONT', 26, 2); // Shades' seat (y 3)
 add('COZY_MUG', 27, 4);
-add('COZY_FERN', 28, 3);
 add('COZY_SOFA_BACK', 26, 7);
 add('COZY_LANTERN', 28, 7);
 
