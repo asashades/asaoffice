@@ -10,7 +10,7 @@
 //     edits and commands Bayu. Only installed staff (npm run staff) show up, and they leave again after the task.
 //   - Courier: a task sent from the mailbox is a letter. Shades gets up, takes it from the mailbox on the wall and
 //     hands it over (to the meeting on the sofas for his own tasks, or to the workroom for a staff member's), and
-//     only then does the task start (the task server holds it until ns.director.courier calls back, or 20 s pass).
+//     only then does the task start (the task server holds it until ns.director.courier calls back, or 30 s pass).
 // Which session is his comes from the office data feed (taskAgents); the mailbox also tells us a moment before
 // (ns.director.expect) so the swap happens as the session appears instead of a few seconds later.
 (() => {

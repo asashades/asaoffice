@@ -314,9 +314,13 @@ chat (Shades is the default recipient):
 2. **Sending is a little show.** A whoosh sound, a paper plane flying from the send button to the mailbox on the wall,
    the letter dropping in with a thunk, then **Shades gets up, takes the letter from the mailbox and hands it over**
    (to the meeting on the sofas for his own tasks, or to the workroom for a staff member). The panel closes so you can
-   watch. The task only *starts* when he hands it over (the task server holds it as "queued" until then, or for 20
+   watch. For 3 seconds after sending there's an **↩ Batalkan** bar: the letter is only queued, so undoing it cancels the
+   task before anything has started. The task only *starts* when he hands it over (the task server holds it as "queued" until then, or for 30
    seconds at most), so the show never delays real work by more than a few seconds. If Shades is busy or reduced
    motion is on, the task starts right away and only the plane flies. Sounds are synthesised (WebAudio) and muted by 🔕.
+   Typing **@name** at any point in a new chat opens a small list to pick who does it (arrow keys + Enter, or click);
+   the "@name" text is removed and the who-chip flashes. **Drafts are kept** per chat, across closing the panel and
+   reloading the page.
 3. The office runs it on the Mac as a headless Claude Code session. With hooks on, its villager walks to a desk and
    works like any other session, and a staff member shows up as their own villager (Wren, Pip, …).
 4. The chat shows the answer with a "typing" bubble and live progress while it works; a chime and a red badge on the

@@ -13,7 +13,7 @@
     id: {
       title: 'Kotak Surat', compose: '✉️ Tugas baru', back: '← Kembali', empty: 'Belum ada surat. Kirim tugas pertama lewat tombol di atas!',
       who: 'Siapa yang ngerjain?', general: 'Claude (umum)', project: 'Proyek', task: 'Tugasnya apa?',
-      placeholder: 'Tulis tugasnya… (Enter kirim, Shift+Enter baris baru)', send: 'Kirim', sending: 'Ngirim…',
+      placeholder: 'Tulis tugasnya… (@nama pilih orang · Enter kirim · Shift+Enter baris baru)', send: 'Kirim', sending: 'Ngirim…',
       access: { read: 'baca file', web: 'cari di web', edit: 'ngedit file', git: 'lihat git', test: 'jalanin test' },
       canDo: (list) => `Boleh: ${list}. Selain itu ditolak otomatis.`,
       running: '⏳ Lagi dikerjain', done: '✅ Selesai', error: '⚠️ Gagal', stopped: '⏹ Dihentikan',
@@ -54,11 +54,12 @@
       chipStyles: { solo: '💰 Hemat', delegate: '👥 Delegasi' },
       approvedNote: '✅ Rencana disetujui', rejectedNote: '❌ Rencana ditolak', revisedNote: '✏️ Minta revisi', reviseHint: 'atau tulis revisinya di bawah',
       busyPh: (n) => `${n} lagi kerja… tunggu jawabannya ya`,
+      sentUndo: '📮 Terkirim! Salah kirim?', undo: '↩ Batalkan',
     },
     en: {
       title: 'Mailbox', compose: '✉️ New task', back: '← Back', empty: 'No letters yet. Send your first task with the button above!',
       who: 'Who should do it?', general: 'Claude (general)', project: 'Project', task: 'What should they do?',
-      placeholder: 'Write the task… (Enter to send, Shift+Enter for a new line)', send: 'Send', sending: 'Sending…',
+      placeholder: 'Write the task… (@name picks who · Enter sends · Shift+Enter new line)', send: 'Send', sending: 'Sending…',
       access: { read: 'read files', web: 'search the web', edit: 'edit files', git: 'look at git', test: 'run tests' },
       canDo: (list) => `Allowed: ${list}. Anything else is refused automatically.`,
       running: '⏳ In progress', done: '✅ Done', error: '⚠️ Failed', stopped: '⏹ Stopped',
@@ -99,6 +100,7 @@
       chipStyles: { solo: '💰 Thrifty', delegate: '👥 Delegate' },
       approvedNote: '✅ Plan approved', rejectedNote: '❌ Plan rejected', revisedNote: '✏️ Asked for a revision', reviseHint: 'or write the revision below',
       busyPh: (n) => `${n} is working… wait for the answer`,
+      sentUndo: '📮 Sent! Sent by mistake?', undo: '↩ Undo',
     },
   });
 
@@ -165,7 +167,20 @@
   .asa-sys { align-self: center; font-size: 12px; padding: 2px 10px; background: #e6d3a6; border: 1px solid #c9a877; }
   .asa-plan-actions { align-items: center; margin: -2px 0 0 32px; }
   .asa-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 32px; }
-  .asa-comp { border-top: 2px dashed #c9a877; padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .asa-comp { border-top: 2px dashed #c9a877; padding-top: 8px; display: flex; flex-direction: column; gap: 6px; position: relative; }
+  .asa-mention { position: absolute; left: 0; bottom: 100%; margin-bottom: 4px; z-index: 5; min-width: 240px; max-width: 100%; background: #fffbe9;
+    border: 2px solid #744122; box-shadow: 0 3px 0 rgba(0,0,0,0.25); display: flex; flex-direction: column; }
+  .asa-mention[hidden] { display: none; }
+  .asa-mention button { font: inherit; font-size: 13px; text-align: left; background: none; border: 0; padding: 5px 10px; cursor: pointer; color: inherit; }
+  .asa-mention button b { font-weight: normal; } .asa-mention button span { opacity: 0.65; font-size: 12px; }
+  .asa-mention button.on, .asa-mention button:hover { background: #f4e6c4; }
+  .asa-undo { position: relative; overflow: hidden; display: flex; align-items: center; gap: 10px; padding: 6px 10px 9px; margin-top: 6px; background: #fff6dc; border: 2px solid #744122; font-size: 13px; }
+  .asa-undo span { flex: 1; }
+  .asa-undo .asa-btn { padding: 3px 10px; }
+  .asa-undo-bar { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: #c8503c; transform-origin: left; animation: asa-undo linear forwards; }
+  @keyframes asa-undo { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+  .asa-flash { animation: asa-flash 0.9s ease-out; }
+  @keyframes asa-flash { 0%, 40% { border-color: #f2c94c; box-shadow: 0 0 0 3px #f2c94c; } 100% { box-shadow: 0 0 0 0 transparent; } }
   .asa-comp-box { display: flex; gap: 8px; align-items: flex-end; }
   .asa-comp textarea { flex: 1; min-width: 0; font: inherit; font-size: 14px; padding: 6px 8px; background: #fffbe9; color: #3a2117; border: 2px solid #744122;
     resize: none; max-height: 150px; }
@@ -272,7 +287,24 @@
   let sending = false;
   const prefs = (() => { try { return JSON.parse(ns.store.get('chatPrefs') || '{}'); } catch { return {}; } })();
   const savePrefs = () => ns.store.set('chatPrefs', JSON.stringify(prefs));
-  const draft = { prompt: '' };
+  // Drafts survive closing the panel and reloading the page (one per chat, the newest 20).
+  const drafts = (() => { try { return JSON.parse(ns.store.get('chatDrafts') || '{}'); } catch { return {}; } })();
+  const draftKey = () => sel ?? 'new';
+  const getDraft = (key = draftKey()) => drafts[key] ?? '';
+  let draftTimer = null;
+  const flushDrafts = () => {
+    clearTimeout(draftTimer);
+    const keys = Object.keys(drafts);
+    for (const k of keys.slice(0, Math.max(0, keys.length - 20))) delete drafts[k];
+    ns.store.set('chatDrafts', JSON.stringify(drafts));
+  };
+  const setDraft = (text, key = draftKey()) => {
+    delete drafts[key]; // re-insert last so the newest are kept
+    if (text) drafts[key] = text;
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(flushDrafts, 300);
+  };
+  let pendingUndo = null; // resolves 'go' | 'undo' while the undo bar shows
   const ui = {}; // root, side, main, head, thread, comp, refill, keys
   const fx = { drop: 0 };
   const narrow = () => matchMedia('(max-width: 720px)').matches;
@@ -451,6 +483,7 @@
 
   // ── Main: header, thread, composer ──
   function select(id) {
+    pendingUndo?.('go');
     sel = id;
     notice = '';
     const l = current();
@@ -525,7 +558,7 @@
     if (sel === 'new') {
       const first = memberOf(prefs.agent ?? '')?.name ?? '';
       out.push(h('div', { class: 'asa-brow' }, smallFace({ agent: options?.staff?.find((x) => x.director)?.agent ?? null }), h('div', { class: 'asa-b agent' }, h('div', { class: 'asa-b-text' }, S.greeting(first)))));
-      out.push(h('div', { class: 'asa-suggest' }, S.suggestions.map((t) => h('button', { type: 'button', class: 'asa-chip', onclick: () => { draft.prompt = t; ui.comp.querySelector('textarea')?.focus(); fillComposer(null); } }, t))));
+      out.push(h('div', { class: 'asa-suggest' }, S.suggestions.map((t) => h('button', { type: 'button', class: 'asa-chip', onclick: () => { setDraft(t); fillComposer(null); ui.comp.querySelector('textarea')?.focus(); } }, t))));
     } else if (l.report) {
       out.push(h('div', { class: 'asa-b agent' }, h('div', { class: 'asa-b-text' }, l.text)));
     } else {
@@ -571,15 +604,64 @@
     const locked = existing && busy(l);
     const ta = h('textarea', { rows: '2', 'aria-label': S.task,
       placeholder: locked ? S.busyPh(l.name ?? S.general) : existing ? (l.status === 'awaiting' ? S.revisePh : S.replyPh) : S.placeholder });
-    ta.value = locked ? '' : draft.prompt;
+    ta.value = locked ? '' : getDraft();
     ta.disabled = locked;
     const grow = () => { ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight + 2, 150)}px`; };
     const send = h('button', { type: 'button', class: 'asa-send', title: S.send, 'aria-label': S.send }, '➤');
     const sync = () => { send.disabled = locked || !ta.value.trim() || sending; };
-    ta.oninput = () => { draft.prompt = ta.value; grow(); sync(); };
+    ta.oninput = () => { setDraft(ta.value); grow(); sync(); updateMention(); };
     const controls = {};
     const submit = () => (existing ? sendReply(l, ta, send) : sendNew(ta, send, controls));
-    ta.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!send.disabled) submit(); } };
+    // @name in a new chat picks who does it (a small list above the box, like a chat app's mentions).
+    const mention = { open: false, idx: 0, items: [], start: -1 };
+    const pop = h('div', { class: 'asa-mention', role: 'listbox' });
+    pop.hidden = true;
+    function closeMention() { mention.open = false; pop.hidden = true; }
+    function drawMention() {
+      pop.replaceChildren(...mention.items.map((it, i) => h('button', { type: 'button', role: 'option', class: i === mention.idx ? 'on' : '',
+        onmousedown: (e) => { e.preventDefault(); chooseMention(i); } }, h('b', {}, `@${it.name}`), it.role ? h('span', {}, ` ${it.role}`) : null)));
+      pop.hidden = !mention.items.length;
+    }
+    function updateMention() {
+      if (existing || !controls.setWho) return closeMention();
+      const before = ta.value.slice(0, ta.selectionStart ?? ta.value.length);
+      const m = /(^|\s)@([\p{L}\d_-]*)$/u.exec(before);
+      if (!m) return closeMention();
+      const q = m[2].toLowerCase();
+      mention.start = before.length - m[2].length - 1;
+      const all = [...options.staff.map((x) => ({ agent: x.agent, name: x.name, role: pickLang(x.role) })), { agent: '', name: S.general, role: '' }];
+      mention.items = all.filter((x) => !q || x.name.toLowerCase().startsWith(q) || x.agent.startsWith(q));
+      mention.idx = Math.min(mention.idx, Math.max(0, mention.items.length - 1));
+      mention.open = mention.items.length > 0;
+      drawMention();
+    }
+    function chooseMention(i) {
+      const it = mention.items[i];
+      if (!it) return;
+      const end = ta.selectionStart ?? ta.value.length;
+      ta.value = `${ta.value.slice(0, mention.start)}${ta.value.slice(end).replace(/^\s/, '')}`;
+      ta.setSelectionRange(mention.start, mention.start);
+      controls.setWho(it.agent);
+      setDraft(ta.value);
+      closeMention();
+      grow();
+      sync();
+      ta.focus();
+    }
+    ta.onkeydown = (e) => {
+      if (mention.open) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          mention.idx = (mention.idx + (e.key === 'ArrowDown' ? 1 : -1) + mention.items.length) % mention.items.length;
+          return drawMention();
+        }
+        if ((e.key === 'Enter' || e.key === 'Tab') && !e.isComposing) { e.preventDefault(); return chooseMention(mention.idx); }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); return closeMention(); } // don't close the whole panel
+      }
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!send.disabled) submit(); }
+    };
+    ta.onkeyup = (e) => { if (!['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(e.key)) updateMention(); };
+    ta.onblur = () => setTimeout(closeMention, 150);
     send.onclick = submit;
     const chips = h('div', { class: 'asa-chips' });
     if (!existing) {
@@ -601,11 +683,20 @@
         whoSel.title = `${S.who} — ${S.canDo(access.map((a) => S.access[a] ?? a).join(', '))}`;
       };
       whoSel.onchange = () => { prefs.agent = whoSel.value; savePrefs(); update(); };
+      const setWho = (agent) => {
+        whoSel.value = agent;
+        prefs.agent = agent;
+        savePrefs();
+        update();
+        whoSel.classList.remove('asa-flash');
+        void whoSel.offsetWidth; // restart the animation
+        whoSel.classList.add('asa-flash');
+      };
       projSel.onchange = () => { prefs.cwd = projSel.value; savePrefs(); };
       modeSel.onchange = () => { prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value }; savePrefs(); };
       styleSel.onchange = () => { prefs.style = styleSel.value; savePrefs(); };
       update();
-      Object.assign(controls, { whoSel, projSel, modeSel, styleSel, member });
+      Object.assign(controls, { whoSel, projSel, modeSel, styleSel, member, setWho });
       chips.append(whoSel, projSel, modeSel, styleSel);
     } else {
       chips.append(h('span', { class: 'asa-pill' }, `👤 ${who(l)}`), h('span', { class: 'asa-pill', title: l.cwd }, `📁 ${l.project}`), l.mode ? h('span', { class: 'asa-pill' }, S.chipModes[l.mode]) : null);
@@ -613,12 +704,33 @@
     const sendBtn = locked
       ? h('button', { type: 'button', class: 'asa-send stop', title: S.stop, 'aria-label': S.stop, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/stop`)) }, '⏹')
       : send;
-    comp.append(h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips);
+    comp.append(pop, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips);
     grow();
     sync();
   }
 
   // ── Sending ──
+  const UNDO_MS = 3000;
+  /** A bar with "Batalkan" for UNDO_MS; resolves 'undo' if clicked, else 'go' (also if you leave the chat or close the panel). */
+  function undoWindow() {
+    return new Promise((resolve) => {
+      let timer = null;
+      const btn = h('button', { type: 'button', class: 'asa-btn' }, S.undo);
+      const bar = h('div', { class: 'asa-undo', role: 'status' }, h('span', {}, S.sentUndo), btn, h('i', { class: 'asa-undo-bar', style: { animationDuration: `${UNDO_MS}ms` } }));
+      const done = (v) => {
+        if (pendingUndo !== done) return;
+        pendingUndo = null;
+        clearTimeout(timer);
+        bar.remove();
+        resolve(v);
+      };
+      pendingUndo = done;
+      btn.onclick = () => done('undo');
+      if (ui.main?.isConnected && ui.comp?.parentNode === ui.main) ui.main.insertBefore(bar, ui.comp);
+      timer = setTimeout(() => done('go'), UNDO_MS);
+    });
+  }
+
   async function sendNew(ta, sendBtn, c) {
     const text = ta.value.trim();
     if (!text || sending) return;
@@ -631,17 +743,24 @@
     const cwd = c.projSel.value;
     ns.notify?.sfx?.('send');
     const landed = flyPlane(sendBtn);
+    ta.disabled = true;
     try {
       const { letter } = await api('POST', '/api/tasks', {
         agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, style: director ? c.styleSel.value : undefined, hold: true,
       });
-      draft.prompt = '';
       await landed;
       dropLetter();
+      // A few seconds to change your mind: the letter is only queued, so nothing has started yet.
+      if (panel && (await undoWindow()) === 'undo') {
+        try { await api('DELETE', `/api/tasks/${letter.id}`); } catch { /* the hold expires by itself */ }
+        await ns.refreshData();
+        return;
+      }
+      setDraft('', 'new');
       // Shades takes the letter from the mailbox and hands it over; the task starts when he does (or right away).
       const deliver = async () => {
         if (director) ns.director?.expect({ cwd, prompt: text, meeting: true });
-        try { await api('POST', `/api/tasks/${letter.id}/deliver`); } catch { /* the server starts it by itself after 20 s */ }
+        try { await api('POST', `/api/tasks/${letter.id}/deliver`); } catch { /* the server starts it by itself after 30 s */ }
         // The office learns who runs the new session from the data feed: look a few times so the face is right early.
         for (const ms of [0, 2500, 5000]) setTimeout(() => ns.refreshData(), ms);
       };
@@ -656,7 +775,7 @@
       notice = errorText(err);
     } finally {
       sending = false;
-      if (panel) refreshMain();
+      if (panel) { ui.keys.comp = null; refreshMain(); }
     }
   }
   async function sendReply(l, ta, sendBtn) {
@@ -669,7 +788,7 @@
     const landed = flyPlane(sendBtn);
     try {
       await api('POST', `/api/tasks/${l.id}/reply`, { text });
-      draft.prompt = '';
+      setDraft('', l.id);
       if (isDirector(l.agent)) ns.director?.expect({ cwd: l.cwd });
       await landed;
       dropLetter();
@@ -747,7 +866,7 @@
     else if (next.name === 'letter') sel = next.id;
     else sel = narrow() ? null : (letters().find((l) => l.status === 'awaiting') ?? letters().find((l) => !l.read && !l.report && !busy(l)))?.id ?? 'new';
     let timer = null;
-    panel = ns.panel.open({ theme: 'cozy', title: `📮 ${S.title}`, render, onClose: () => { clearInterval(timer); panel = null; } });
+    panel = ns.panel.open({ theme: 'cozy', title: `📮 ${S.title}`, render, onClose: () => { pendingUndo?.('go'); flushDrafts(); clearInterval(timer); panel = null; } });
     panel.el.classList.add('asa-wide');
     ns.refreshData().then(refreshAll);
     // While open, keep running tasks' chats fresh (the composer is never rebuilt while you type).

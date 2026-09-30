@@ -15,7 +15,7 @@
 //   - auto   ("Langsung jalan", the staff default): works straight away within its allow-list.
 //   - report ("Cuma laporan"): read-only from start to finish.
 // A task can be created on hold (`hold: true`): the letter waits as "queued" until the office says the letter was
-// delivered (POST /api/tasks/:id/deliver, when Shades hands it over in the office), or 20 seconds have passed.
+// delivered (POST /api/tasks/:id/deliver, when Shades hands it over in the office), or 30 seconds have passed.
 // The director (Shades) can also delegate: then it may call the staff as real subagents (the Task/Agent tool).
 // Letters (tasks, their replies and results) are kept in ~/.pixel-agents/asaoffice-mail.json.
 import { spawn } from 'node:child_process';
@@ -30,7 +30,7 @@ const MAX_PROMPT = 4000;
 const MAX_RESULT = 8000;
 const TASK_TIMEOUT_MS = 30 * 60_000;
 const KEEP_LETTERS = 60;
-const HOLD_MS = 20_000;
+const HOLD_MS = 30_000;
 
 const TOOLS = {
   read: ['Read', 'Grep', 'Glob', 'LS', 'TodoWrite'],

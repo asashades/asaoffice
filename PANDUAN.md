@@ -196,9 +196,11 @@ Sekarang kamu bisa **nyuruh Claude langsung dari kantor**, gak perlu buka Termin
    lalu Enter. Ada juga 3 saran tugas buat mulai.
 3. **Kirimnya seru:** ada bunyi "wusss", **pesawat kertas terbang ke kotak surat** di dinding, suratnya jatuh ke dalam
    ("tok!"), terus **Shades bangun, ngambil surat dari kotak surat, dan nganterin ke yang ngerjain** (ke rapat di sofa
-   kalau tugas buat dia sendiri, atau ke ruang kerja kalau buat karyawan). Panelnya nutup biar kamu bisa lihat. Tugasnya
-   baru mulai jalan pas Shades nyerahin suratnya (paling lama 20 detik), jadi kerjaannya gak ketunda lama. Bunyinya bisa
+   kalau tugas buat dia sendiri, atau ke ruang kerja kalau buat karyawan). Selama 3 detik setelah kirim ada tombol **↩ Batalkan** kalau salah kirim (tugasnya belum mulai, jadi aman). Panelnya nutup biar kamu bisa lihat. Tugasnya
+   baru mulai jalan pas Shades nyerahin suratnya (paling lama 30 detik), jadi kerjaannya gak ketunda lama. Bunyinya bisa
    dimatiin lewat tombol 🔕.
+   Ada dua bonus: ketik **@nama** (misalnya `@Wren`) di chat baru buat milih siapa yang ngerjain (pakai panah + Enter,
+   atau klik). Dan **draf tulisanmu tersimpan** per chat, jadi gak hilang walau panelnya ketutup atau halamannya di-refresh.
 4. Villager-nya kerja seperti biasa. Kalau yang kamu pilih karyawan, yang datang villager dia sendiri (misalnya Wren).
 5. Di chat kelihatan gelembung "lagi ngetik" dengan progres langsung. Kalau udah selesai, bunyi "ting" dan ada **angka
    merah di kotak surat**. Rencana, laporan, dan error muncul sebagai gelembung chat. Rencana punya tombol **✅ Setujui**
