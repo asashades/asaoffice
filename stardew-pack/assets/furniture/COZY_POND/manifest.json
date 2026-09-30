@@ -1,0 +1,14 @@
+{
+  "id": "COZY_POND",
+  "name": "Pond",
+  "category": "decor",
+  "type": "asset",
+  "file": "COZY_POND.png",
+  "width": 48,
+  "height": 32,
+  "footprintW": 3,
+  "footprintH": 2,
+  "canPlaceOnWalls": false,
+  "canPlaceOnSurfaces": false,
+  "backgroundTiles": 0
+}

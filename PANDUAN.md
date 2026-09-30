@@ -80,6 +80,15 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
   menghangatkan diri di perapian (lebih sering pas sore/malam), memandang ke jendela, nyiram tanaman, atau ngelus
   Oyen si kucing oren 🐱. Ada balon kecil di atas kepalanya yang bilang dia lagi ngapain. Begitu dapet tugas, dia
   langsung balik ke meja.
+- **Kantin, toilet, dan kebun**: villager yang santai juga **makan di kantin** (duduk di kursi meja makan), jajan di
+  mesin camilan, minum dari dispenser, dan **ke toilet**: dia masuk bilik, terus ada **pintu tertutup dengan tanda
+  "terisi"** selama 8–14 detik, dan biasanya abis itu cuci tangan. Kalau siang, mereka juga ngecek petak sayur, lihat
+  kolam, timba air di sumur, dan duduk di bangku. **Sekitar jam makan siang (11.45–13.15) hampir semua villager yang
+  santai pergi makan**, dan jam 15.00 ada jam ngopi dan camilan.
+- **Kebun ikut streak-mu 🌱**: petak sayur tumbuh sesuai **hari beruntun** kamu. Hari ke-1 ditanam tanaman pertama,
+  terus tiap hari tumbuh dari tunas sampai matang (wortel, tomat, kol; total 12 tanaman). Streak putus = petaknya
+  kosong lagi. Kebunnya juga ikut **musim** tanggal asli: ada rona warna dan kelopak, daun gugur, atau salju yang
+  beterbangan. Mau musim tertentu? Tambah `&season=fall` (spring, summer, fall, winter). Mau dimatiin? `&garden=off`.
 - **Ekspresi**:
   - 💤 **zzz** = context-nya udah 80% penuh. Saatnya `/compact`.
   - 💧 **keringetan** = udah kerja 15 menit nonstop, atau nungguin izinmu lebih dari 1 menit.
@@ -95,15 +104,27 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
   izin, ngobrol sama siapa, atau santai), proyeknya, tool terakhir, dan isi context-nya. Klik lagi buat nutup.
 - **Klik kalender di dinding** → kalender bulan ini, lengkap sama acara dari aplikasi **Calendar** di Mac.
   Klik tanggalnya buat lihat agenda hari itu. Angka merah di kalender = jumlah acara hari ini.
-- **Klik layar hologram di atas perapian (Holo-board)** → dashboard kerja Claude hari ini: jumlah tool call,
-  file yang diedit, command, sesi, pemakaian token dan model, jam tersibuk, grafik 14 hari, dan streak harian 🔥.
+- **Klik papan pengumuman kayu di ruang meeting** → **Jurnal Petani** ala Stardew. Isinya: panen hari ini (jumlah
+  tool call) lawan rekor 14 harimu, musim dan tanggal, streak 🔥, "emas" (token hari ini), dan **level keahlian
+  berbintang** yang naik sesuai kerja Claude: 🌾 Bertani (nulis dan ngedit file), 🍄 Mencari makan (baca dan cari
+  kode), ⛏️ Menambang (jalanin command), 🎣 Memancing (cari di web), ⚔️ Bertarung (manggil sub-agent). Ada juga
+  **pesanan khusus** (daftar TodoWrite sesi terbaru), grafik 14 hari dan jam kerja, plus **buku pencapaian**
+  (panen pertama, 1.000 dan 10.000 tool call, streak 7 dan 14 hari, 5 tugas kotak surat, dan lain-lain).
 
 Pertama kali nyalain kantor, Mac bakal nanya **"Asa Office ingin mengakses kalender"** (atau "Terminal", kalau
 kamu nyalain lewat Terminal). Klik **Izinkan** biar acara kamu muncul. Kelewat? Buka **System Settings → Privasi &
 Keamanan → Kalender**, nyalain Asa Office (atau Terminal), terus matiin dan nyalain lagi kantornya.
 
-Kalau Holo-board belum ada di kantor kamu, jalanin `npm run layout` (layout lama otomatis di-backup), atau klik
-**Layout**, cari **Holo-board**, terus tempel di dinding mana aja.
+Kantor kamu belum berubah setelah update? Jalanin `npm run layout` (layout lama otomatis di-backup).
+
+## Kantor yang lebih luas 🏡
+
+Kantornya sekarang memanjang (33×24 petak, denah lanskap) dan ada halamannya:
+- **Baris atas:** **area kerja terbuka** dengan 6 meja dalam 3 divisi (Teknis, Operasional, Administrasi; **tanpa dinding pemisah**, bedanya cuma warna lantai dan tata mejanya), **ruang meeting** (meja panjang, khusus buat rapat; dindingnya penuh papan pengumuman, papan tugas, kotak surat, kalender), dan **ruang direktur** (meja Shades, pojok privat, jendela lebar).
+- **Baris bawah:** **pantry** dan **toilet** yang kecil di kiri, **pojok santai** (sofa hijau, satu meja bundar, papan tulis) di tengah dengan **pintu depan** di bawahnya, dan **lounge tamu** dengan perapian di kanan.
+- **Jendela** cuma di dinding luar, gak ada lagi di dinding tengah.
+- **Luar:** jalan setapak batu, petak sayur dengan orang-orangan sawah, sumur, kolam, bangku, pohon apel, semak, bunga, dan pagar kayu. Kucing Oyen dan ayam Clucky boleh jalan-jalan sampai keluar.
+- Karena petanya lebih besar, karakter kelihatan lebih kecil. Pakai tombol zoom **+** atau klik villager biar kamera ngikutin dia.
 
 ## Kamera, notifikasi, papan tugas, dan siang-malam 🌙
 
@@ -195,7 +216,7 @@ Sekarang kamu bisa **nyuruh Claude langsung dari kantor**, gak perlu buka Termin
    jalan / Cuma laporan), dan gaya kerja Shades (Hemat / Delegasi). Pilihanmu **diingat**, jadi biasanya tinggal ketik
    lalu Enter. Ada juga 3 saran tugas buat mulai.
 3. **Kirimnya seru:** ada bunyi "wusss", **pesawat kertas terbang ke kotak surat** di dinding, suratnya jatuh ke dalam
-   ("tok!"), terus **Shades bangun, ngambil surat dari kotak surat, dan nganterin ke yang ngerjain** (ke rapat di sofa
+   ("tok!"), terus **Shades bangun, ngambil surat dari kotak surat, dan nganterin ke yang ngerjain** (ke rapat di meja meeting
    kalau tugas buat dia sendiri, atau ke ruang kerja kalau buat karyawan). Selama 3 detik setelah kirim ada tombol **↩ Batalkan** kalau salah kirim (tugasnya belum mulai, jadi aman). Panelnya nutup biar kamu bisa lihat. Tugasnya
    baru mulai jalan pas Shades nyerahin suratnya (paling lama 30 detik), jadi kerjaannya gak ketunda lama. Bunyinya bisa
    dimatiin lewat tombol 🔕.
@@ -237,7 +258,7 @@ Sekarang kamu bisa **nyuruh Claude langsung dari kantor**, gak perlu buka Termin
 ## Shades, direktur kantor 🕶️
 
 Shades (kacamata item, jas biru tua, dasi merah) **selalu ada di kantor**, walaupun lagi gak ada sesi Claude sama
-sekali. Ruangannya di pojok kanan bawah: meja direktur, kursi merah, lantai parket. Kalau lagi gak ada tugas, dia
+sekali. Ruangannya di pojok kanan atas: meja direktur, kursi merah, lantai parket. Kalau lagi gak ada tugas, dia
 kerja di mejanya, baca-baca, sesekali jalan-jalan dan ngobrol sama yang lain.
 
 **Cara nyuruh Shades:**
@@ -245,7 +266,7 @@ kerja di mejanya, baca-baca, sesekali jalan-jalan dan ngobrol sama yang lain.
 2. Buka **kotak surat → ✉️ Tugas baru**. Shades udah kepilih otomatis.
 3. Pilih **Cara kerja** (default *Rencana dulu*) dan **Gaya kerja Shades**:
    - **💰 Hemat** (default): Shades kerja sendirian di **satu** sesi, jadi kuotanya irit. Tapi kantornya tetap rame:
-     pas mulai ada **rapat singkat di sofa** sama tim yang dibutuhin, terus tiap Shades baca kode, Iris (atau Gus pas
+     pas mulai ada **rapat singkat di meja meeting** sama tim yang dibutuhin, terus tiap Shades baca kode, Iris (atau Gus pas
      lagi bikin rencana) ikut duduk di meja baca-baca; pas ngetes Wren yang sibuk, pas ngecek git Pip, pas nulis
      dokumen Sari, pas ngedit kode Bayu. Balon Shades bilang lagi "Ngarahin Wren" dan seterusnya. Timnya pulang
      sendiri sekitar setengah menit setelah tugas beres.

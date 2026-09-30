@@ -1,0 +1,14 @@
+{
+  "id": "COZY_MAT",
+  "name": "Door Mat",
+  "category": "misc",
+  "type": "asset",
+  "file": "COZY_MAT.png",
+  "width": 32,
+  "height": 16,
+  "footprintW": 2,
+  "footprintH": 1,
+  "canPlaceOnWalls": false,
+  "canPlaceOnSurfaces": false,
+  "backgroundTiles": 1
+}

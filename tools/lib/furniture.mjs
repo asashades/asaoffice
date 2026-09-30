@@ -2,6 +2,7 @@
 // Geometry mirrors the bundled pieces (desk surface rows, PC keyboard rows, chair heights) so
 // seating, surfaces and z-sorting behave exactly like the defaults.
 import { Sprite, shade, rng } from './pixel.mjs';
+import { buildOfficeExtras } from './furniture-office.mjs';
 
 // Warm Stardew-ish wood ramp + accents
 const C = {
@@ -822,5 +823,6 @@ export function buildFurniture() {
     { surface: true },
   );
 
+  items.push(...buildOfficeExtras());
   return items;
 }

@@ -1,0 +1,14 @@
+{
+  "id": "COZY_TREE",
+  "name": "Apple Tree",
+  "category": "decor",
+  "type": "asset",
+  "file": "COZY_TREE.png",
+  "width": 32,
+  "height": 48,
+  "footprintW": 2,
+  "footprintH": 3,
+  "canPlaceOnWalls": false,
+  "canPlaceOnSurfaces": false,
+  "backgroundTiles": 2
+}

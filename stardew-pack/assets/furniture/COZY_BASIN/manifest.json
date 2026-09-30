@@ -1,0 +1,14 @@
+{
+  "id": "COZY_BASIN",
+  "name": "Basin with Mirror",
+  "category": "misc",
+  "type": "asset",
+  "file": "COZY_BASIN.png",
+  "width": 16,
+  "height": 32,
+  "footprintW": 1,
+  "footprintH": 2,
+  "canPlaceOnWalls": false,
+  "canPlaceOnSurfaces": false,
+  "backgroundTiles": 1
+}
