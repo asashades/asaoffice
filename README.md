@@ -224,6 +224,26 @@ Existing offices need the task board placed once, like the Holo-board: `npm run 
 The task board reads the same feed as the Holo-board, which now also carries each recent session's title, last
 prompt, project folder name and to-dos (same token-hashed file, so the same privacy as the calendar).
 
+## HUD
+
+An always-on overview around the office (`addon/hud.js`), in the same cozy look as the other panels. The idea of a
+HUD with live counters, a feed, a sub-agent history and per-character cards is inspired by
+[kantor-agent](https://github.com/humaedihume/kantor-agent) (no code taken from it).
+
+- **Top bar:** one sentence about what the office is doing ("Lagi kerja: Shades · 2 asisten ikut bantu"), whether the
+  data feed is alive, and counters: sessions working, helpers working, sub-agents started today.
+- **Cards along the bottom:** one per villager (Shades, sessions, helpers, staff acting for Shades) with its state
+  (Bekerja, Santai, Selesai for 45 s after work, Nunggu kamu, Butuh izin), its project or task and what it's doing right
+  now. Click a card to select and follow that villager.
+- **Side panel, three tabs:** **Aktivitas** (live feed of tool calls, helpers coming and going, waiting for you; it
+  starts when the page opens), **Riwayat** (sub-agents of the last 24 hours with their task, working or done) and
+  **Tugas** (TodoWrite lists of the latest sessions). The panel can be minimised.
+- **H** or the 🧭 button under the zoom buttons hides the HUD for a clear view. On phones the panel sits above the
+  cards and starts minimised. `?hud=off` turns the HUD off (remembered; `?hud=on` brings it back).
+
+History and todos come from the data feed (`runs` and `tasks`, read from `~/.claude/projects` by
+`tools/lib/claude-stats.mjs`), so they need `npm run office`.
+
 ## Pomodoro
 
 Click the pendulum clock on the wall to open the timer. **Start focus** runs 25 minutes (or 50 with the 50/10
@@ -284,15 +304,30 @@ description (a copy you edited in `~/.claude/agents/` is backed up first). `npm 
 
 ## Mailbox: send tasks from the office
 
-Click the mailbox on the wall (next to the calendar), or **✉️ Kirim tugas baru** on the task board:
+Click the mailbox on the wall (next to the calendar), or **✉️ Kirim tugas baru** on the task board. The mailbox is a
+chat (Shades is the default recipient):
 
-1. **Tugas baru:** pick who does it (plain Claude, or an installed staff member), the project (folders Claude Code
-   worked in recently, plus the office's own workspace), and what to do, then send it.
-2. The office runs it on the Mac as a headless Claude Code session. With hooks on, its villager walks to a desk and
+1. **Chat baru:** type the task and press Enter (Shift+Enter for a new line). Under the box, chips pick who does it
+   (Shades, a staff member or plain Claude), the project (folders Claude Code worked in recently, plus the office's own
+   workspace), how to work (plan first / just do it / report only) and, for Shades, thrifty or real delegation. The
+   chips remember your last choice, so the usual task is just typing and Enter. Three quick suggestions help you start.
+2. **Sending is a little show.** A whoosh sound, a paper plane flying from the send button to the mailbox on the wall,
+   the letter dropping in with a thunk, then **Shades gets up, takes the letter from the mailbox and hands it over**
+   (to the meeting on the sofas for his own tasks, or to the workroom for a staff member). The panel closes so you can
+   watch. For 3 seconds after sending there's an **↩ Batalkan** bar: the letter is only queued, so undoing it cancels the
+   task before anything has started. The task only *starts* when he hands it over (the task server holds it as "queued" until then, or for 30
+   seconds at most), so the show never delays real work by more than a few seconds. If Shades is busy or reduced
+   motion is on, the task starts right away and only the plane flies. Sounds are synthesised (WebAudio) and muted by 🔕.
+   Typing **@name** at any point in a new chat opens a small list to pick who does it (arrow keys + Enter, or click);
+   the "@name" text is removed and the who-chip flashes. **Drafts are kept** per chat, across closing the panel and
+   reloading the page.
+3. The office runs it on the Mac as a headless Claude Code session. With hooks on, its villager walks to a desk and
    works like any other session, and a staff member shows up as their own villager (Wren, Pip, …).
-3. The answer arrives as a **letter**, with a chime and a red badge on the mailbox. Reply in the letter to continue the
-   same conversation (`claude -p --resume`), stop a running task, or archive the letter.
-4. Each morning there's a **daily report** letter with yesterday's sessions, tool calls, edited files, tokens, most used
+4. The chat shows the answer with a "typing" bubble and live progress while it works; a chime and a red badge on the
+   mailbox tell you when it's done. Plans, reports and errors are chat bubbles; a plan comes with **✅ Setujui** and
+   **❌ Tolak** right under it (write a revision in the box to revise). Reply to keep talking in the same session
+   (`claude -p --resume`), stop a running task, or archive the chat.
+5. Each morning there's a **daily report** with yesterday's sessions, tool calls, edited files, tokens, most used
    model, mailbox tasks done and the streak.
 
 What a task may do depends on who does it (`staff/roster.json` → `access`). Everything else is refused automatically
@@ -316,6 +351,22 @@ At most 3 tasks run at once, and each is stopped after 30 minutes. Letters are k
 `~/.pixel-agents/asaoffice-mail.json` (last 60). Tasks use your normal Claude Code account and usage.
 `OFFICE_TASKS=off npm run office` turns sending off. Existing offices need the mailbox placed once: run
 `npm run layout`, or pick **Layout → Mailbox**.
+
+While a task runs, its letter shows live progress ("⏳ Baca app.js", "⏳ Jalanin: npm test", "⏳ Nulis jawaban"), read from
+the session's stream-json output. Every letter also has **📋 Salin perintah Terminal**, which copies
+`cd '<project>' && claude --resume <session id>` so you can keep talking in the same session from Terminal. Task
+sessions run headless (`claude -p`), so they don't appear in the Claude Desktop session list; the office is where
+you follow them. They use whatever account the `claude` command is logged in to (your Pro plan, unless an
+`ANTHROPIC_API_KEY` is set in the environment).
+
+**Finding your way around.** The mailbox has two tabs. **📮 Surat** lists the letters, with a search box and filters
+(status, project, person). Each letter gets a title from the first line of the task, which you can rename in the
+letter. **🗂 Semua sesi** lists every Claude Code session on this Mac from the last 30 days (Terminal, Desktop and
+the mailbox alike; chat-only sessions too) with its title, folder, last prompt, how recent it is ("● lagi jalan" when
+active in the last 90 seconds) and a **📋 Salin** button for the Terminal resume command. Sessions that came from
+the mailbox open their letter when clicked. The data comes from `~/.claude/projects` (`tools/lib/claude-stats.mjs` →
+`sessions` in the data feed). The project list for new tasks comes from the same place, the folders Claude Code worked
+in during the last 45 days (15 at most, plus the office workspace), shown with their path.
 
 **Approval modes** (the **Cara kerja** menu when you send a task), like Claude Code's own modes:
 

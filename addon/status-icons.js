@@ -230,6 +230,12 @@
     return s ? translate(s) : null;
   };
 
+  /** What sub-agent villager `ch` is doing (its tool, else its task), translated; null if unknown. Used by the HUD. */
+  ns.subStatusText = (ch) => {
+    const office = ns.view?.office;
+    return office && ch?.isSubagent ? subText(office, ch) : null;
+  };
+
   function onSofa(office, ch) {
     if (!ch.seatId || ch.state !== 'type' || ch.asaActivity) return false;
     const uid = String(ch.seatId).split(':')[0];

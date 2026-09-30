@@ -165,7 +165,7 @@
     }
     return null;
   }
-  const eligible = (ch) => !ch.isActive && !ch.isSubagent && !ch.isGreeter && !ch.isHeadless && !ch.matrixEffect && ch.bubbleType !== 'permission';
+  const eligible = (ch) => !ch.isActive && !ch.asaBusy && !ch.isSubagent && !ch.isGreeter && !ch.isHeadless && !ch.matrixEffect && ch.bubbleType !== 'permission';
 
   function pickSpot(office, ch, center) {
     const taken = new Set([...gather.values()].map((g) => key(g.col, g.row)));

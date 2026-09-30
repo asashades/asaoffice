@@ -71,6 +71,56 @@
     }
   }
 
+  /** Short sound effects for the mailbox (all synthesised, muted by 🔕): send (whoosh), pickup, drop (letter lands), plan. */
+  function sfx(name) {
+    if (!enabled) return;
+    unlockAudio();
+    if (!audio || audio.state !== 'running') return;
+    const t0 = audio.currentTime + 0.01;
+    const env = (gain, peak, at, len) => {
+      gain.gain.setValueAtTime(0.0001, t0 + at);
+      gain.gain.exponentialRampToValueAtTime(peak, t0 + at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + at + len);
+    };
+    const tone = (type, from, to, at, len, peak) => {
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(from, t0 + at);
+      osc.frequency.exponentialRampToValueAtTime(to, t0 + at + len);
+      env(gain, peak, at, len);
+      osc.connect(gain).connect(audio.destination);
+      osc.start(t0 + at);
+      osc.stop(t0 + at + len + 0.05);
+    };
+    if (name === 'send') { // a paper-plane whoosh: filtered noise sweeping up
+      const len = 0.5;
+      const buf = audio.createBuffer(1, Math.floor(audio.sampleRate * len), audio.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      const src = audio.createBufferSource();
+      const filter = audio.createBiquadFilter();
+      const gain = audio.createGain();
+      src.buffer = buf;
+      filter.type = 'bandpass';
+      filter.Q.value = 2.5;
+      filter.frequency.setValueAtTime(500, t0);
+      filter.frequency.exponentialRampToValueAtTime(3200, t0 + len);
+      env(gain, 0.12, 0, len);
+      src.connect(filter).connect(gain).connect(audio.destination);
+      src.start(t0);
+    } else if (name === 'drop') { // the letter drops into the mailbox: thunk, then a little ting
+      tone('sine', 190, 70, 0, 0.16, 0.18);
+      tone('triangle', 1174.7, 1174.7, 0.1, 0.22, 0.07);
+    } else if (name === 'pickup') {
+      tone('square', 660, 660, 0, 0.08, 0.03);
+      tone('square', 880, 880, 0.09, 0.1, 0.03);
+    } else if (name === 'plan') {
+      tone('triangle', 523.3, 523.3, 0, 0.16, 0.07);
+      tone('triangle', 784, 784, 0.14, 0.24, 0.07);
+    }
+  }
+
   // ── Toasts ──
   const css = `
   .asa-toasts { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 950; display: flex;
@@ -150,6 +200,8 @@
   });
 
   ns.notify = {
+    sfx,
+    get enabled() { return enabled; },
     test: (kind = 'permission') => { const ch = ns.view?.office?.characters.values().next().value; if (ch) announce(kind, ch); },
     /** Office-wide message (e.g. the Pomodoro timer): toast + chime + system notification, muted by 🔕. */
     message({ icon, title, body = '', kind = 'done' }) {

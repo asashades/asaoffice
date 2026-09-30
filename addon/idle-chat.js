@@ -65,7 +65,7 @@
   const inConvo = (id) => convos.some((c) => c.a === id || c.b === id);
   const interrupted = (ch) => ch.isActive || ch.matrixEffect || ch.bubbleType === 'permission';
   function available(ch) {
-    return !ch.isActive && !ch.isSubagent && !ch.isGreeter && !ch.isHeadless && !ch.matrixEffect &&
+    return !ch.isActive && !ch.asaBusy && !ch.isSubagent && !ch.isGreeter && !ch.isHeadless && !ch.matrixEffect &&
       ch.bubbleType !== 'permission' && !inConvo(ch.id) && !ns.activities?.isBusy(ch.id) &&
       (ns.pomodoro?.mayChat?.(ch.id) ?? true);
   }

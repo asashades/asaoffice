@@ -133,6 +133,14 @@ Kalau Holo-board belum ada di kantor kamu, jalanin `npm run layout` (layout lama
 
 Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layout**, cari **Task Board**, tempel di dinding.
 
+## HUD: ringkasan kantor di layar 🧭
+
+Di sekeliling kantor ada **HUD** (papan ringkasan) yang selalu kelihatan:
+- **Bar atas:** satu kalimat tentang apa yang lagi terjadi ("Lagi kerja: Shades · 2 asisten ikut bantu"), status koneksi data, dan angka: sesi yang lagi kerja, asisten yang lagi kerja, dan subagent hari ini.
+- **Kartu di bawah:** satu kartu per villager (Shades, sesi, asisten, karyawan yang lagi "akting" bantu Shades). Isinya status (Bekerja, Santai, Selesai, Nunggu kamu, Butuh izin), proyek atau tugasnya, dan apa yang lagi dikerjain. **Klik kartu** buat ngikutin villager itu.
+- **Panel samping** dengan tiga tab: **Aktivitas** (feed langsung: tool yang dipakai, asisten datang dan pergi), **Riwayat** (subagent 24 jam terakhir), dan **Tugas** (daftar TodoWrite sesi terbaru). Panelnya bisa diperkecil pakai tombol ▾.
+- Mau lihat kantor tanpa HUD? Tekan **H** atau klik tombol 🧭 di bawah tombol zoom. Di HP panelnya mulai dalam keadaan kecil. Mau dimatiin permanen? Tambah `&hud=off` di ujung link kantor (`&hud=on` buat nyalain lagi).
+
 ## Pomodoro 🍅
 
 - **Klik jam dinding** (jam bandul di sebelah jendela), terus klik **▶ Mulai fokus**. Timer 25 menit jalan, dan
@@ -180,16 +188,33 @@ Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layo
 
 Sekarang kamu bisa **nyuruh Claude langsung dari kantor**, gak perlu buka Terminal.
 
-1. Klik **kotak surat** di dinding (sebelah kalender), terus klik **✉️ Tugas baru**. Bisa juga lewat tombol
-   **✉️ Kirim tugas baru** di papan tugas.
-2. Pilih **siapa** yang ngerjain (Claude biasa, atau karyawan kayak Wren/Pip), **proyeknya**, terus tulis **tugasnya**.
-   Contoh: *"jalanin semua test terus kasih tahu yang gagal"*. Klik **Kirim tugas**.
-3. Villager-nya jalan ke meja dan mulai kerja. Kalau yang kamu pilih karyawan, yang datang villager dia sendiri
-   (misalnya Wren).
-4. Kalau udah selesai, bunyi "ting", terus ada **angka merah di kotak surat**. Buka buat baca hasilnya dalam bentuk surat.
-5. Mau lanjut? Tulis di kotak **Balas**, nanti dia nerusin kerjaan yang sama. Ada juga tombol **Hentikan** (kalau
-   masih jalan) dan **Arsipkan**.
-6. Tiap pagi ada **surat laporan harian** dari kantor: kemarin ada berapa sesi, tool, file diedit, token, dan streak 🔥.
+1. Klik **kotak surat** di dinding (sebelah kalender). Bisa juga lewat tombol **✉️ Kirim tugas baru** di papan tugas.
+   Tampilannya **chat**: Shades udah jadi penerima bawaan.
+2. Ketik tugasnya (contoh: *"jalanin semua test terus kasih tahu yang gagal"*), terus tekan **Enter** (Shift+Enter buat
+   baris baru). Di bawah kotak ada **chip pilihan**: siapa yang ngerjain, proyek, cara kerja (Rencana dulu / Langsung
+   jalan / Cuma laporan), dan gaya kerja Shades (Hemat / Delegasi). Pilihanmu **diingat**, jadi biasanya tinggal ketik
+   lalu Enter. Ada juga 3 saran tugas buat mulai.
+3. **Kirimnya seru:** ada bunyi "wusss", **pesawat kertas terbang ke kotak surat** di dinding, suratnya jatuh ke dalam
+   ("tok!"), terus **Shades bangun, ngambil surat dari kotak surat, dan nganterin ke yang ngerjain** (ke rapat di sofa
+   kalau tugas buat dia sendiri, atau ke ruang kerja kalau buat karyawan). Selama 3 detik setelah kirim ada tombol **↩ Batalkan** kalau salah kirim (tugasnya belum mulai, jadi aman). Panelnya nutup biar kamu bisa lihat. Tugasnya
+   baru mulai jalan pas Shades nyerahin suratnya (paling lama 30 detik), jadi kerjaannya gak ketunda lama. Bunyinya bisa
+   dimatiin lewat tombol 🔕.
+   Ada dua bonus: ketik **@nama** (misalnya `@Wren`) di chat baru buat milih siapa yang ngerjain (pakai panah + Enter,
+   atau klik). Dan **draf tulisanmu tersimpan** per chat, jadi gak hilang walau panelnya ketutup atau halamannya di-refresh.
+4. Villager-nya kerja seperti biasa. Kalau yang kamu pilih karyawan, yang datang villager dia sendiri (misalnya Wren).
+5. Di chat kelihatan gelembung "lagi ngetik" dengan progres langsung. Kalau udah selesai, bunyi "ting" dan ada **angka
+   merah di kotak surat**. Rencana, laporan, dan error muncul sebagai gelembung chat. Rencana punya tombol **✅ Setujui**
+   dan **❌ Tolak** tepat di bawahnya (mau revisi? tulis di kotak bawah).
+6. Mau lanjut? Tulis di kotak chat, dia nerusin kerjaan yang sama. Ada tombol **⏹** (kalau masih jalan), **📋** (salin
+   perintah Terminal) dan **🗄** (arsipkan).
+7. Tiap pagi ada **laporan harian** dari kantor: kemarin ada berapa sesi, tool, file diedit, token, dan streak 🔥.
+
+**Ngikutin progres:** selama tugas jalan, suratnya nunjukin apa yang lagi dikerjain ("⏳ Baca app.js", "⏳ Jalanin: npm test"). Di tiap surat ada tombol **📋 Salin perintah Terminal**: tempel di Terminal buat lanjut ngobrol di sesi yang sama. Tugas dari kotak surat jalan di belakang layar, jadi **gak muncul di daftar sesi Claude Desktop**. Ngikutinnya lewat kantor dan kotak surat. Pakai jatah akun `claude` di Mac kamu (Pro), kecuali ada `ANTHROPIC_API_KEY` yang aktif. Cek: `echo $ANTHROPIC_API_KEY` (kosong = aman).
+
+**Biar gak bingung sesi yang mana:**
+- Tiap surat dapet **judul otomatis** dari kalimat pertama tugasmu. Mau ganti? Ketik langsung di kotak judul dalam surat.
+- Di kiri kotak surat ada dua tab. **💬 Chat** buat chat-chatmu, lengkap dengan kotak cari dan filter (status, proyek, orang). **🗂 Sesi** nunjukin semua sesi Claude Code di Mac ini 30 hari terakhir, baik dari Terminal, Desktop, maupun kotak surat. Ada judul, folder, pesan terakhir, dan kapan terakhir aktif ("● lagi jalan" kalau aktif dalam 90 detik terakhir). Klik **📋 Salin** buat dapet perintah lanjut di Terminal.
+- **Daftar proyek** di form tugas diambil dari folder yang dipakai Claude Code di Mac kamu dalam 45 hari terakhir (maksimal 15, plus folder workspace kantor), sekarang lengkap sama path-nya.
 
 **Batasan biar aman:**
 - Tugas cuma boleh ngelakuin hal sesuai jabatannya. Pip dan Gus cuma baca. Wren dan Bayu boleh ngedit dan jalanin

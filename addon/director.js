@@ -8,6 +8,9 @@
 //   - "Mode Hemat": Shades does the work in one session, but the staff act it out — when he reads code Iris
 //     (or Gus while planning) sits at a desk reading, tests make Wren busy, git makes Pip busy, docs Sari, other
 //     edits and commands Bayu. Only installed staff (npm run staff) show up, and they leave again after the task.
+//   - Courier: a task sent from the mailbox is a letter. Shades gets up, takes it from the mailbox on the wall and
+//     hands it over (to the meeting on the sofas for his own tasks, or to the workroom for a staff member's), and
+//     only then does the task start (the task server holds it until ns.director.courier calls back, or 30 s pass).
 // Which session is his comes from the office data feed (taskAgents); the mailbox also tells us a moment before
 // (ns.director.expect) so the swap happens as the session appears instead of a few seconds later.
 (() => {
@@ -33,6 +36,7 @@
         'bayu-debugger': 'Kalau ada bug, serahin aku.',
       },
       ok: 'Siap, Pak!',
+      handoff: (n) => (n ? `${n}, ada tugas dari Komisaris!` : 'Ada tugas dari Komisaris!'),
     },
     en: {
       awaiting: 'Plan ready — check the mail',
@@ -53,6 +57,7 @@
         'bayu-debugger': 'Bugs? Send them my way.',
       },
       ok: 'On it, boss!',
+      handoff: (n) => (n ? `${n}, a task from the Commissioner!` : 'A task from the Commissioner!'),
     },
   });
 
@@ -83,6 +88,7 @@
   let meeting = null; // { start, lines: [{ id, text }], ids: Set, shadesId }
   let rest = { until: performance.now() + (60 + Math.random() * 120) * 1000, away: false }; // desk ↔ stroll rhythm
   let readUntil = 0;
+  let courier = null; // { phase, since, deadline, agent, name, deliver, tile, seat, fx }
 
   // ── Seats ──
   const seatsOf = (office, test) => {
@@ -132,13 +138,13 @@
     if (npc.palette !== director().palette) dress(npc, director());
     // Mostly at his desk; every few minutes a short walk (idle chat, activities and Pomodoro treat him like anyone).
     const now = performance.now();
-    if (!meeting && now > rest.until) {
+    if (!meeting && !courier && now > rest.until) {
       rest = rest.away
         ? { away: false, until: now + (180 + Math.random() * 240) * 1000 }
         : { away: true, until: now + (45 + Math.random() * 75) * 1000 };
       if (rest.away) { office.setAgentActive(NPC_ID, false); office.setAgentTool(NPC_ID, null); }
     }
-    if (!meeting && !rest.away) {
+    if (!meeting && !courier && !rest.away) {
       if (!npc.isActive) office.setAgentActive(NPC_ID, true);
       const seat = execSeat(office);
       if (seat && npc.seatId !== seat) moveTo(office, npc, seat);
@@ -162,6 +168,7 @@
       Object.assign(ch, { matrixEffect: null, matrixEffectTimer: 0, matrixEffectSeeds: [] });
     }
     claimed = ch.id;
+    courier = null;
     ensureShades(office); // removes the NPC and frees its seat
     const start = expecting?.meeting ? startMeeting(office, ch, expecting.prompt) : false;
     if (!start) moveTo(office, ch, execSeat(office));
@@ -169,6 +176,7 @@
   }
   function release(office, ch) {
     claimed = null;
+    courier = null;
     endedAt = performance.now();
     rest = { away: false, until: endedAt + (120 + Math.random() * 180) * 1000 };
     if (meeting) endMeeting(office, ch?.id);
@@ -368,7 +376,123 @@
   /** Villager card: a note after the role line. */
   ns.castNote = (ch) => (ch.asaActing ? S.acting : ch.asaShades ? S.alwaysIn : '');
 
+  // ── Courier: Shades fetches the letter from the mailbox and hands it over ──
+  const UP = 3;
+  const COURIER_TIMEOUT_MS = 14_000;
+  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const arrived = (ch) => ch.path.length === 0 && ch.state !== 'walk';
+  function finishCourier(office) {
+    const npc = office.characters.get(NPC_ID);
+    if (npc) { npc.asaBusy = false; npc.asaCarry = false; }
+    courier = null;
+  }
+  function startCourier(spec) {
+    const office = ns.view?.office;
+    const npc = office?.characters.get(NPC_ID);
+    if (!office || !npc || npc.matrixEffect || claimed != null || meeting || courier || reduced()) return false;
+    if (!ns.findFurniture('COZY_MAILBOX')[0] || !office.walkableTiles?.length) return false;
+    const now = performance.now();
+    npc.asaBusy = true;
+    office.setAgentActive(NPC_ID, false);
+    office.setAgentTool(NPC_ID, null);
+    courier = { ...spec, phase: 'wait', since: now, deadline: now + 6000 };
+    return true;
+  }
+  function tendCourier(office) {
+    if (!courier) return;
+    const npc = office.characters.get(NPC_ID);
+    if (!npc || claimed != null) { courier = null; return; }
+    const now = performance.now();
+    const go = (phase, ms = COURIER_TIMEOUT_MS) => { courier.phase = phase; courier.since = now; courier.deadline = now + ms; };
+    const c = courier;
+    const late = now > c.deadline;
+    if (c.phase === 'wait') { // let an idle activity or chat he's in wind down first
+      const busy = ns.activities?.isBusy?.(NPC_ID) || ns.idleChat?.partnerOf?.(NPC_ID) != null;
+      if (busy && !late) return;
+      const m = ns.findFurniture('COZY_MAILBOX')[0];
+      const tile = office.closestFreeWalkableTile(m.col, m.row + 2);
+      go('toMailbox');
+      if (!tile || !office.walkToTile(NPC_ID, tile.col, tile.row)) go('pickup', 700);
+    } else if (c.phase === 'toMailbox') {
+      if ((now - c.since > 400 && arrived(npc)) || late) {
+        npc.dir = UP;
+        npc.asaCarry = true;
+        ns.notify?.sfx?.('pickup');
+        go('pickup', 800);
+      }
+    } else if (c.phase === 'pickup') {
+      if (now < c.deadline) return;
+      go('toTarget');
+      if (c.agent === DIRECTOR) {
+        c.seat = freeSeats(office, (t) => t.startsWith('COZY_SOFA'))[0] ?? null;
+        if (c.seat) moveTo(office, npc, c.seat);
+      }
+      if (!c.seat) {
+        const tile = office.closestFreeWalkableTile(7, 7);
+        if (!tile || !office.walkToTile(NPC_ID, tile.col, tile.row)) go('handoff', 2600);
+      }
+    } else if (c.phase === 'toTarget') {
+      if ((now - c.since > 400 && arrived(npc)) || late) {
+        npc.asaCarry = false;
+        c.fx = now;
+        ns.notify?.sfx?.('plan');
+        c.deliver?.();
+        go('handoff', 2600);
+      }
+    } else if (c.phase === 'handoff') {
+      if (now < c.deadline) return;
+      if (c.agent === DIRECTOR) go('await', 30_000); // his session takes over as soon as it appears
+      else {
+        moveTo(office, npc, execSeat(office));
+        finishCourier(office);
+      }
+    } else if (c.phase === 'await') {
+      if (late) {
+        moveTo(office, npc, execSeat(office));
+        finishCourier(office);
+      }
+    }
+  }
+  function drawCourier(ctx, office, offX, offY, zoom) {
+    const npc = office.characters.get(NPC_ID);
+    if (!npc) return;
+    const u = Math.max(1, Math.round(zoom));
+    const now = performance.now();
+    const cx = offX + npc.x * zoom;
+    if (npc.asaCarry) { // the letter in his hands, over his head
+      const bob = Math.round(Math.sin(now / 180) * u);
+      const x = Math.round(cx - 5 * u);
+      const y = Math.round(offY + (npc.y - 34) * zoom + bob);
+      ctx.fillStyle = '#2b1a10';
+      ctx.fillRect(x - u, y - u, 12 * u, 9 * u);
+      ctx.fillStyle = '#fff6dc';
+      ctx.fillRect(x, y, 10 * u, 7 * u);
+      ctx.fillStyle = '#c8503c';
+      for (let i = 0; i < 5; i++) ctx.fillRect(x + i * u, y + i * u, u, u), ctx.fillRect(x + (9 - i) * u, y + i * u, u, u);
+    }
+    if (courier?.fx && now - courier.fx < 700) { // a little burst as the letter changes hands
+      const k = (now - courier.fx) / 700;
+      ctx.globalAlpha = 1 - k;
+      ctx.fillStyle = '#f2d070';
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        const r = (6 + 14 * k) * zoom;
+        ctx.fillRect(Math.round(cx + Math.cos(a) * r), Math.round(offY + (npc.y - 14) * zoom + Math.sin(a) * r), 2 * u, 2 * u);
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (courier?.fx && now - courier.fx < 2600 && ns.drawSpeech) {
+      ns.drawSpeech(ctx, cx, offY + (npc.y - 30) * zoom, zoom, { text: S.handoff(courier.agent === DIRECTOR ? '' : courier.name), t: now / 1000 });
+    }
+  }
+
   ns.director = {
+    /**
+     * Shades takes the letter for a task just created on hold and hands it over, then calls `deliver()` (which tells
+     * the task server to start it). Returns false when he can't (he's working, in a meeting, reduced motion…): then
+     * the caller starts the task right away.
+     */
+    courier: ({ agent, name = '', deliver }) => startCourier({ agent, name, deliver }),
     /** The mailbox just started (or resumed) a task for Shades in `cwd`: claim the next session that appears there. */
     expect({ cwd, prompt = '', meeting: withMeeting = false }) {
       const folder = String(cwd ?? '').split(/[\\/]/).filter(Boolean).pop() ?? null;
@@ -382,12 +506,14 @@
     if (!office?.characters) return;
     track(office);
     ensureShades(office);
+    tendCourier(office);
     tendStaff(office);
-    if (meeting && !editMode) {
+    if ((meeting || courier || office.characters.get(NPC_ID)?.asaCarry) && !editMode) {
       const ctx = canvas.getContext('2d');
       ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      drawMeeting(ctx, office, offX, offY, zoom);
+      if (meeting) drawMeeting(ctx, office, offX, offY, zoom);
+      drawCourier(ctx, office, offX, offY, zoom);
       ctx.restore();
     }
   });

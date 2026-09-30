@@ -1,4 +1,4 @@
-// Installs addon/ (idle chat, villager card, calendar, Holo-board, Pomodoro, mailbox, director) into the installed pixel-agents webview: copies the scripts to
+// Installs addon/ (idle chat, villager card, calendar, Holo-board, Pomodoro, mailbox, director, HUD) into the installed pixel-agents webview: copies the scripts to
 // dist/webview/asaoffice/, adds <script> tags to index.html, and patches one spot in the bundle
 // so it calls window.__asaoffice.afterRender(...) after each frame. Originals go to the same
 // .asaoffice-backup folder the art overlay uses. Only the installed copy in node_modules changes.
@@ -26,6 +26,7 @@ const SCRIPTS = [
   'taskboard.js',
   'pomodoro.js',
   'mailbox.js',
+  'hud.js',
 ];
 const HTML_MARKER = '<!-- asaoffice addon -->';
 const JS_MARKER_PREFIX = '/*asaoffice-hook';

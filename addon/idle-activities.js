@@ -263,7 +263,7 @@
       nextCheck = clock + CFG.checkEverySec;
       const idle = [...office.characters.values()].filter((ch) => {
         const m = meta.get(ch.id);
-        return !ch.isActive && !ch.isSubagent && !ch.isGreeter && !ch.isHeadless && !ch.matrixEffect && !ch.bubbleType &&
+        return !ch.isActive && !ch.asaBusy && !ch.isSubagent && !ch.isGreeter && !ch.isHeadless && !ch.matrixEffect && !ch.bubbleType &&
           !jobs.has(ch.id) && ns.idleChat?.partnerOf?.(ch.id) == null && m.idleSince !== null &&
           clock - m.idleSince >= CFG.minIdleSec && clock >= m.cooldownUntil;
       });
@@ -286,7 +286,7 @@
       const office = ns.view?.office;
       if (!office) return null;
       for (const ch of office.characters.values()) {
-        if (ch.isActive || ch.isSubagent || jobs.has(ch.id) || ns.idleChat?.partnerOf?.(ch.id) != null) continue;
+        if (ch.isActive || ch.asaBusy || ch.isSubagent || jobs.has(ch.id) || ns.idleChat?.partnerOf?.(ch.id) != null) continue;
         const job = start(office, ch, kind);
         if (job) return { id: job.id, kind: job.kind };
       }

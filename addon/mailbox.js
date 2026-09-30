@@ -13,7 +13,7 @@
     id: {
       title: 'Kotak Surat', compose: '✉️ Tugas baru', back: '← Kembali', empty: 'Belum ada surat. Kirim tugas pertama lewat tombol di atas!',
       who: 'Siapa yang ngerjain?', general: 'Claude (umum)', project: 'Proyek', task: 'Tugasnya apa?',
-      placeholder: 'Misal: jalanin semua test terus ceritain yang gagal', send: 'Kirim tugas', sending: 'Ngirim…',
+      placeholder: 'Tulis tugasnya… (@nama pilih orang · Enter kirim · Shift+Enter baris baru)', send: 'Kirim', sending: 'Ngirim…',
       access: { read: 'baca file', web: 'cari di web', edit: 'ngedit file', git: 'lihat git', test: 'jalanin test' },
       canDo: (list) => `Boleh: ${list}. Selain itu ditolak otomatis.`,
       running: '⏳ Lagi dikerjain', done: '✅ Selesai', error: '⚠️ Gagal', stopped: '⏹ Dihentikan',
@@ -37,11 +37,29 @@
       approve: '✅ Setujui', revise: '✏️ Revisi', reject: '❌ Tolak', revisePh: 'Apa yang perlu diubah dari rencananya?',
       planReady: (n) => `${n}: rencananya siap, nunggu persetujuanmu`, planLabel: '📝 Rencana', reportLabel: '📜 Laporan untuk Komisaris',
       directorBusy: 'Shades lagi ngerjain tugas lain. Tunggu selesai dulu ya.',
+      progress: (t) => `⏳ ${t}`, starting: '⏳ Lagi mulai…', writing: 'Nulis jawaban',
+      copyCmd: '📋 Salin perintah Terminal', copied: '✅ Tersalin! Tempel di Terminal',
+      copyNote: 'Buat lanjut ngobrol di sesi yang sama dari Terminal.',
+      tabLetters: '📮 Surat', tabSessions: '🗂 Semua sesi', search: 'Cari judul, proyek, atau isi…',
+      fAll: 'Semua', fRunning: '⏳ Jalan', fAwaiting: '📝 Nunggu', fDone: '✅ Selesai', allProjects: 'Semua proyek', allWho: 'Semua orang',
+      noMatch: 'Gak ada yang cocok.', noSessions: 'Belum ada sesi Claude Code di Mac ini.', live: '● lagi jalan', ago: (m) => (m < 1 ? 'barusan' : m < 60 ? `${m} mnt lalu` : m < 1440 ? `${Math.round(m / 60)} jam lalu` : `${Math.round(m / 1440)} hari lalu`),
+      fromMailbox: '📮 dari kotak surat', sessionsNote: 'Semua sesi Claude Code di Mac ini (Terminal, Desktop, dan kotak surat), 30 hari terakhir.',
+      rename: 'Judul surat', copySmall: '📋 Salin', copiedSmall: '✅',
+      queued: '📮 Diantar', queuedShort: '📮 Nunggu diambil Shades…', queuedNote: (n) => (n ? `📮 Suratmu lagi diantar Shades ke ${n}…` : '📮 Suratmu lagi diambil Shades…'),
+      newChat: '＋ Chat baru', newChatSub: 'Tulis tugasnya, pilih cara kerjanya di bawah', tabChats: '💬 Chat', tabSessions: '🗂 Sesi',
+      pickChat: 'Pilih chat di kiri, atau mulai yang baru.',
+      greeting: (n) => `Halo Komisaris! Mau dikerjain apa hari ini${n ? `, biar ${n} yang pegang` : ''}?`,
+      suggestions: ['Cek status proyek ini', 'Jalanin semua test terus laporin yang gagal', 'Review perubahan terakhir'],
+      chipModes: { plan: '📝 Rencana dulu', auto: '⚡ Langsung jalan', report: '👀 Cuma laporan' },
+      chipStyles: { solo: '💰 Hemat', delegate: '👥 Delegasi' },
+      approvedNote: '✅ Rencana disetujui', rejectedNote: '❌ Rencana ditolak', revisedNote: '✏️ Minta revisi', reviseHint: 'atau tulis revisinya di bawah',
+      busyPh: (n) => `${n} lagi kerja… tunggu jawabannya ya`,
+      sentUndo: '📮 Terkirim! Salah kirim?', undo: '↩ Batalkan',
     },
     en: {
       title: 'Mailbox', compose: '✉️ New task', back: '← Back', empty: 'No letters yet. Send your first task with the button above!',
       who: 'Who should do it?', general: 'Claude (general)', project: 'Project', task: 'What should they do?',
-      placeholder: 'E.g. run all the tests and tell me what fails', send: 'Send task', sending: 'Sending…',
+      placeholder: 'Write the task… (@name picks who · Enter sends · Shift+Enter new line)', send: 'Send', sending: 'Sending…',
       access: { read: 'read files', web: 'search the web', edit: 'edit files', git: 'look at git', test: 'run tests' },
       canDo: (list) => `Allowed: ${list}. Anything else is refused automatically.`,
       running: '⏳ In progress', done: '✅ Done', error: '⚠️ Failed', stopped: '⏹ Stopped',
@@ -65,6 +83,24 @@
       approve: '✅ Approve', revise: '✏️ Revise', reject: '❌ Reject', revisePh: 'What should change in the plan?',
       planReady: (n) => `${n}: the plan is ready for your approval`, planLabel: '📝 Plan', reportLabel: '📜 Report for the Commissioner',
       directorBusy: 'Shades is on another task. Wait for it to finish.',
+      progress: (t) => `⏳ ${t}`, starting: '⏳ Starting…', writing: 'Writing the answer',
+      copyCmd: '📋 Copy Terminal command', copied: '✅ Copied! Paste it in Terminal',
+      copyNote: 'To keep talking in the same session from Terminal.',
+      tabLetters: '📮 Letters', tabSessions: '🗂 All sessions', search: 'Search title, project or text…',
+      fAll: 'All', fRunning: '⏳ Running', fAwaiting: '📝 Waiting', fDone: '✅ Finished', allProjects: 'All projects', allWho: 'Everyone',
+      noMatch: 'Nothing matches.', noSessions: 'No Claude Code sessions on this Mac yet.', live: '● running now', ago: (m) => (m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`),
+      fromMailbox: '📮 from the mailbox', sessionsNote: 'Every Claude Code session on this Mac (Terminal, Desktop and the mailbox), last 30 days.',
+      rename: 'Letter title', copySmall: '📋 Copy', copiedSmall: '✅',
+      queued: '📮 Delivering', queuedShort: '📮 Waiting for Shades…', queuedNote: (n) => (n ? `📮 Shades is delivering your letter to ${n}…` : '📮 Shades is picking up your letter…'),
+      newChat: '＋ New chat', newChatSub: 'Write the task, pick how to work below', tabChats: '💬 Chats', tabSessions: '🗂 Sessions',
+      pickChat: 'Pick a chat on the left, or start a new one.',
+      greeting: (n) => `Hello Commissioner! What should we get done today${n ? `, with ${n} on it` : ''}?`,
+      suggestions: ['Check this project’s status', 'Run all the tests and report what fails', 'Review the latest changes'],
+      chipModes: { plan: '📝 Plan first', auto: '⚡ Just do it', report: '👀 Report only' },
+      chipStyles: { solo: '💰 Thrifty', delegate: '👥 Delegate' },
+      approvedNote: '✅ Plan approved', rejectedNote: '❌ Plan rejected', revisedNote: '✏️ Asked for a revision', reviseHint: 'or write the revision below',
+      busyPh: (n) => `${n} is working… wait for the answer`,
+      sentUndo: '📮 Sent! Sent by mistake?', undo: '↩ Undo',
     },
   });
 
@@ -93,6 +129,92 @@
   .asa-msg.you { background: #e6f0d8; border-color: #9ab87a; align-self: flex-end; max-width: 85%; }
   .asa-msg small { display: block; opacity: 0.6; font-size: 11px; margin-bottom: 3px; }
   .asa-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .asa-panel.asa-wide { max-width: min(960px, 100%); }
+  .asa-chat { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 12px; height: min(74vh, 640px); }
+  .asa-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden; border-right: 2px dashed #c9a877; padding-right: 12px; }
+  .asa-side .asa-letters { overflow-y: auto; flex: 1; min-height: 0; }
+  .asa-side .asa-letter { padding: 6px 8px; gap: 8px; }
+  .asa-side .asa-letter.on { border-color: #744122; background: #f4e6c4; box-shadow: inset 3px 0 0 #744122; }
+  .asa-side .asa-face { width: 26px; height: 42px; background-size: 182px 156px; background-position: -26px -3px; }
+  .asa-side .asa-letter-status { display: none; }
+  .asa-side .asa-filters { margin: 0; }
+  .asa-side input[type="search"] { font: inherit; font-size: 13px; padding: 5px 8px; background: #fffbe9; color: #3a2117; border: 2px solid #744122; min-width: 0; }
+  .asa-newchat.on { box-shadow: 0 2px 0 #973a2f, 0 0 0 3px #f2c94c; }
+  .asa-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .asa-chat-head { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 2px dashed #c9a877; }
+  .asa-chat-head .asa-face { width: 26px; height: 42px; background-size: 182px 156px; background-position: -26px -3px; flex: none; }
+  .asa-chat-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .asa-chat-title b { font-weight: normal; font-size: 16px; }
+  .asa-chat-title .asa-muted { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+  .asa-chat-head .asa-title-input { margin: 0; padding: 2px 6px; font-size: 15px; border-color: transparent; background: transparent; }
+  .asa-chat-head .asa-title-input:hover, .asa-chat-head .asa-title-input:focus { border-color: #d9c49a; background: #fffbe9; }
+  .asa-head-actions { display: flex; gap: 6px; flex: none; }
+  .asa-head-actions .asa-btn { padding: 3px 8px; }
+  .asa-back { display: none; padding: 3px 9px; }
+  .asa-thread-box { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 2px; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; scrollbar-color: #b8935c transparent; }
+  .asa-brow { display: flex; gap: 8px; align-items: flex-end; max-width: 92%; }
+  .asa-face.sm { width: 24px; height: 38px; background-size: 168px 144px; background-position: -24px -3px; flex: none; }
+  .asa-b { padding: 8px 10px; border: 1px solid #d9c49a; background: #fffbe9; font-size: 13.5px; line-height: 1.4; min-width: 0; }
+  .asa-b.you { align-self: flex-end; max-width: 85%; background: #e6f0d8; border-color: #9ab87a; }
+  .asa-b.plan { border-color: #4a8ac8; box-shadow: inset 3px 0 0 #4a8ac8; }
+  .asa-b .asa-b-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 46vh; overflow: auto; }
+  .asa-b small { display: block; opacity: 0.6; font-size: 11px; margin-top: 4px; }
+  .asa-b em { display: block; font-style: normal; margin-bottom: 4px; }
+  .asa-b.typing { display: flex; gap: 8px; align-items: center; }
+  .asa-dots { display: inline-flex; gap: 3px; } .asa-dots i { width: 5px; height: 5px; background: #744122; animation: asa-dot 1.2s infinite; }
+  .asa-dots i:nth-child(2) { animation-delay: 0.2s; } .asa-dots i:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes asa-dot { 0%, 60%, 100% { opacity: 0.25; transform: none; } 30% { opacity: 1; transform: translateY(-3px); } }
+  .asa-sys { align-self: center; font-size: 12px; padding: 2px 10px; background: #e6d3a6; border: 1px solid #c9a877; }
+  .asa-plan-actions { align-items: center; margin: -2px 0 0 32px; }
+  .asa-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 32px; }
+  .asa-comp { border-top: 2px dashed #c9a877; padding-top: 8px; display: flex; flex-direction: column; gap: 6px; position: relative; }
+  .asa-mention { position: absolute; left: 0; bottom: 100%; margin-bottom: 4px; z-index: 5; min-width: 240px; max-width: 100%; background: #fffbe9;
+    border: 2px solid #744122; box-shadow: 0 3px 0 rgba(0,0,0,0.25); display: flex; flex-direction: column; }
+  .asa-mention[hidden] { display: none; }
+  .asa-mention button { font: inherit; font-size: 13px; text-align: left; background: none; border: 0; padding: 5px 10px; cursor: pointer; color: inherit; }
+  .asa-mention button b { font-weight: normal; } .asa-mention button span { opacity: 0.65; font-size: 12px; }
+  .asa-mention button.on, .asa-mention button:hover { background: #f4e6c4; }
+  .asa-undo { position: relative; overflow: hidden; display: flex; align-items: center; gap: 10px; padding: 6px 10px 9px; margin-top: 6px; background: #fff6dc; border: 2px solid #744122; font-size: 13px; }
+  .asa-undo span { flex: 1; }
+  .asa-undo .asa-btn { padding: 3px 10px; }
+  .asa-undo-bar { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: #c8503c; transform-origin: left; animation: asa-undo linear forwards; }
+  @keyframes asa-undo { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+  .asa-flash { animation: asa-flash 0.9s ease-out; }
+  @keyframes asa-flash { 0%, 40% { border-color: #f2c94c; box-shadow: 0 0 0 3px #f2c94c; } 100% { box-shadow: 0 0 0 0 transparent; } }
+  .asa-comp-box { display: flex; gap: 8px; align-items: flex-end; }
+  .asa-comp textarea { flex: 1; min-width: 0; font: inherit; font-size: 14px; padding: 6px 8px; background: #fffbe9; color: #3a2117; border: 2px solid #744122;
+    resize: none; max-height: 150px; }
+  .asa-send { flex: none; width: 40px; height: 40px; font: inherit; font-size: 18px; cursor: pointer; background: #c8503c; color: #fff6dc; border: 2px solid #973a2f; box-shadow: 0 2px 0 #973a2f; }
+  .asa-send:disabled { opacity: 0.45; cursor: default; }
+  .asa-send.stop { background: #fffbe9; color: #3a2117; border-color: #744122; box-shadow: 0 2px 0 #744122; }
+  .asa-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .asa-chipsel { font: inherit; font-size: 12.5px; padding: 3px 6px; background: #fffbe9; color: #3a2117; border: 2px solid #d9c49a; max-width: 48%; cursor: pointer; }
+  .asa-chipsel:hover, .asa-chipsel:focus { border-color: #744122; }
+  .asa-pill { font-size: 12px; padding: 2px 8px; background: #e6d3a6; border: 1px solid #c9a877; }
+  .asa-plane { position: fixed; left: 0; top: 0; z-index: 1200; width: 28px; height: 28px; pointer-events: none; will-change: transform; }
+  .asa-spark { position: fixed; z-index: 1199; width: 5px; height: 5px; background: #f2c94c; pointer-events: none; animation: asa-spark 0.6s ease-out forwards; }
+  @keyframes asa-spark { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(10px) scale(0.3); } }
+  @media (max-width: 720px) {
+    .asa-chat { grid-template-columns: 1fr; height: min(78vh, 640px); }
+    .asa-side { border-right: 0; padding-right: 0; }
+    .asa-chat[data-show="list"] .asa-main, .asa-chat[data-show="chat"] .asa-side { display: none; }
+    .asa-back { display: block; }
+    .asa-side .asa-letter-status { display: block; }
+    .asa-chipsel { max-width: 46%; }
+  }
+  @media (prefers-reduced-motion: reduce) { .asa-dots i, .asa-spark { animation: none; } }
+  .asa-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .asa-tabs .asa-btn.on { background: #744122; color: #fff6dc; }
+  .asa-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .asa-filters input, .asa-filters select { font: inherit; font-size: 13px; padding: 4px 6px; background: #fffbe9; color: #3a2117;
+    border: 2px solid #744122; box-sizing: border-box; min-width: 0; }
+  .asa-filters input { flex: 1 1 100%; }
+  .asa-filters select { flex: 1 1 120px; }
+  .asa-chip { font: inherit; font-size: 12px; padding: 3px 8px; background: #fffbe9; color: #3a2117; border: 2px solid #d9c49a; cursor: pointer; }
+  .asa-chip.on { border-color: #744122; background: #f4e6c4; }
+  .asa-live { color: #3f8a36; }
+  .asa-title-input { width: 100%; font: inherit; font-size: 14px; padding: 4px 6px; margin-top: 8px; background: #fffbe9; color: #3a2117;
+    border: 2px solid #d9c49a; box-sizing: border-box; }
   .asa-msg.plan { border-color: #4a8ac8; box-shadow: inset 3px 0 0 #4a8ac8; }
   .asa-msg em { display: block; font-style: normal; font-weight: bold; margin-bottom: 4px; }
   `;
@@ -156,154 +278,546 @@
   };
   const timeOf = (iso) => new Date(iso).toLocaleString(ns.lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-  // ── Panel ──
-  let view = { name: 'list' };
+  // ── Panel state ──
   let panel = null;
-  let draft = { agent: null, cwd: '', prompt: '' }; // agent null: not picked yet (the director if he's on staff)
-  let options = null;
+  let sel = null; // 'new' (the composer), a letter id, or null (narrow screens: showing the list)
+  let tab = 'chats';
+  let options = null; // the task API's options (who / projects), fetched when the mailbox opens
   let notice = '';
+  let sending = false;
+  const prefs = (() => { try { return JSON.parse(ns.store.get('chatPrefs') || '{}'); } catch { return {}; } })();
+  const savePrefs = () => ns.store.set('chatPrefs', JSON.stringify(prefs));
+  // Drafts survive closing the panel and reloading the page (one per chat, the newest 20).
+  const drafts = (() => { try { return JSON.parse(ns.store.get('chatDrafts') || '{}'); } catch { return {}; } })();
+  const draftKey = () => sel ?? 'new';
+  const getDraft = (key = draftKey()) => drafts[key] ?? '';
+  let draftTimer = null;
+  const flushDrafts = () => {
+    clearTimeout(draftTimer);
+    const keys = Object.keys(drafts);
+    for (const k of keys.slice(0, Math.max(0, keys.length - 20))) delete drafts[k];
+    ns.store.set('chatDrafts', JSON.stringify(drafts));
+  };
+  const setDraft = (text, key = draftKey()) => {
+    delete drafts[key]; // re-insert last so the newest are kept
+    if (text) drafts[key] = text;
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(flushDrafts, 300);
+  };
+  let pendingUndo = null; // resolves 'go' | 'undo' while the undo bar shows
+  const ui = {}; // root, side, main, head, thread, comp, refill, keys
+  const fx = { drop: 0 };
+  const narrow = () => matchMedia('(max-width: 720px)').matches;
 
-  function listView(body) {
-    const top = h('div', { class: 'asa-mail-top' },
-      h('span', { class: 'asa-muted' }, ''),
-      h('button', { type: 'button', class: 'asa-btn primary', onclick: () => go({ name: 'compose' }) }, S.compose));
-    body.append(top);
-    const all = letters();
-    if (!all.length) return body.append(h('p', { class: 'asa-muted' }, S.empty));
-    body.append(h('div', { class: 'asa-letters' }, all.map((l) => {
-      const first = l.report ? S.report : l.thread?.[0]?.text ?? '';
+  const progressText = (l) => (l.progress ? S.progress(l.progress === 'Writing the answer' ? S.writing : ns.translateStatus?.(l.progress) ?? l.progress) : S.starting);
+  /** Shell command that continues this letter's session in Terminal. */
+  const terminalCommand = (l) => `cd '${String(l.cwd).replace(/'/g, `'\\''`)}' && claude --resume ${l.sessionId}`;
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch { /* fall back below */ }
+    const ta = h('textarea', { style: { position: 'fixed', opacity: '0' } });
+    ta.value = text;
+    document.body.append(ta);
+    ta.select();
+    const ok = document.execCommand?.('copy');
+    ta.remove();
+    return !!ok;
+  }
+
+  // ── Helpers ──
+  const filter = { status: 'all', project: '', who: '', q: '' };
+  const home = (p) => String(p ?? '').replace(/^\/(Users|home)\/[^/]+/, '~');
+  const letterTitle = (l) => l.title || (l.thread?.[0]?.text ?? '').split('\n')[0].slice(0, 50) || who(l);
+  const statusGroup = (l) => (l.status === 'running' || l.status === 'queued' ? 'running' : l.status === 'awaiting' ? 'awaiting' : 'done');
+  const has = (text, q) => String(text ?? '').toLowerCase().includes(q);
+  const pickLang = (v) => (v && typeof v === 'object' ? v[ns.lang] ?? v.en : v);
+  const errorText = (err) => ({ busy: S.busy, noApi: S.noApi, 'director busy': S.directorBusy })[err.message] ?? `${S.failed} (${err.message})`;
+  const memberOf = (agent) => (agent ? (options?.staff ?? ns.data?.staff ?? []).find((m) => m.agent === agent) ?? null : null);
+  const isDirector = (agent) => !!memberOf(agent)?.director;
+  const current = () => (sel && sel !== 'new' ? letters().find((l) => l.id === sel) ?? null : null);
+  const busy = (l) => l?.status === 'running' || l?.status === 'queued';
+  const smallFace = (l) => { const el = face(l); el.classList.add('sm'); return el; };
+
+  async function ensureOptions() {
+    if (options) return options;
+    try { options = await api('GET', '/api/options'); } catch { options = { error: true }; }
+    return options;
+  }
+
+  // ── Paper plane and the letter landing in the mailbox ──
+  function mailboxPoint() {
+    const v = ns.view;
+    const f = ns.findFurniture('COZY_MAILBOX')[0];
+    if (!v || !f) return null;
+    const r = v.canvas.getBoundingClientRect();
+    const k = r.width / v.canvas.width;
+    return { x: r.left + (v.offX + (f.col * 16 + 8) * v.zoom) * k, y: r.top + (v.offY + (f.row * 16 + 8) * v.zoom) * k };
+  }
+  const PLANE = '<svg viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><path d="M2 5 L26 14 L2 23 L8 14 Z" fill="#fff6dc" stroke="#744122" stroke-width="2" stroke-linejoin="round"/><path d="M8 14 L26 14" stroke="#744122" stroke-width="2"/></svg>';
+  function spark(x, y) {
+    const el = h('i', { class: 'asa-spark', style: { left: `${x}px`, top: `${y}px` } });
+    document.body.append(el);
+    setTimeout(() => el.remove(), 600);
+  }
+  /** A paper plane from `fromEl` to the mailbox on the wall; resolves when it lands (never rejects). */
+  function flyPlane(fromEl) {
+    return new Promise((resolve) => {
+      const end = mailboxPoint();
+      const r = fromEl?.getBoundingClientRect();
+      if (!end || !r || matchMedia('(prefers-reduced-motion: reduce)').matches) return void setTimeout(resolve, 250);
+      const a = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      const c = { x: (a.x + end.x) / 2 - 60, y: Math.min(a.y, end.y) - 170 };
+      const plane = h('div', { class: 'asa-plane' });
+      plane.innerHTML = PLANE;
+      document.body.append(plane);
+      const t0 = performance.now();
+      const DUR = 1000;
+      let lastSpark = 0;
+      const step = (now) => {
+        const t = Math.min(1, (now - t0) / DUR);
+        const e = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
+        const x = (1 - e) ** 2 * a.x + 2 * (1 - e) * e * c.x + e * e * end.x;
+        const y = (1 - e) ** 2 * a.y + 2 * (1 - e) * e * c.y + e * e * end.y;
+        const dx = 2 * (1 - e) * (c.x - a.x) + 2 * e * (end.x - c.x);
+        const dy = 2 * (1 - e) * (c.y - a.y) + 2 * e * (end.y - c.y);
+        plane.style.transform = `translate(${x - 14}px, ${y - 14}px) rotate(${(Math.atan2(dy, dx) * 180) / Math.PI}deg) scale(${1.35 - 0.7 * e})`;
+        if (now - lastSpark > 45) { lastSpark = now; spark(x, y); }
+        if (t < 1) requestAnimationFrame(step);
+        else { plane.remove(); resolve(); }
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  const dropLetter = () => { fx.drop = performance.now(); ns.notify?.sfx?.('drop'); };
+
+  // ── Sidebar: chats and sessions ──
+  function pickLetter(id) { select(id); }
+
+  function letterRows(container) {
+    const q = filter.q.trim().toLowerCase();
+    const all = letters().filter((l) => {
+      if (l.report) return filter.status === 'all' && !filter.project && !filter.who && !q;
+      if (filter.status !== 'all' && statusGroup(l) !== filter.status) return false;
+      if (filter.project && l.cwd !== filter.project) return false;
+      if (filter.who && (l.agent ?? '') !== filter.who) return false;
+      return !q || [letterTitle(l), l.project, who(l), ...(l.thread ?? []).map((m) => m.text)].some((t) => has(t, q));
+    });
+    container.replaceChildren(...(all.length ? all.map((l) => {
       const status = l.report ? '' : S[l.status] ?? '';
-      return h('button', { type: 'button', class: `asa-letter${l.read || l.status === 'running' ? '' : ' unread'}`, onclick: () => go({ name: 'letter', id: l.id }) },
+      return h('button', { type: 'button', class: `asa-letter${l.read || busy(l) ? '' : ' unread'}${sel === l.id ? ' on' : ''}`, onclick: () => pickLetter(l.id) },
         face(l),
         h('div', { class: 'asa-letter-body' },
-          h('b', {}, `${who(l)}${l.project ? ` · ${l.project}` : ''}`),
-          h('div', {}, first)),
-        h('div', { class: 'asa-letter-status' }, status || (l.report ? l.day : '')));
-    })));
+          h('b', {}, l.report ? S.report : letterTitle(l)),
+          h('div', {}, l.report ? l.day : [who(l), l.project, l.createdAt ? timeOf(l.createdAt) : null].filter(Boolean).join(' · ')),
+          busy(l) ? h('div', {}, l.status === 'queued' ? S.queuedShort : progressText(l)) : null),
+        h('div', { class: 'asa-letter-status' }, status));
+    }) : [h('p', { class: 'asa-muted' }, letters().length ? S.noMatch : S.empty)]));
   }
 
-  function letterView(body, id) {
-    const l = letters().find((x) => x.id === id);
-    if (!l) return go({ name: 'list' });
-    markRead(l);
-    body.append(h('div', { class: 'asa-mail-top' },
-      h('button', { type: 'button', class: 'asa-btn', onclick: () => go({ name: 'list' }) }, S.back),
-      l.report ? null : h('span', { class: 'asa-letter-status' }, S[l.status] ?? '')));
+  function sessionRows(container) {
+    const q = filter.q.trim().toLowerCase();
+    const byId = new Map((ns.data?.mail ?? []).map((l) => [l.sessionId, l]));
+    const rows = (ns.data?.sessions ?? []).filter((x) => (!filter.project || x.cwd === filter.project) &&
+      (!q || [x.title, x.prompt, x.project, x.cwd].some((t) => has(t, q))));
+    const now = Date.now();
+    container.replaceChildren(...(rows.length ? rows.map((x) => {
+      const letter = byId.get(x.id);
+      const mins = Math.max(0, Math.round((now - Date.parse(x.at)) / 60_000));
+      const live = now - Date.parse(x.at) < 90_000;
+      const btn = h('button', { type: 'button', class: 'asa-chip', title: terminalCommand({ cwd: x.cwd, sessionId: x.id }) }, S.copySmall);
+      btn.onclick = async (e) => {
+        e.stopPropagation();
+        if (await copyText(terminalCommand({ cwd: x.cwd, sessionId: x.id }))) {
+          btn.textContent = S.copiedSmall;
+          setTimeout(() => { btn.textContent = S.copySmall; }, 2000);
+        }
+      };
+      const row = h('div', { class: 'asa-letter', style: { cursor: letter ? 'pointer' : 'default' } },
+        h('div', { class: 'asa-face envelope' }, letter ? '📮' : '💬'),
+        h('div', { class: 'asa-letter-body' },
+          h('b', {}, (letter ? letterTitle(letter) : x.title) || x.project || x.id.slice(0, 8)),
+          h('div', { title: x.cwd ?? '' }, [x.project, x.cwd ? home(x.cwd) : null].filter(Boolean).join(' · ')),
+          h('div', {}, x.prompt && x.prompt !== x.title ? x.prompt : (letter ? S.fromMailbox : ''))),
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' } },
+          h('span', { class: `asa-letter-status${live ? ' asa-live' : ''}` }, live ? S.live : S.ago(mins)), x.cwd ? btn : null));
+      if (letter) row.onclick = () => pickLetter(letter.id);
+      return row;
+    }) : [h('p', { class: 'asa-muted' }, ns.data?.sessions?.length ? S.noMatch : S.noSessions)]));
+  }
+
+  function fillSide() {
+    const side = ui.side;
+    const rows = h('div', { class: 'asa-letters' });
+    ui.refill = () => (tab === 'chats' ? letterRows(rows) : sessionRows(rows));
+    const search = h('input', { type: 'search', placeholder: S.search, value: filter.q, 'aria-label': S.search });
+    search.oninput = () => { filter.q = search.value; ui.refill(); };
+    const select2 = (label, key, opts) => {
+      const el = h('select', {}, h('option', { value: '' }, label), opts.map(([v, t]) => h('option', { value: v }, t)));
+      el.value = filter[key];
+      el.onchange = () => { filter[key] = el.value; ui.refill(); };
+      return el;
+    };
+    const projects = tab === 'chats'
+      ? [...new Map(letters().filter((l) => l.cwd).map((l) => [l.cwd, l.project])).entries()]
+      : [...new Map((ns.data?.sessions ?? []).filter((x) => x.cwd).map((x) => [x.cwd, `${x.project} — ${home(x.cwd)}`])).entries()];
+    const filters = h('div', { class: 'asa-filters' });
+    if (tab === 'chats') {
+      const chips = h('div', { style: { display: 'flex', gap: '6px', flexWrap: 'wrap', flex: '1 1 100%' } },
+        [['all', S.fAll], ['running', S.fRunning], ['awaiting', S.fAwaiting], ['done', S.fDone]].map(([v, t]) => {
+          const c = h('button', { type: 'button', class: `asa-chip${filter.status === v ? ' on' : ''}` }, t);
+          c.onclick = () => { filter.status = v; chips.querySelectorAll('.asa-chip').forEach((el) => el.classList.toggle('on', el === c)); ui.refill(); };
+          return c;
+        }));
+      const people = [...new Map(letters().filter((l) => !l.report).map((l) => [l.agent ?? '', who(l)])).entries()];
+      filters.append(chips, select2(S.allProjects, 'project', projects), select2(S.allWho, 'who', people));
+    } else {
+      filters.append(select2(S.allProjects, 'project', projects));
+    }
+    side.replaceChildren(...[
+      h('button', { type: 'button', class: `asa-btn primary asa-newchat${sel === 'new' ? ' on' : ''}`, onclick: () => select('new') }, S.newChat),
+      h('div', { class: 'asa-tabs' }, ['chats', 'sessions'].map((t) => h('button', { type: 'button', class: `asa-btn${tab === t ? ' on' : ''}`,
+        onclick: () => { tab = t; filter.project = ''; filter.who = ''; fillSide(); } }, t === 'chats' ? S.tabChats : S.tabSessions))),
+      search, filters, tab === 'sessions' ? h('div', { class: 'asa-note' }, S.sessionsNote) : null, rows,
+    ].filter(Boolean));
+    ui.refill();
+  }
+
+  // ── Main: header, thread, composer ──
+  function select(id) {
+    pendingUndo?.('go');
+    sel = id;
+    notice = '';
+    const l = current();
+    if (l) markRead(l);
+    syncLayout();
+    ui.refill?.();
+    ui.side?.querySelector('.asa-newchat')?.classList.toggle('on', sel === 'new');
+    buildMain();
+  }
+  function syncLayout() { if (ui.root) ui.root.dataset.show = narrow() ? (sel ? 'chat' : 'list') : 'both'; }
+
+  function buildMain() {
+    ui.head = h('div', { class: 'asa-chat-head' });
+    ui.thread = h('div', { class: 'asa-thread-box' });
+    ui.comp = h('div', { class: 'asa-comp' });
+    ui.keys = {};
+    ui.main.replaceChildren(ui.head, ui.thread, ui.comp);
+    if (!sel) return ui.main.append(h('p', { class: 'asa-muted', style: { padding: '16px' } }, S.pickChat));
+    refreshMain(true);
+    if (sel === 'new') ensureOptions().then(() => { if (sel === 'new') refreshMain(); });
+    else if (!narrow()) ui.comp.querySelector('textarea')?.focus();
+  }
+
+  function refreshMain(force = false) {
+    if (!ui.head || !sel) return;
+    const l = current();
+    if (sel !== 'new' && !l) { sel = null; syncLayout(); return buildMain(); }
+    // Header
+    const headKey = JSON.stringify([sel, l?.status, l?.title, l?.cwd]);
+    if (force || (ui.keys.head !== headKey && document.activeElement?.className !== 'asa-title-input')) {
+      ui.keys.head = headKey;
+      fillHead(l);
+    }
+    // Thread
+    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.cost, notice, options ? 1 : 0, l?.text?.length]);
+    if (force || ui.keys.thread !== threadKey) {
+      ui.keys.thread = threadKey;
+      const box = ui.thread;
+      const stick = force || box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+      fillThread(l);
+      if (stick) box.scrollTop = box.scrollHeight;
+    }
+    // Composer (rebuilt only when what you can do changes, so typing is never interrupted)
+    const compKey = JSON.stringify([sel, l ? (busy(l) ? 'busy' : l.status === 'awaiting' ? 'awaiting' : 'idle') : '', options ? (options.error ? 'err' : 'ok') : 'wait']);
+    if (force || ui.keys.comp !== compKey) {
+      ui.keys.comp = compKey;
+      fillComposer(l);
+    }
+  }
+
+  function fillHead(l) {
+    const head = ui.head;
+    const back = h('button', { type: 'button', class: 'asa-btn asa-back', onclick: () => { sel = null; syncLayout(); ui.refill?.(); }, 'aria-label': S.back }, '←');
+    if (sel === 'new') return head.replaceChildren(back, h('div', { class: 'asa-chat-title' }, h('b', {}, S.newChat.replace(/^＋\s*/, '')), h('span', { class: 'asa-muted' }, S.newChatSub)));
+    if (l.report) return head.replaceChildren(back, face(l), h('div', { class: 'asa-chat-title' }, h('b', {}, S.report), h('span', { class: 'asa-muted' }, l.day)));
     const m = staffFor(l);
-    body.append(h('div', { style: { display: 'flex', gap: '10px', alignItems: 'center' } }, face(l),
-      h('div', {}, h('div', { style: { fontSize: '17px' } }, who(l)),
-        h('div', { class: 'asa-muted' }, [m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.createdAt ? timeOf(l.createdAt) : l.day].filter(Boolean).join(' · ')))));
-    if (l.report) return body.append(h('div', { class: 'asa-thread' }, h('div', { class: 'asa-msg' }, l.text)));
-    const director = isDirector(l.agent);
-    const label = (msg) => (msg.from === 'you' ? null : msg.kind === 'plan' ? S.planLabel : director && msg.kind ? S.reportLabel : null);
-    body.append(h('div', { class: 'asa-thread' }, (l.thread ?? []).map((msg) =>
-      h('div', { class: `asa-msg ${msg.from === 'you' ? 'you' : ''} ${msg.kind === 'plan' ? 'plan' : ''}` },
-        h('small', {}, `${msg.from === 'you' ? S.you : who(l)} · ${timeOf(msg.at)}`), label(msg) ? h('em', {}, label(msg)) : null, msg.text))));
-    if (l.error) body.append(h('div', { class: 'asa-warn' }, l.error));
-    if (l.cost) body.append(h('div', { class: 'asa-note' }, S.cost(l.cost)));
-    if (notice) body.append(h('div', { class: 'asa-warn' }, notice));
-    if (l.status === 'running') {
-      body.append(h('div', { class: 'asa-actions' }, h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('POST', `/api/tasks/${l.id}/stop`)) }, `⏹ ${S.stop}`)));
-      return;
-    }
-    const awaiting = l.status === 'awaiting';
-    const box = h('textarea', { placeholder: awaiting ? S.revisePh : S.replyPh, rows: '3' });
-    const form = h('div', { class: 'asa-form' }, box);
-    // The next run is a new session for the office: tell the director add-on so Shades takes it over at once.
-    const resumed = () => { if (director) ns.director?.expect({ cwd: l.cwd }); };
-    const send = h('button', { type: 'button', class: `asa-btn${awaiting ? '' : ' primary'}` }, awaiting ? S.revise : S.reply);
-    send.onclick = () => {
-      const text = box.value.trim();
-      if (!text) return box.focus();
-      send.disabled = true;
-      act(async () => { await api('POST', `/api/tasks/${l.id}/reply`, { text }); resumed(); });
-    };
-    const archive = h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('DELETE', `/api/tasks/${l.id}`), { name: 'list' }) }, S.archive);
-    if (awaiting) {
-      const approve = h('button', { type: 'button', class: 'asa-btn primary' }, S.approve);
-      approve.onclick = () => { approve.disabled = true; act(async () => { await api('POST', `/api/tasks/${l.id}/approve`); resumed(); }); };
-      const reject = h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('POST', `/api/tasks/${l.id}/reject`)) }, S.reject);
-      body.append(h('div', { class: 'asa-actions' }, approve, reject), form, h('div', { class: 'asa-actions' }, send, archive));
-      return;
-    }
-    body.append(form, h('div', { class: 'asa-actions' }, send, archive));
+    const titleBox = h('input', { class: 'asa-title-input', value: letterTitle(l), maxlength: '80', title: S.rename, 'aria-label': S.rename });
+    titleBox.onchange = () => { if (titleBox.value.trim()) act(() => api('POST', `/api/tasks/${l.id}/rename`, { title: titleBox.value.trim() })); };
+    const actions = h('div', { class: 'asa-head-actions' });
+    if (busy(l)) actions.append(h('button', { type: 'button', class: 'asa-btn', title: S.stop, 'aria-label': S.stop, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/stop`)) }, '⏹'));
+    const copy = h('button', { type: 'button', class: 'asa-btn', title: S.copyCmd, 'aria-label': S.copyCmd }, '📋');
+    copy.onclick = async () => { if (await copyText(terminalCommand(l))) { copy.textContent = '✅'; setTimeout(() => { copy.textContent = '📋'; }, 2000); } };
+    actions.append(copy);
+    if (!busy(l)) actions.append(h('button', { type: 'button', class: 'asa-btn', title: S.archive, 'aria-label': S.archive, onclick: () => act(() => api('DELETE', `/api/tasks/${l.id}`), () => { sel = null; syncLayout(); buildMain(); }) }, '🗄'));
+    head.replaceChildren(back, face(l), h('div', { class: 'asa-chat-title' }, titleBox,
+      h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, S[l.status]].filter(Boolean).join(' · '))), actions);
   }
 
-  function composeView(body) {
-    body.append(h('div', { class: 'asa-mail-top' }, h('button', { type: 'button', class: 'asa-btn', onclick: () => go({ name: 'list' }) }, S.back)));
-    if (!options) {
-      body.append(h('p', { class: 'asa-muted' }, '…'));
-      api('GET', '/api/options').then((o) => { options = o; rerender(); }).catch(() => { options = { error: true }; rerender(); });
-      return;
+  function fillThread(l) {
+    const box = ui.thread;
+    const out = [];
+    if (sel === 'new') {
+      const first = memberOf(prefs.agent ?? '')?.name ?? '';
+      out.push(h('div', { class: 'asa-brow' }, smallFace({ agent: options?.staff?.find((x) => x.director)?.agent ?? null }), h('div', { class: 'asa-b agent' }, h('div', { class: 'asa-b-text' }, S.greeting(first)))));
+      out.push(h('div', { class: 'asa-suggest' }, S.suggestions.map((t) => h('button', { type: 'button', class: 'asa-chip', onclick: () => { setDraft(t); fillComposer(null); ui.comp.querySelector('textarea')?.focus(); } }, t))));
+    } else if (l.report) {
+      out.push(h('div', { class: 'asa-b agent' }, h('div', { class: 'asa-b-text' }, l.text)));
+    } else {
+      const thread = l.thread ?? [];
+      const lastAgent = thread.map((m, i) => (m.from === 'agent' ? i : -1)).filter((i) => i >= 0).pop();
+      thread.forEach((m, i) => {
+        if (m.from === 'you' && ['approve', 'reject', 'revise'].includes(m.kind)) {
+          return out.push(h('div', { class: 'asa-sys' }, m.kind === 'approve' ? S.approvedNote : m.kind === 'reject' ? S.rejectedNote : `${S.revisedNote}: ${m.text}`));
+        }
+        if (m.from === 'you') return out.push(h('div', { class: 'asa-b you' }, h('div', { class: 'asa-b-text' }, m.text), h('small', {}, timeOf(m.at))));
+        const plan = m.kind === 'plan';
+        const label = plan ? S.planLabel : isDirector(l.agent) && m.kind ? S.reportLabel : null;
+        out.push(h('div', { class: 'asa-brow' }, smallFace(l),
+          h('div', { class: `asa-b agent${plan ? ' plan' : ''}` }, label ? h('em', {}, label) : null, h('div', { class: 'asa-b-text' }, m.text), h('small', {}, `${who(l)} · ${timeOf(m.at)}`))));
+        if (plan && l.status === 'awaiting' && i === lastAgent) {
+          const yes = h('button', { type: 'button', class: 'asa-btn primary' }, S.approve);
+          yes.onclick = () => approve(l, yes);
+          out.push(h('div', { class: 'asa-actions asa-plan-actions' }, yes,
+            h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('POST', `/api/tasks/${l.id}/reject`)) }, S.reject),
+            h('span', { class: 'asa-muted' }, S.reviseHint)));
+        }
+      });
+      if (l.status === 'queued') out.push(h('div', { class: 'asa-sys' }, S.queuedNote(isDirector(l.agent) ? '' : l.name ?? '')));
+      if (l.status === 'running') out.push(h('div', { class: 'asa-brow' }, smallFace(l), h('div', { class: 'asa-b agent typing' }, h('span', { class: 'asa-dots' }, h('i'), h('i'), h('i')), h('span', {}, progressText(l).replace(/^⏳\s*/, '')))));
+      if (l.error) out.push(h('div', { class: 'asa-warn' }, l.error));
+      if (l.cost) out.push(h('div', { class: 'asa-note' }, S.cost(l.cost)));
     }
-    if (options.error) return body.append(h('div', { class: 'asa-warn' }, S.noApi));
-    if (!options.claude) return body.append(h('div', { class: 'asa-warn' }, S.noClaude));
-    if (!options.projects.length) return body.append(h('div', { class: 'asa-warn' }, S.noProject));
-    if (!draft.cwd || !options.projects.some((p) => p.cwd === draft.cwd)) draft.cwd = options.projects[0].cwd;
-    const pick = (v) => (v && typeof v === 'object' ? v[ns.lang] ?? v.en : v);
-    const whoSel = h('select', {}, h('option', { value: '' }, S.general),
-      options.staff.map((m) => h('option', { value: m.agent }, `${m.name} — ${pick(m.role)}`)));
-    if (draft.agent === null) draft.agent = options.staff.find((m) => m.director)?.agent ?? '';
-    whoSel.value = draft.agent;
-    const projSel = h('select', {}, options.projects.map((p) => h('option', { value: p.cwd, title: p.cwd }, p.name)));
-    projSel.value = draft.cwd;
-    const text = h('textarea', { placeholder: S.placeholder, rows: '5' });
-    text.value = draft.prompt;
-    const note = h('div', { class: 'asa-note' });
-    const modeSel = h('select', {}, Object.entries(S.modes).map(([v, label]) => h('option', { value: v }, label)));
-    const styleSel = h('select', {}, Object.entries(S.styles).map(([v, label]) => h('option', { value: v }, label)));
-    styleSel.value = draft.style ?? 'solo';
-    const styleRow = h('div', {}, h('label', {}, S.style), styleSel);
-    const member = () => options.staff.find((x) => x.agent === whoSel.value);
-    const updateNote = () => {
-      const m = member();
-      const access = m?.access ?? options.general?.access ?? ['read'];
-      note.textContent = S.canDo(access.map((a) => S.access[a] ?? a).join(', '));
-      styleRow.style.display = m?.director ? '' : 'none';
-    };
-    // The director plans first by default; everyone else just does it (as before). Your pick sticks per person.
-    const defaultMode = () => draft.modes?.[whoSel.value] ?? (member()?.director ? 'plan' : 'auto');
-    modeSel.value = defaultMode();
-    modeSel.onchange = () => { draft.modes = { ...draft.modes, [whoSel.value]: modeSel.value }; };
-    styleSel.onchange = () => { draft.style = styleSel.value; };
-    whoSel.onchange = () => { draft.agent = whoSel.value; modeSel.value = defaultMode(); updateNote(); };
-    projSel.onchange = () => { draft.cwd = projSel.value; };
-    text.oninput = () => { draft.prompt = text.value; };
-    updateNote();
-    const send = h('button', { type: 'button', class: 'asa-btn primary' }, S.send);
-    send.onclick = async () => {
-      if (!text.value.trim()) return text.focus();
-      send.disabled = true;
-      send.textContent = S.sending;
-      try {
-        const director = !!member()?.director;
-        const { letter } = await api('POST', '/api/tasks', {
-          agent: whoSel.value || null, cwd: projSel.value, prompt: text.value.trim(), mode: modeSel.value,
-          style: director ? styleSel.value : undefined,
-        });
-        if (director) ns.director?.expect({ cwd: letter.cwd, prompt: text.value.trim(), meeting: true });
-        draft.prompt = '';
-        await ns.refreshData();
-        go({ name: 'letter', id: letter.id });
-      } catch (err) {
-        notice = errorText(err);
-        send.disabled = false;
-        send.textContent = S.send;
-        rerender();
+    if (notice) out.push(h('div', { class: 'asa-warn' }, notice));
+    box.replaceChildren(...out);
+  }
+
+  function fillComposer(l) {
+    const comp = ui.comp;
+    comp.replaceChildren();
+    if (sel !== 'new' && l?.report) return;
+    if (sel === 'new') {
+      if (!options) return comp.append(h('p', { class: 'asa-muted' }, '…'));
+      if (options.error) return comp.append(h('div', { class: 'asa-warn' }, S.noApi));
+      if (!options.claude) return comp.append(h('div', { class: 'asa-warn' }, S.noClaude));
+      if (!options.projects.length) return comp.append(h('div', { class: 'asa-warn' }, S.noProject));
+    }
+    const existing = sel !== 'new';
+    const locked = existing && busy(l);
+    const ta = h('textarea', { rows: '2', 'aria-label': S.task,
+      placeholder: locked ? S.busyPh(l.name ?? S.general) : existing ? (l.status === 'awaiting' ? S.revisePh : S.replyPh) : S.placeholder });
+    ta.value = locked ? '' : getDraft();
+    ta.disabled = locked;
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight + 2, 150)}px`; };
+    const send = h('button', { type: 'button', class: 'asa-send', title: S.send, 'aria-label': S.send }, '➤');
+    const sync = () => { send.disabled = locked || !ta.value.trim() || sending; };
+    ta.oninput = () => { setDraft(ta.value); grow(); sync(); updateMention(); };
+    const controls = {};
+    const submit = () => (existing ? sendReply(l, ta, send) : sendNew(ta, send, controls));
+    // @name in a new chat picks who does it (a small list above the box, like a chat app's mentions).
+    const mention = { open: false, idx: 0, items: [], start: -1 };
+    const pop = h('div', { class: 'asa-mention', role: 'listbox' });
+    pop.hidden = true;
+    function closeMention() { mention.open = false; pop.hidden = true; }
+    function drawMention() {
+      pop.replaceChildren(...mention.items.map((it, i) => h('button', { type: 'button', role: 'option', class: i === mention.idx ? 'on' : '',
+        onmousedown: (e) => { e.preventDefault(); chooseMention(i); } }, h('b', {}, `@${it.name}`), it.role ? h('span', {}, ` ${it.role}`) : null)));
+      pop.hidden = !mention.items.length;
+    }
+    function updateMention() {
+      if (existing || !controls.setWho) return closeMention();
+      const before = ta.value.slice(0, ta.selectionStart ?? ta.value.length);
+      const m = /(^|\s)@([\p{L}\d_-]*)$/u.exec(before);
+      if (!m) return closeMention();
+      const q = m[2].toLowerCase();
+      mention.start = before.length - m[2].length - 1;
+      const all = [...options.staff.map((x) => ({ agent: x.agent, name: x.name, role: pickLang(x.role) })), { agent: '', name: S.general, role: '' }];
+      mention.items = all.filter((x) => !q || x.name.toLowerCase().startsWith(q) || x.agent.startsWith(q));
+      mention.idx = Math.min(mention.idx, Math.max(0, mention.items.length - 1));
+      mention.open = mention.items.length > 0;
+      drawMention();
+    }
+    function chooseMention(i) {
+      const it = mention.items[i];
+      if (!it) return;
+      const end = ta.selectionStart ?? ta.value.length;
+      ta.value = `${ta.value.slice(0, mention.start)}${ta.value.slice(end).replace(/^\s/, '')}`;
+      ta.setSelectionRange(mention.start, mention.start);
+      controls.setWho(it.agent);
+      setDraft(ta.value);
+      closeMention();
+      grow();
+      sync();
+      ta.focus();
+    }
+    ta.onkeydown = (e) => {
+      if (mention.open) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          mention.idx = (mention.idx + (e.key === 'ArrowDown' ? 1 : -1) + mention.items.length) % mention.items.length;
+          return drawMention();
+        }
+        if ((e.key === 'Enter' || e.key === 'Tab') && !e.isComposing) { e.preventDefault(); return chooseMention(mention.idx); }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); return closeMention(); } // don't close the whole panel
       }
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!send.disabled) submit(); }
     };
-    body.append(h('div', { class: 'asa-form' },
-      h('label', {}, S.who), whoSel, note,
-      h('label', {}, S.mode), modeSel, styleRow,
-      h('label', {}, S.project), projSel,
-      h('label', {}, S.task), text));
-    if (notice) body.append(h('div', { class: 'asa-warn' }, notice));
-    body.append(h('div', { class: 'asa-actions' }, send));
+    ta.onkeyup = (e) => { if (!['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(e.key)) updateMention(); };
+    ta.onblur = () => setTimeout(closeMention, 150);
+    send.onclick = submit;
+    const chips = h('div', { class: 'asa-chips' });
+    if (!existing) {
+      const staff = options.staff;
+      const whoSel = h('select', { class: 'asa-chipsel', title: S.who, 'aria-label': S.who }, h('option', { value: '' }, `👤 ${S.general}`),
+        staff.map((m) => h('option', { value: m.agent }, `👤 ${m.name}`)));
+      whoSel.value = staff.some((m) => m.agent === prefs.agent) || prefs.agent === '' ? prefs.agent : staff.find((m) => m.director)?.agent ?? '';
+      const projSel = h('select', { class: 'asa-chipsel', title: S.project, 'aria-label': S.project }, options.projects.map((p) => h('option', { value: p.cwd, title: p.cwd }, `📁 ${p.name}`)));
+      projSel.value = options.projects.some((p) => p.cwd === prefs.cwd) ? prefs.cwd : options.projects[0].cwd;
+      const modeSel = h('select', { class: 'asa-chipsel', title: S.mode, 'aria-label': S.mode }, Object.entries(S.chipModes).map(([v, t]) => h('option', { value: v }, t)));
+      const styleSel = h('select', { class: 'asa-chipsel', title: S.style, 'aria-label': S.style }, Object.entries(S.chipStyles).map(([v, t]) => h('option', { value: v }, t)));
+      styleSel.value = prefs.style ?? 'solo';
+      const member = () => staff.find((m) => m.agent === whoSel.value) ?? null;
+      const defaultMode = () => prefs.modes?.[whoSel.value] ?? (member()?.director ? 'plan' : 'auto');
+      const update = () => {
+        modeSel.value = defaultMode();
+        styleSel.style.display = member()?.director ? '' : 'none';
+        const access = member()?.access ?? options.general?.access ?? ['read'];
+        whoSel.title = `${S.who} — ${S.canDo(access.map((a) => S.access[a] ?? a).join(', '))}`;
+      };
+      whoSel.onchange = () => { prefs.agent = whoSel.value; savePrefs(); update(); };
+      const setWho = (agent) => {
+        whoSel.value = agent;
+        prefs.agent = agent;
+        savePrefs();
+        update();
+        whoSel.classList.remove('asa-flash');
+        void whoSel.offsetWidth; // restart the animation
+        whoSel.classList.add('asa-flash');
+      };
+      projSel.onchange = () => { prefs.cwd = projSel.value; savePrefs(); };
+      modeSel.onchange = () => { prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value }; savePrefs(); };
+      styleSel.onchange = () => { prefs.style = styleSel.value; savePrefs(); };
+      update();
+      Object.assign(controls, { whoSel, projSel, modeSel, styleSel, member, setWho });
+      chips.append(whoSel, projSel, modeSel, styleSel);
+    } else {
+      chips.append(h('span', { class: 'asa-pill' }, `👤 ${who(l)}`), h('span', { class: 'asa-pill', title: l.cwd }, `📁 ${l.project}`), l.mode ? h('span', { class: 'asa-pill' }, S.chipModes[l.mode]) : null);
+    }
+    const sendBtn = locked
+      ? h('button', { type: 'button', class: 'asa-send stop', title: S.stop, 'aria-label': S.stop, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/stop`)) }, '⏹')
+      : send;
+    comp.append(pop, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips);
+    grow();
+    sync();
   }
 
-  const errorText = (err) => ({ busy: S.busy, noApi: S.noApi, 'director busy': S.directorBusy })[err.message] ?? `${S.failed} (${err.message})`;
-  const isDirector = (agent) => !!(ns.data?.staff ?? []).find((m) => m.agent === agent)?.director;
-  async function act(fn, next) {
+  // ── Sending ──
+  const UNDO_MS = 3000;
+  /** A bar with "Batalkan" for UNDO_MS; resolves 'undo' if clicked, else 'go' (also if you leave the chat or close the panel). */
+  function undoWindow() {
+    return new Promise((resolve) => {
+      let timer = null;
+      const btn = h('button', { type: 'button', class: 'asa-btn' }, S.undo);
+      const bar = h('div', { class: 'asa-undo', role: 'status' }, h('span', {}, S.sentUndo), btn, h('i', { class: 'asa-undo-bar', style: { animationDuration: `${UNDO_MS}ms` } }));
+      const done = (v) => {
+        if (pendingUndo !== done) return;
+        pendingUndo = null;
+        clearTimeout(timer);
+        bar.remove();
+        resolve(v);
+      };
+      pendingUndo = done;
+      btn.onclick = () => done('undo');
+      if (ui.main?.isConnected && ui.comp?.parentNode === ui.main) ui.main.insertBefore(bar, ui.comp);
+      timer = setTimeout(() => done('go'), UNDO_MS);
+    });
+  }
+
+  async function sendNew(ta, sendBtn, c) {
+    const text = ta.value.trim();
+    if (!text || sending) return;
+    sending = true;
+    sendBtn.disabled = true;
+    notice = '';
+    const agent = c.whoSel.value;
+    const member = c.member();
+    const director = !!member?.director;
+    const cwd = c.projSel.value;
+    ns.notify?.sfx?.('send');
+    const landed = flyPlane(sendBtn);
+    ta.disabled = true;
+    try {
+      const { letter } = await api('POST', '/api/tasks', {
+        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, style: director ? c.styleSel.value : undefined, hold: true,
+      });
+      await landed;
+      dropLetter();
+      // A few seconds to change your mind: the letter is only queued, so nothing has started yet.
+      if (panel && (await undoWindow()) === 'undo') {
+        try { await api('DELETE', `/api/tasks/${letter.id}`); } catch { /* the hold expires by itself */ }
+        await ns.refreshData();
+        return;
+      }
+      setDraft('', 'new');
+      // Shades takes the letter from the mailbox and hands it over; the task starts when he does (or right away).
+      const deliver = async () => {
+        if (director) ns.director?.expect({ cwd, prompt: text, meeting: true });
+        try { await api('POST', `/api/tasks/${letter.id}/deliver`); } catch { /* the server starts it by itself after 30 s */ }
+        // The office learns who runs the new session from the data feed: look a few times so the face is right early.
+        for (const ms of [0, 2500, 5000]) setTimeout(() => ns.refreshData(), ms);
+      };
+      const walking = ns.director?.courier?.({ agent: agent || null, name: member?.name ?? '', deliver });
+      if (!walking) await deliver();
+      await ns.refreshData();
+      sel = letter.id;
+      if (walking && panel) setTimeout(() => ns.panel.close(), 500); // leave the office in view to watch him go
+      else select(letter.id);
+    } catch (err) {
+      await landed;
+      notice = errorText(err);
+    } finally {
+      sending = false;
+      if (panel) { ui.keys.comp = null; refreshMain(); }
+    }
+  }
+  async function sendReply(l, ta, sendBtn) {
+    const text = ta.value.trim();
+    if (!text || sending) return;
+    sending = true;
+    sendBtn.disabled = true;
+    notice = '';
+    ns.notify?.sfx?.('send');
+    const landed = flyPlane(sendBtn);
+    try {
+      await api('POST', `/api/tasks/${l.id}/reply`, { text });
+      setDraft('', l.id);
+      if (isDirector(l.agent)) ns.director?.expect({ cwd: l.cwd });
+      await landed;
+      dropLetter();
+    } catch (err) {
+      await landed;
+      notice = errorText(err);
+    }
+    await ns.refreshData();
+    sending = false;
+    if (panel) { ui.keys.comp = null; refreshMain(); }
+  }
+  async function approve(l, btn) {
+    btn.disabled = true;
+    ns.notify?.sfx?.('send');
+    const landed = flyPlane(btn);
+    try {
+      await api('POST', `/api/tasks/${l.id}/approve`);
+      if (isDirector(l.agent)) ns.director?.expect({ cwd: l.cwd });
+      await landed;
+      dropLetter();
+    } catch (err) {
+      await landed;
+      notice = errorText(err);
+    }
+    await ns.refreshData();
+    if (panel) refreshMain();
+  }
+
+  async function act(fn, after) {
     notice = '';
     try {
       await fn();
@@ -311,8 +825,9 @@
       notice = errorText(err);
     }
     await ns.refreshData();
-    if (next) view = next;
-    rerender();
+    if (after) after();
+    ui.refill?.();
+    if (panel) refreshMain(true);
   }
 
   function markRead(l) {
@@ -326,35 +841,66 @@
     }
   }
 
+  // ── The panel ──
   function render(body) {
-    if (view.name === 'compose') composeView(body);
-    else if (view.name === 'letter') letterView(body, view.id);
-    else listView(body);
+    ui.root = h('div', { class: 'asa-chat' });
+    ui.side = h('aside', { class: 'asa-side' });
+    ui.main = h('section', { class: 'asa-main' });
+    ui.root.append(ui.side, ui.main);
+    body.append(ui.root);
+    fillSide();
+    syncLayout();
+    buildMain();
   }
-  function rerender() { if (panel && ns.panel.isOpen) panel.rerender(); }
-  function go(next) {
-    view = next;
-    notice = '';
-    if (next.name === 'compose') options = null;
-    rerender();
+  function refreshAll() {
+    if (!panel || !ns.panel.isOpen) return;
+    ui.refill?.();
+    refreshMain();
   }
-
-  function open(next = { name: 'list' }) {
+  function open(next = {}) {
     if (!document.getElementById('asa-mail-css')) document.head.appendChild(h('style', { id: 'asa-mail-css' }, css));
-    view = next;
     notice = '';
     options = null;
+    sending = false;
+    if (next.name === 'compose' || next === 'new') sel = 'new';
+    else if (next.name === 'letter') sel = next.id;
+    else sel = narrow() ? null : (letters().find((l) => l.status === 'awaiting') ?? letters().find((l) => !l.read && !l.report && !busy(l)))?.id ?? 'new';
     let timer = null;
-    panel = ns.panel.open({ theme: 'cozy', title: `📮 ${S.title}`, render, onClose: () => { clearInterval(timer); panel = null; } });
-    ns.refreshData().then(rerender);
-    // While open, keep running tasks' letters fresh (but don't wipe what you're typing).
-    timer = setInterval(() => {
-      if (view.name === 'compose' || document.activeElement?.tagName === 'TEXTAREA') return;
-      ns.refreshData().then(rerender);
-    }, 4000);
+    panel = ns.panel.open({ theme: 'cozy', title: `📮 ${S.title}`, render, onClose: () => { pendingUndo?.('go'); flushDrafts(); clearInterval(timer); panel = null; } });
+    panel.el.classList.add('asa-wide');
+    ns.refreshData().then(refreshAll);
+    // While open, keep running tasks' chats fresh (the composer is never rebuilt while you type).
+    timer = setInterval(() => ns.refreshData().then(refreshAll), 4000);
   }
   ns.onFurnitureClick('COZY_MAILBOX', () => open());
   ns.mailbox = { open, compose: () => open({ name: 'compose' }) };
+
+  // ── A letter drops into the mailbox ──
+  function drawDrop(ctx, offX, offY, zoom) {
+    const age = performance.now() - fx.drop;
+    if (!fx.drop || age > 900) return;
+    const k = age / 900;
+    const u = Math.max(1, Math.round(zoom));
+    for (const f of ns.findFurniture('COZY_MAILBOX')) {
+      const cx = offX + (f.col * 16 + 8) * zoom;
+      const top = offY + f.row * 16 * zoom;
+      const y = Math.round(top - 12 * zoom + Math.min(1, k * 2) * 12 * zoom); // the envelope falls in during the first half
+      ctx.globalAlpha = k < 0.5 ? 1 : 1 - (k - 0.5) * 2;
+      ctx.fillStyle = '#2b1a10';
+      ctx.fillRect(Math.round(cx - 6 * u), y - u, 12 * u, 9 * u);
+      ctx.fillStyle = '#fff6dc';
+      ctx.fillRect(Math.round(cx - 5 * u), y, 10 * u, 7 * u);
+      ctx.fillStyle = '#c8503c';
+      for (let i = 0; i < 5; i++) { ctx.fillRect(Math.round(cx - 5 * u) + i * u, y + i * u, u, u); ctx.fillRect(Math.round(cx + 4 * u) - i * u, y + i * u, u, u); }
+      ctx.fillStyle = '#f2c94c';
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + 0.4;
+        const r = (5 + 12 * k) * zoom;
+        ctx.fillRect(Math.round(cx + Math.cos(a) * r), Math.round(top + 8 * zoom + Math.sin(a) * r), 2 * u, 2 * u);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
 
   // ── Badge + notifications ──
   const lastStatus = new Map();
@@ -368,7 +914,7 @@
     }
     for (const l of mail) {
       const prev = lastStatus.get(l.id);
-      if (prev === 'running' && l.status !== 'running') {
+      if ((prev === 'running' || prev === 'queued') && l.status !== 'running' && l.status !== 'queued') {
         const name = l.name ?? S.general;
         const first = (l.thread?.[0]?.text ?? '').slice(0, 40);
         const ok = l.status === 'done' || l.status === 'awaiting';
@@ -381,11 +927,12 @@
       lastStatus.set(l.id, l.status);
     }
     if (editMode) return;
-    const n = unread();
-    if (!n) return;
     const ctx = canvas.getContext('2d');
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    drawDrop(ctx, offX, offY, zoom);
+    const n = unread();
+    if (!n) return void ctx.restore();
     for (const f of ns.findFurniture('COZY_MAILBOX')) {
       const x = offX + (f.col * 16 + 14) * zoom;
       const y = offY + (f.row * 16 + 3) * zoom;
