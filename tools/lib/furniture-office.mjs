@@ -133,6 +133,60 @@ function signPlaque(kind) {
   return s.outline(OUT);
 }
 
+
+// ── Meeting room and the open-plan office ────────────────────────────
+function meetingTable() {
+  const s = new Sprite(48, 32);
+  s.rect(1, 7, 46, 14, P.w3).rect(1, 7, 46, 3, P.w1).hline(1, 7, 46, P.w0);
+  for (let x = 6; x < 46; x += 9) s.vline(x, 10, 9, '#b06f38'); // grain
+  s.rect(1, 20, 46, 4, P.w4).hline(1, 20, 46, P.w2);
+  s.rect(3, 24, 4, 7, P.w4).rect(41, 24, 4, 7, P.w4).rect(3, 24, 1, 7, P.w3).rect(41, 24, 1, 7, P.w3);
+  // two laptops, papers, a water jug and cups
+  for (const x of [8, 33]) s.rect(x, 9, 8, 5, '#c7ccd4').rect(x + 1, 10, 6, 3, '#26323f').rect(x + 1, 10, 6, 1, '#4a86d8').rect(x - 1, 14, 10, 2, '#a4a9b2');
+  s.rect(19, 10, 4, 5, P.paper).rect(20, 9, 4, 5, '#ffffff').hline(20, 11, 3, P.creamS).hline(20, 13, 2, P.creamS);
+  s.rect(26, 8, 4, 8, P.waterL).rect(27, 9, 1, 5, '#ffffff').rect(26, 7, 4, 1, P.metalL);
+  s.rect(31, 14, 2, 3, P.cream).rect(15, 15, 2, 3, P.cream).rect(4, 13, 2, 3, P.red);
+  return s.outline(OUT);
+}
+
+function easel() {
+  const s = new Sprite(16, 32);
+  s.rect(1, 2, 14, 16, P.w3).rect(2, 3, 12, 14, '#ffffff').hline(2, 3, 12, '#dfe4e8');
+  s.hline(3, 6, 7, '#4a86d8').hline(3, 8, 5, '#4a86d8').hline(3, 10, 8, '#c8503c');
+  s.rect(4, 12, 2, 3, '#6ea84e').rect(7, 13, 2, 2, '#e8c04a').rect(10, 11, 2, 4, '#4a86d8');
+  s.rect(2, 18, 12, 2, P.w2).hline(2, 18, 12, P.w0);
+  s.rect(3, 6, 1, 1, '#c8503c').rect(9, 5, 1, 1, '#c8503c');
+  for (let i = 0; i < 11; i++) {
+    s.set(3 - Math.floor(i / 5), 20 + i, P.w4);
+    s.set(12 + Math.floor(i / 5), 20 + i, P.w4);
+  }
+  s.vline(8, 20, 10, P.w4).rect(6, 29, 4, 2, P.w4);
+  s.rect(6, 19, 1, 1, '#e8c04a').rect(10, 19, 2, 1, '#c8503c'); // markers on the tray
+  return s.outline(OUT);
+}
+
+function divider() {
+  const s = new Sprite(16, 32);
+  s.rect(2, 4, 12, 25, P.w2).rect(3, 5, 10, 23, P.cream);
+  for (let y = 5; y < 28; y += 4) for (let x = 3; x < 13; x++) if ((x + y) % 4 === 0 || (x - y + 40) % 4 === 0) s.set(x, y + 1, '#d9c49a'); // fabric weave
+  s.vline(7, 5, 23, P.w3).vline(8, 5, 23, P.w3);
+  s.hline(2, 4, 12, P.w0).hline(2, 28, 12, P.w4).rect(1, 29, 14, 2, P.w4);
+  for (const [x, y] of [[4, 3], [6, 2], [9, 3], [11, 2], [7, 4], [12, 4]]) s.rect(x, y, 2, 2, P.green).set(x, y, P.leafL); // a plant peeking over
+  return s.outline(OUT);
+}
+
+function printer() {
+  const s = new Sprite(16, 32);
+  s.rect(2, 8, 12, 5, '#b8bcc0').hline(2, 8, 12, '#dfe2e4').rect(3, 9, 10, 2, '#8a9096'); // lid
+  s.rect(2, 13, 12, 14, '#d8d8d0').vline(2, 13, 14, '#f0f0e8').vline(13, 13, 14, '#a8a8a0').hline(2, 13, 12, '#eeeee6');
+  s.rect(9, 15, 4, 2, '#26323f').set(10, 16, '#6ee08a').set(11, 16, '#6ee08a'); // display
+  s.rect(3, 15, 4, 1, '#a8a8a0');
+  s.rect(3, 21, 10, 4, '#a8a8a0').rect(4, 22, 8, 2, '#c8c8c0');
+  s.rect(3, 26, 10, 2, P.paper).rect(4, 27, 8, 1, '#ffffff'); // a sheet coming out
+  s.rect(3, 27, 2, 3, P.stoneD).rect(11, 27, 2, 3, P.stoneD);
+  return s.outline(OUT);
+}
+
 // ── Toilet ───────────────────────────────────────────────────────────
 function toilet() {
   const s = new Sprite(16, 32);
@@ -320,6 +374,11 @@ export function buildOfficeExtras() {
   single('COZY_BASIN', 'Basin with Mirror', 'misc', basin(), [1, 2], { bg: 1 });
   single('COZY_SIGN_WC', 'Toilet Sign', 'wall', signPlaque('wc'), [1, 2], { wall: true });
   single('COZY_MAT', 'Door Mat', 'misc', doorMat(), [2, 1], { bg: 1 });
+  // meeting room and open-plan office
+  single('COZY_MEETING_TABLE', 'Meeting Table', 'desks', meetingTable(), [3, 2], { bg: 1 });
+  single('COZY_EASEL', 'Whiteboard Easel', 'misc', easel(), [1, 2], { bg: 1 });
+  single('COZY_DIVIDER', 'Fabric Screen', 'decor', divider(), [1, 2], { bg: 1 });
+  single('COZY_PRINTER', 'Copier', 'misc', printer(), [1, 2], { bg: 1 });
   // quest board
   single('COZY_QUESTBOARD', 'Quest Board', 'wall', questBoard(), [3, 2], { wall: true });
   // garden

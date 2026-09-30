@@ -104,7 +104,7 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
   izin, ngobrol sama siapa, atau santai), proyeknya, tool terakhir, dan isi context-nya. Klik lagi buat nutup.
 - **Klik kalender di dinding** → kalender bulan ini, lengkap sama acara dari aplikasi **Calendar** di Mac.
   Klik tanggalnya buat lihat agenda hari itu. Angka merah di kalender = jumlah acara hari ini.
-- **Klik papan pengumuman kayu di ruang komando** → **Jurnal Petani** ala Stardew. Isinya: panen hari ini (jumlah
+- **Klik papan pengumuman kayu di ruang meeting** → **Jurnal Petani** ala Stardew. Isinya: panen hari ini (jumlah
   tool call) lawan rekor 14 harimu, musim dan tanggal, streak 🔥, "emas" (token hari ini), dan **level keahlian
   berbintang** yang naik sesuai kerja Claude: 🌾 Bertani (nulis dan ngedit file), 🍄 Mencari makan (baca dan cari
   kode), ⛏️ Menambang (jalanin command), 🎣 Memancing (cari di web), ⚔️ Bertarung (manggil sub-agent). Ada juga
@@ -120,8 +120,10 @@ Kantor kamu belum berubah setelah update? Jalanin `npm run layout` (layout lama 
 ## Kantor yang lebih luas 🏡
 
 Kantornya sekarang lebih besar (31×30 petak) dan ada halamannya:
-- **Atas:** **ruang kerja** (6 meja) dan **ruang komando** (meja Shades, dengan dinding panjang buat papan pengumuman, papan tugas, kotak surat, dan kalender).
-- **Bawah:** **toilet** (dua bilik dan dua wastafel), **kantin** (kulkas, dapur, dispenser, mesin camilan, dan dua meja makan), dan **lounge** (perapian dan sofa) dengan **pintu depan**.
+- **Ruang kerja terbuka dengan 4 divisi** (10 meja, **tanpa dinding pemisah**; bedanya cuma warna lantai dan tata mejanya): **Bullpen** (6 meja berbaris), **Studio** (2 meja saling belakang), **pojok Fokus** (meja sendiri-sendiri di balik sekat kain), dan **pojok Diskusi** (sofa, papan tulis easel, dan mesin fotokopi).
+- **Ruang meeting** di kanan atas: meja panjang dengan Shades duduk di ujungnya, dan dindingnya penuh papan (papan pengumuman, papan tugas, kotak surat, kalender). Rapat Shades sekarang di sini.
+- **Lounge** (perapian dan sofa) dengan **pintu depan**, plus **kantin** dan **toilet** yang kecil di sisi selatan.
+- **Jendela** cuma di dinding luar, gak ada lagi di dinding tengah.
 - **Luar:** jalan setapak batu, petak sayur dengan orang-orangan sawah, sumur, kolam, bangku, pohon apel, semak, bunga, dan pagar kayu. Kucing Oyen dan ayam Clucky boleh jalan-jalan sampai keluar.
 - Karena petanya lebih besar, karakter kelihatan lebih kecil. Pakai tombol zoom **+** atau klik villager biar kamera ngikutin dia.
 
@@ -215,7 +217,7 @@ Sekarang kamu bisa **nyuruh Claude langsung dari kantor**, gak perlu buka Termin
    jalan / Cuma laporan), dan gaya kerja Shades (Hemat / Delegasi). Pilihanmu **diingat**, jadi biasanya tinggal ketik
    lalu Enter. Ada juga 3 saran tugas buat mulai.
 3. **Kirimnya seru:** ada bunyi "wusss", **pesawat kertas terbang ke kotak surat** di dinding, suratnya jatuh ke dalam
-   ("tok!"), terus **Shades bangun, ngambil surat dari kotak surat, dan nganterin ke yang ngerjain** (ke rapat di sofa
+   ("tok!"), terus **Shades bangun, ngambil surat dari kotak surat, dan nganterin ke yang ngerjain** (ke rapat di meja meeting
    kalau tugas buat dia sendiri, atau ke ruang kerja kalau buat karyawan). Selama 3 detik setelah kirim ada tombol **↩ Batalkan** kalau salah kirim (tugasnya belum mulai, jadi aman). Panelnya nutup biar kamu bisa lihat. Tugasnya
    baru mulai jalan pas Shades nyerahin suratnya (paling lama 30 detik), jadi kerjaannya gak ketunda lama. Bunyinya bisa
    dimatiin lewat tombol 🔕.

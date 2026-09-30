@@ -1,4 +1,4 @@
-// asaoffice Journal (Jurnal Petani): the quest board on the command room's wall (COZY_QUESTBOARD) shows today's harvest
+// asaoffice Journal (Jurnal Petani): the quest board on the meeting room's wall (COZY_QUESTBOARD) shows today's harvest
 // (tool calls) on its biggest note; click it to open the farmer's journal — Stardew-style skill levels earned from
 // what Claude Code does (edits = farming, reading = foraging, commands = mining, web = fishing, sub-agents = combat),
 // today's numbers, the day streak, the "special orders" (TodoWrite lists), the last 14 days and a book of achievements.

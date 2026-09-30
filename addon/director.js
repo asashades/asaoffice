@@ -4,12 +4,12 @@
 //   - When you send him a task from the mailbox, the session that runs it (`claude -p --agent shades-director`)
 //     takes his place: the villager you see *is* that session from then on (its tools, bubbles and sub-agents),
 //     and when the session ends he's back to being the office's own Shades, in the same spot.
-//   - A new task starts with a short meeting on the lounge sofas with the staff it needs.
+//   - A new task starts with a short meeting at the meeting table (the lounge sofas in older layouts) with the staff it needs.
 //   - "Mode Hemat": Shades does the work in one session, but the staff act it out — when he reads code Iris
 //     (or Gus while planning) sits at a desk reading, tests make Wren busy, git makes Pip busy, docs Sari, other
 //     edits and commands Bayu. Only installed staff (npm run staff) show up, and they leave again after the task.
 //   - Courier: a task sent from the mailbox is a letter. Shades gets up, takes it from the mailbox on the wall and
-//     hands it over (to the meeting on the sofas for his own tasks, or to the workroom for a staff member's), and
+//     hands it over (to the meeting table for his own tasks, or to the workroom for a staff member's), and
 //     only then does the task start (the task server holds it until ns.director.courier calls back, or 30 s pass).
 // Which session is his comes from the office data feed (taskAgents); the mailbox also tells us a moment before
 // (ns.director.expect) so the swap happens as the session appears instead of a few seconds later.
@@ -216,7 +216,7 @@
     for (const id of seen) if (!office.characters.has(id)) seen.delete(id);
   }
 
-  // ── Meeting on the lounge sofas ──
+  // ── Meeting at the meeting table (or the lounge sofas) ──
   function pickTeam(prompt, phasePlan) {
     const staff = installedStaff();
     const want = [];
@@ -232,18 +232,35 @@
     add('iris-researcher');
     return want.map((a) => staff.find((m) => m.agent === a)).filter(Boolean);
   }
+  /** Free chairs round the meeting table (Shades has his own at its head), nearest first; none if there's no meeting table. */
+  function meetingSeats(office) {
+    const tables = ns.findFurniture('COZY_MEETING_TABLE');
+    if (!tables.length) return [];
+    const near = (seat) => tables.some((t) => seat.seatCol >= t.col - 1 && seat.seatCol <= t.col + 3 && seat.seatRow >= t.row - 1 && seat.seatRow <= t.row + 2);
+    return freeSeats(office, (t) => t.startsWith('COZY_CHAIR') && !t.startsWith('COZY_EXEC')).filter((id) => near(office.seats.get(id)));
+  }
+  /** Chairs that face a desk (where people work), as opposed to dining or meeting chairs. */
+  function deskSeats(office) {
+    const desks = ns.findFurniture('COZY_DESK_FRONT').concat(ns.findFurniture('COZY_DESK_SIDE'));
+    return freeSeats(office, (t) => t.startsWith('COZY_CHAIR')).filter((id) => {
+      const s = office.seats.get(id);
+      return desks.some((d) => s.seatCol >= d.col - 1 && s.seatCol <= d.col + 3 && ((s.seatRow >= d.row + 1 && s.seatRow <= d.row + 3) || (s.seatRow >= d.row - 2 && s.seatRow <= d.row - 1)));
+    });
+  }
   function startMeeting(office, shades, prompt) {
-    const sofas = freeSeats(office, (t) => t.startsWith('COZY_SOFA'));
+    const atTable = ns.findFurniture('COZY_MEETING_TABLE').length > 0; // else the meeting is on the lounge sofas
+    const sofas = atTable ? meetingSeats(office) : freeSeats(office, (t) => t.startsWith('COZY_SOFA'));
     const plan = directorLetters().some((l) => l.status === 'running' && l.phase === 'plan');
-    const team = pickTeam(prompt, plan).slice(0, Math.min(MAX_ACTING, sofas.length - 1));
+    const team = pickTeam(prompt, plan).slice(0, Math.min(MAX_ACTING, atTable ? sofas.length : sofas.length - 1));
     if (!team.length) return false;
-    moveTo(office, shades, sofas[0]);
+    if (atTable) moveTo(office, shades, execSeat(office));
+    else moveTo(office, shades, sofas[0]);
     const ids = new Set([shades.id]);
     const lines = [{ id: shades.id, text: S.open }];
     const gist = String(prompt ?? '').replace(/\s+/g, ' ').trim();
     if (gist) lines.push({ id: shades.id, text: S.quote(gist.length > 22 ? `${gist.slice(0, 21)}…` : gist) });
     team.forEach((m, i) => {
-      const npc = castStaff(office, m, sofas[i + 1]);
+      const npc = castStaff(office, m, sofas[atTable ? i : i + 1]);
       if (!npc) return;
       ids.add(npc.id);
       office.setAgentActive(npc.id, true);
@@ -263,7 +280,7 @@
     // The team goes to proper desks for the work.
     for (const id of m.ids) {
       if (id === m.shadesId) continue;
-      const desk = freeSeats(office, (t) => t.startsWith('COZY_CHAIR'))[0];
+      const desk = deskSeats(office)[0];
       const ch = office.characters.get(id);
       if (ch && desk) moveTo(office, ch, desk);
     }
@@ -424,8 +441,14 @@
       if (now < c.deadline) return;
       go('toTarget');
       if (c.agent === DIRECTOR) {
-        c.seat = freeSeats(office, (t) => t.startsWith('COZY_SOFA'))[0] ?? null;
-        if (c.seat) moveTo(office, npc, c.seat);
+        if (ns.findFurniture('COZY_MEETING_TABLE').length) {
+          // His own tasks are opened at the meeting table: back to his seat at its head.
+          c.seat = execSeat(office);
+          if (c.seat) { if (npc.seatId === c.seat) office.sendToSeat(NPC_ID); else moveTo(office, npc, c.seat); }
+        } else {
+          c.seat = freeSeats(office, (t) => t.startsWith('COZY_SOFA'))[0] ?? null;
+          if (c.seat) moveTo(office, npc, c.seat);
+        }
       }
       if (!c.seat) {
         // The middle of the workroom: between the desk rows, wherever the layout puts them.

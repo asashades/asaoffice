@@ -1,0 +1,14 @@
+{
+  "id": "COZY_DIVIDER",
+  "name": "Fabric Screen",
+  "category": "decor",
+  "type": "asset",
+  "file": "COZY_DIVIDER.png",
+  "width": 16,
+  "height": 32,
+  "footprintW": 1,
+  "footprintH": 2,
+  "canPlaceOnWalls": false,
+  "canPlaceOnSurfaces": false,
+  "backgroundTiles": 1
+}

@@ -24,7 +24,7 @@ sunflowers, an orange office cat and a hen). No sprites are taken from Stardew V
 | `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and villagers 1–6 (Asa, Rowan, Clem, Theo, Mabel, Juno) in place of the bundled characters, for the parts `pixel-agents` only loads from its own bundle. |
 | `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), [idle activities and expressions](#idle-activities-and-expressions), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night), and a [Pomodoro timer](#pomodoro) on the wall clock. |
 | `staff/` | The [office staff](#office-staff) (also the [mailbox](#mailbox-send-tasks-from-the-office)'s task runners): six Claude Code subagents with job descriptions (`staff/agents/*.md`), each played by a villager (`staff/roster.json`). Install with `npm run staff`. |
-| `layouts/stardew-office.json` | A ready-made 31×30 office with a garden around it: a 6-desk workroom and the command room (Shades' desk, and a long wall for the quest board, task board, mailbox and calendar) on top; a toilet, the canteen (kantin) and the fireplace lounge below; the front door, a stone path, vegetable beds, a well, a pond, trees and a fence outside. Import it via **Layout → Import**, or `npm run layout`. |
+| `layouts/stardew-office.json` | A ready-made 31×30 office with a garden around it: an **open-plan workroom** with 10 desks in four divisions that share one floor and are told apart only by floor tint and furniture (no walls): the Bullpen (six desks), the Studio (two desks back to back), the Focus corner (single desks behind fabric screens) and the Discussion corner (sofas, easel, copier); a **meeting room** (long table with Shades at its head, and the quest board, task board, mailbox and calendar on its wall); the fireplace lounge with the front door; a small toilet and canteen; and outside a stone path, vegetable beds, a well, a pond, trees and a fence. Windows are only on the outer walls. Import it via **Layout → Import**, or `npm run layout`. |
 | `tools/` | The sprite generator (`npm run generate`), plus setup, launcher, and tunnel scripts. |
 
 ## Quick start
@@ -154,7 +154,7 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
   sit on a free chair), grab a snack from the vending machine, get water from the dispenser or the fridge, and use the
   **toilet**: they walk into a stall, a **closed door with an "occupied" plate** covers them for 8–14 seconds, and
   mostly they wash their hands afterwards. By day they also check the vegetable beds, watch the pond, draw water at the
-  well and sit by the bench. **Around noon (11:45–13:15) nearly every idle villager goes to eat**, and there is a coffee
+  well and sit by the bench. In the open-plan office they sketch on the whiteboard easel and use the copier. **Around noon (11:45–13:15) nearly every idle villager goes to eat**, and there is a coffee
   and snack round at 15:00. Kinds the layout doesn't have are simply skipped, so older layouts still work.
 - **The garden** (`addon/garden.js`): the vegetable beds grow with your **day streak**: plant 1 is sown on day 1, and
   each plant sprouts, grows and ripens over the following days (carrots, tomatoes, cabbages, 12 plants); a broken streak
@@ -173,7 +173,7 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
 - **Calendar:** click the wall calendar for a month view (Monday first, with the Stardew season) of your macOS
   Calendar events, from last month to two months ahead. Click a day for its agenda. A red badge on the calendar
   shows how many events are on today.
-- **Quest board and the Farmer's Journal:** the wooden bulletin board on the command room's wall shows today's
+- **Quest board and the Farmer's Journal:** the wooden bulletin board on the meeting room's wall shows today's
   tool-call count in red ink on its biggest note. Click it to open the **Jurnal Petani**, in the Stardew spirit:
   today's harvest against your 14-day best; the season and date; your day streak, sessions, "gold" (today's tokens)
   and who is working now; **skill levels with stars** earned from what Claude does (edits = 🌾 farming, reads and
@@ -327,7 +327,7 @@ chat (Shades is the default recipient):
    chips remember your last choice, so the usual task is just typing and Enter. Three quick suggestions help you start.
 2. **Sending is a little show.** A whoosh sound, a paper plane flying from the send button to the mailbox on the wall,
    the letter dropping in with a thunk, then **Shades gets up, takes the letter from the mailbox and hands it over**
-   (to the meeting on the sofas for his own tasks, or to the workroom for a staff member). The panel closes so you can
+   (to the meeting table for his own tasks, or to the workroom for a staff member). The panel closes so you can
    watch. For 3 seconds after sending there's an **↩ Batalkan** bar: the letter is only queued, so undoing it cancels the
    task before anything has started. The task only *starts* when he hands it over (the task server holds it as "queued" until then, or for 30
    seconds at most), so the show never delays real work by more than a few seconds. If Shades is busy or reduced
@@ -401,7 +401,7 @@ default, and his final message is a **Laporan untuk Komisaris** (a report for th
 summary, what was done and by whom, results and proof, decisions you need to make, and next steps.
 
 - **Mode Hemat** (thrifty, the default): Shades does the whole task in **one** session. The staff act it out: a new
-  task starts with a short meeting on the lounge sofas with the staff it needs (picked from the task's wording), then
+  task starts with a short meeting at the meeting table (on the lounge sofas in older layouts) with the staff it needs (picked from the task's wording), then
   whenever Shades reads code, Iris (or Gus while he's planning) sits at a desk reading; tests make Wren busy, git
   makes Pip busy, docs Sari, and other edits and commands Bayu. Shades' bubble says who he's directing. The stand-ins
   go back to idling when there's nothing for them and leave about half a minute after the task. Only installed staff

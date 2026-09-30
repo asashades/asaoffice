@@ -16,11 +16,13 @@
       coffee: 'Rehat ngopi', sofa: 'Baca buku di sofa', books: 'Lihat-lihat rak buku', fire: 'Menghangatkan diri', window: 'Memandang ke luar', plant: 'Menyiram tanaman', pet: (n) => `Mengelus ${n}`,
       eat: 'Makan di kantin', snack: 'Jajan camilan', drink: 'Minum air', toilet: 'Ke toilet', wash: 'Cuci tangan',
       garden: 'Ngecek kebun', pond: 'Lihat kolam', well: 'Timba air', bench: 'Duduk di bangku',
+      board: 'Corat-coret di papan tulis', print: 'Ngeprint dokumen',
     },
     en: {
       coffee: 'Coffee break', sofa: 'Reading on the sofa', books: 'Browsing the bookshelf', fire: 'Warming up by the fire', window: 'Looking outside', plant: 'Watering a plant', pet: (n) => `Petting ${n}`,
       eat: 'Eating in the canteen', snack: 'Grabbing a snack', drink: 'Having some water', toilet: 'In the toilet', wash: 'Washing hands',
       garden: 'Checking the garden', pond: 'Watching the pond', well: 'Drawing water', bench: 'Sitting on the bench',
+      board: 'Sketching on the whiteboard', print: 'Printing a document',
     },
   });
   const CFG = { minIdleSec: 12, checkEverySec: 3, chance: 0.3, cooldownSec: [60, 150], approachTimeoutSec: 25 };
@@ -31,9 +33,10 @@
     COZY_BIG_PLANT: [2, 3], COZY_SUNFLOWER: [1, 2], COZY_FERN: [1, 2],
     COZY_KCOUNTER: [2, 2], COZY_FRIDGE: [1, 2], COZY_WATER: [1, 2], COZY_VENDING: [1, 2], COZY_TOILET: [1, 2], COZY_BASIN: [1, 2],
     COZY_SCARECROW: [1, 2], COZY_FLOWERS: [1, 1], COZY_POND: [3, 2], COZY_WELL: [2, 2], COZY_BENCH: [2, 1],
+    COZY_EASEL: [1, 2], COZY_PRINTER: [1, 2],
   };
   // Items against a wall are used from the tile in front of them (below): wall décor, the kitchen, the toilet and basins.
-  const WALL = new Set(['COZY_BOOKSHELF', 'COZY_WINDOW', 'COZY_KCOUNTER', 'COZY_FRIDGE', 'COZY_WATER', 'COZY_VENDING', 'COZY_TOILET', 'COZY_BASIN']);
+  const WALL = new Set(['COZY_BOOKSHELF', 'COZY_WINDOW', 'COZY_KCOUNTER', 'COZY_FRIDGE', 'COZY_WATER', 'COZY_VENDING', 'COZY_TOILET', 'COZY_BASIN', 'COZY_EASEL', 'COZY_PRINTER']);
   const GLYPH = {
     coffee: ['.#.#...', '..#.#..', '.......', '#####..', '#####.#', '#####.#', '.###...'],
     book: ['.......', '##.##..', '#.#.#..', '#.#.#..', '#.#.#..', '##.##..', '.......'],
@@ -47,7 +50,7 @@
     sprout: ['.......', '..#.#..', '.##.##.', '..###..', '...#...', '...#...', '...#...'],
   };
   const COLOR = '#c98a2b';
-  const WEIGHT = { coffee: 3, sofa: 2, books: 2, fire: 2, window: 2, plant: 1, pet: 2, eat: 2, snack: 1.5, drink: 1.5, toilet: 1, wash: 0, garden: 1, pond: 1, well: 0.7, bench: 1 };
+  const WEIGHT = { coffee: 3, sofa: 2, books: 2, fire: 2, window: 2, plant: 1, pet: 2, eat: 2, snack: 1.5, drink: 1.5, toilet: 1, wash: 0, garden: 1, pond: 1, well: 0.7, bench: 1, board: 1.2, print: 1 };
   const OUTDOOR = new Set(['garden', 'pond', 'well', 'bench']);
   const minutesNow = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
   const lunchTime = () => { const m = minutesNow(); return m >= 11 * 60 + 45 && m < 13 * 60 + 15; };
@@ -123,6 +126,8 @@
     // The canteen, the toilet and (by day) the garden — only what the layout has.
     addSpots('snack', byType('COZY_VENDING'), GLYPH.cookie);
     addSpots('drink', byType('COZY_WATER', 'COZY_FRIDGE'), GLYPH.drop);
+    addSpots('board', byType('COZY_EASEL'), GLYPH.book);
+    addSpots('print', byType('COZY_PRINTER'), GLYPH.book);
     addSpots('toilet', byType('COZY_TOILET'), GLYPH.drop);
     addSpots('wash', byType('COZY_BASIN'), GLYPH.drop);
     if (daytime()) {
