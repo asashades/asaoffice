@@ -47,6 +47,8 @@
   ns.onFrame((canvas, office, offX, offY, zoom, editMode, panRef) => {
     if (!locked || editMode) return;
     if (office.cameraFollowId !== null) office.cameraFollowId = null;
+    // The greeter's welcome camera chases the greeter, who starts outside now (bottom-left of the garden): don't follow.
+    if (office.greeterCameraTarget) office.cancelGreeterCamera?.();
     const pan = panRef?.current;
     if (!pan || (pan.x === 0 && pan.y === 0)) return;
     // Glide back to the centre (after unlocking-then-locking, or leftovers from the greeter camera).
