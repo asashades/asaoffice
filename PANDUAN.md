@@ -133,6 +133,14 @@ Kalau Holo-board belum ada di kantor kamu, jalanin `npm run layout` (layout lama
 
 Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layout**, cari **Task Board**, tempel di dinding.
 
+## HUD: ringkasan kantor di layar 🧭
+
+Di sekeliling kantor ada **HUD** (papan ringkasan) yang selalu kelihatan:
+- **Bar atas:** satu kalimat tentang apa yang lagi terjadi ("Lagi kerja: Shades · 2 asisten ikut bantu"), status koneksi data, dan angka: sesi yang lagi kerja, asisten yang lagi kerja, dan subagent hari ini.
+- **Kartu di bawah:** satu kartu per villager (Shades, sesi, asisten, karyawan yang lagi "akting" bantu Shades). Isinya status (Bekerja, Santai, Selesai, Nunggu kamu, Butuh izin), proyek atau tugasnya, dan apa yang lagi dikerjain. **Klik kartu** buat ngikutin villager itu.
+- **Panel samping** dengan tiga tab: **Aktivitas** (feed langsung: tool yang dipakai, asisten datang dan pergi), **Riwayat** (subagent 24 jam terakhir), dan **Tugas** (daftar TodoWrite sesi terbaru). Panelnya bisa diperkecil pakai tombol ▾.
+- Mau lihat kantor tanpa HUD? Tekan **H** atau klik tombol 🧭 di bawah tombol zoom. Di HP panelnya mulai dalam keadaan kecil. Mau dimatiin permanen? Tambah `&hud=off` di ujung link kantor (`&hud=on` buat nyalain lagi).
+
 ## Pomodoro 🍅
 
 - **Klik jam dinding** (jam bandul di sebelah jendela), terus klik **▶ Mulai fokus**. Timer 25 menit jalan, dan

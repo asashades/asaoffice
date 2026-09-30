@@ -224,6 +224,26 @@ Existing offices need the task board placed once, like the Holo-board: `npm run 
 The task board reads the same feed as the Holo-board, which now also carries each recent session's title, last
 prompt, project folder name and to-dos (same token-hashed file, so the same privacy as the calendar).
 
+## HUD
+
+An always-on overview around the office (`addon/hud.js`), in the same cozy look as the other panels. The idea of a
+HUD with live counters, a feed, a sub-agent history and per-character cards is inspired by
+[kantor-agent](https://github.com/humaedihume/kantor-agent) (no code taken from it).
+
+- **Top bar:** one sentence about what the office is doing ("Lagi kerja: Shades · 2 asisten ikut bantu"), whether the
+  data feed is alive, and counters: sessions working, helpers working, sub-agents started today.
+- **Cards along the bottom:** one per villager (Shades, sessions, helpers, staff acting for Shades) with its state
+  (Bekerja, Santai, Selesai for 45 s after work, Nunggu kamu, Butuh izin), its project or task and what it's doing right
+  now. Click a card to select and follow that villager.
+- **Side panel, three tabs:** **Aktivitas** (live feed of tool calls, helpers coming and going, waiting for you; it
+  starts when the page opens), **Riwayat** (sub-agents of the last 24 hours with their task, working or done) and
+  **Tugas** (TodoWrite lists of the latest sessions). The panel can be minimised.
+- **H** or the 🧭 button under the zoom buttons hides the HUD for a clear view. On phones the panel sits above the
+  cards and starts minimised. `?hud=off` turns the HUD off (remembered; `?hud=on` brings it back).
+
+History and todos come from the data feed (`runs` and `tasks`, read from `~/.claude/projects` by
+`tools/lib/claude-stats.mjs`), so they need `npm run office`.
+
 ## Pomodoro
 
 Click the pendulum clock on the wall to open the timer. **Start focus** runs 25 minutes (or 50 with the 50/10

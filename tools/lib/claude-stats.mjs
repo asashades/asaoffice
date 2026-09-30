@@ -5,8 +5,9 @@
 //                prompts or project names)
 //   tasks()    — the task board: each session active in the last day with its title, last prompt,
 //                project folder name, today's tool calls and edited files, and its TodoWrite list if any
-//   sessions() — every main session of the last weeks (also chat-only ones): id, title, first and last prompt,
+//   listSessions() — every main session of the last weeks (also chat-only ones): id, title, first and last prompt,
 //                folder and how recently it was active, for the mailbox's "Semua sesi" tab
+//   runs()     — the sub-agents of the last day (type, task description, when, folder) for the HUD's history tab
 //   spawns()   — { toolUseId: subagent_type } for Agent/Task calls in the last few hours, so the office can
 //                tell which staff member (staff/roster.json) a freshly spawned sub-agent is
 import fs from 'node:fs';
@@ -23,6 +24,7 @@ const KIND = {
 const KINDS = ['edit', 'search', 'command', 'web', 'agent', 'other'];
 const CHUNK = 4 * 1024 * 1024;
 const SPAWN_TTL_MS = 6 * 3600_000;
+const RUN_TTL_MS = 24 * 3600_000;
 
 export function localDay(date) {
   const p = (n) => String(n).padStart(2, '0');
@@ -37,6 +39,7 @@ export class ClaudeStats {
     this.perDay = new Map(); // day -> { tools, edit..., sessions: Set, files: Set, hours: number[24] }
     this.sessions = new Map(); // sessionId -> { title, aiTitle, project, lastAt, todos, todosAt }
     this.spawnMap = new Map(); // tool_use id -> { type, at }
+    this.runLog = new Map(); // tool_use id -> { type, description, at, project }
     this.spawnsVersion = 0;
   }
 
@@ -125,6 +128,15 @@ export class ClaudeStats {
         sess.tools++;
         if (kind === 'edit' && typeof b.input?.file_path === 'string') sess.files.add(b.input.file_path);
       }
+      if ((b.name === 'Agent' || b.name === 'Task') && typeof b.id === 'string' && !rec.isSidechain && !this.runLog.has(b.id) &&
+          ts.getTime() >= Date.now() - RUN_TTL_MS) {
+        this.runLog.set(b.id, {
+          type: String(b.input?.subagent_type ?? 'general-purpose').slice(0, 80),
+          description: String(b.input?.description ?? '').replace(/\s+/g, ' ').trim().slice(0, 100),
+          at: ts.getTime(), project: sess?.project ?? null,
+        });
+        this.spawnsVersion++;
+      }
       if ((b.name === 'Agent' || b.name === 'Task') && typeof b.id === 'string' && typeof b.input?.subagent_type === 'string' &&
           ts.getTime() >= Date.now() - SPAWN_TTL_MS && !this.spawnMap.has(b.id)) {
         this.spawnMap.set(b.id, { type: b.input.subagent_type.slice(0, 80), at: ts.getTime() });
@@ -211,6 +223,13 @@ export class ClaudeStats {
       if (s.cwd && !seen.has(s.cwd)) seen.set(s.cwd, { name: path.basename(s.cwd), cwd: s.cwd });
     }
     return [...seen.values()].slice(0, limit);
+  }
+
+  /** Sub-agents started in the last day, most recent first. */
+  runs(now = Date.now(), limit = 40) {
+    for (const [id, r] of this.runLog) if (now - r.at > RUN_TTL_MS) this.runLog.delete(id);
+    return [...this.runLog].sort((a, b) => b[1].at - a[1].at).slice(0, limit)
+      .map(([id, r]) => ({ id, type: r.type, description: r.description, project: r.project, at: new Date(r.at).toISOString() }));
   }
 
   /** Recent sub-agent spawns: { toolUseId: subagent_type }. */
