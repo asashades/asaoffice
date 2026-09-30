@@ -87,21 +87,24 @@ export const FLOORS = [
   },
   // 5 — kitchen checker tiles
   () => tile((x, y) => ((Math.floor(x / 8) + Math.floor(y / 8)) % 2 ? 196 : 140) + (x % 8 === 0 || y % 8 === 0 ? -18 : 0)),
-  // 6 — woven straw mat
-  () =>
-    tile((x, y) => {
-      const band = Math.floor(y / 4) % 2;
-      const stitch = band ? (x + Math.floor(y / 4)) % 4 === 0 : (x + 2) % 4 === 0;
-      return (band ? 178 : 164) + (stitch ? -30 : 0) + (y % 4 === 0 ? 10 : 0);
-    }),
-  // 7 — brick pavers
-  () =>
-    tile((x, y) => {
-      const row = Math.floor(y / 4);
-      const off = row % 2 ? 4 : 0;
-      if (y % 4 === 3 || (x + off) % 8 === 7) return 104;
-      return 158 + (y % 4 === 0 ? 14 : 0);
-    }),
+  // 6 — meadow grass (outside): tufts and short blades
+  () => {
+    const n = noise(21);
+    const blade = (x, y) => {
+      const h = (x * 73 + y * 151 + 13) % 29;
+      return h === 0 ? 26 : h === 7 ? -22 : h === 14 && y % 2 === 0 ? 14 : 0;
+    };
+    return tile((x, y) => 150 + (n(x, y) - 0.5) * 20 + blade(x, y) + (((x >> 2) + (y >> 2)) % 3 === 0 ? -6 : 0));
+  },
+  // 7 — tilled soil (the vegetable patch): ridges and clods
+  () => {
+    const n = noise(33);
+    return tile((x, y) => {
+      const ridge = y % 5;
+      const base = ridge === 0 ? 146 : ridge === 1 ? 128 : ridge === 4 ? 96 : 116;
+      return base + (n(x, y) - 0.5) * 22 + ((x * 5 + y * 3) % 13 === 0 ? 12 : 0);
+    });
+  },
   // 8 — soft rug weave (for lounge corners)
   () => {
     const n = noise(9);

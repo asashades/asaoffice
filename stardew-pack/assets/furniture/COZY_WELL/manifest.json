@@ -1,0 +1,14 @@
+{
+  "id": "COZY_WELL",
+  "name": "Stone Well",
+  "category": "decor",
+  "type": "asset",
+  "file": "COZY_WELL.png",
+  "width": 32,
+  "height": 32,
+  "footprintW": 2,
+  "footprintH": 2,
+  "canPlaceOnWalls": false,
+  "canPlaceOnSurfaces": false,
+  "backgroundTiles": 1
+}

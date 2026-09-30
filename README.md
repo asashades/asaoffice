@@ -24,7 +24,7 @@ sunflowers, an orange office cat and a hen). No sprites are taken from Stardew V
 | `overlay/` | Stardew floors (9 textures), wallpaper/wainscot walls, and villagers 1–6 (Asa, Rowan, Clem, Theo, Mabel, Juno) in place of the bundled characters, for the parts `pixel-agents` only loads from its own bundle. |
 | `addon/` | Browser add-ons for the office: [idle chat](#idle-chat), [idle activities and expressions](#idle-activities-and-expressions), a [villager card, clickable calendar and Holo-board](#villager-card-calendar-and-holo-board), a [camera lock, notifications, task board and day & night](#camera-lock-notifications-task-board-and-day--night), and a [Pomodoro timer](#pomodoro) on the wall clock. |
 | `staff/` | The [office staff](#office-staff) (also the [mailbox](#mailbox-send-tasks-from-the-office)'s task runners): six Claude Code subagents with job descriptions (`staff/agents/*.md`), each played by a villager (`staff/roster.json`). Install with `npm run staff`. |
-| `layouts/stardew-office.json` | A ready-made office: a 6-desk workroom, fireplace lounge, and the director's corner. Import it via **Layout → Import**, or `npm run layout`. |
+| `layouts/stardew-office.json` | A ready-made 31×30 office with a garden around it: a 6-desk workroom and the command room (Shades' desk, and a long wall for the quest board, task board, mailbox and calendar) on top; a toilet, the canteen (kantin) and the fireplace lounge below; the front door, a stone path, vegetable beds, a well, a pond, trees and a fence outside. Import it via **Layout → Import**, or `npm run layout`. |
 | `tools/` | The sprite generator (`npm run generate`), plus setup, launcher, and tunnel scripts. |
 
 ## Quick start
@@ -150,6 +150,16 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
   pixel-agents walks it back to its desk. Sofa seats assigned to an agent are never used, and a villager is never in
   a chat and an activity at once. `&idleActivities=off` turns them off; `__asaoffice.activities.start('sofa')` starts
   one right away.
+- **The canteen, the toilet and the garden** (bigger layout): idle villagers also **eat** at the canteen tables (they
+  sit on a free chair), grab a snack from the vending machine, get water from the dispenser or the fridge, and use the
+  **toilet**: they walk into a stall, a **closed door with an "occupied" plate** covers them for 8–14 seconds, and
+  mostly they wash their hands afterwards. By day they also check the vegetable beds, watch the pond, draw water at the
+  well and sit by the bench. **Around noon (11:45–13:15) nearly every idle villager goes to eat**, and there is a coffee
+  and snack round at 15:00. Kinds the layout doesn't have are simply skipped, so older layouts still work.
+- **The garden** (`addon/garden.js`): the vegetable beds grow with your **day streak**: plant 1 is sown on day 1, and
+  each plant sprouts, grows and ripens over the following days (carrots, tomatoes, cabbages, 12 plants); a broken streak
+  clears the beds. The garden also follows the **season** of the real date (`&season=spring|summer|fall|winter` to
+  force one): a soft tint plus drifting petals, autumn leaves or snow. `&garden=off` turns it off.
 - **Expressions:** a floating "zzz" when a session's context window is 80% full or more (time for `/compact`), a sweat
   drop after 15 minutes of non-stop work or when a permission request has waited over a minute, and a happy hop with
   sparkles when a turn it worked on for 8+ seconds finishes. `&expressions=off` turns them off;
@@ -163,13 +173,17 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
 - **Calendar:** click the wall calendar for a month view (Monday first, with the Stardew season) of your macOS
   Calendar events, from last month to two months ahead. Click a day for its agenda. A red badge on the calendar
   shows how many events are on today.
-- **Holo-board:** the holographic screen above the fireplace shows today's tool-call count and the last 12
-  hours. Click it for the dashboard: tool calls against your 14-day best, edits and files touched, reads and
-  searches, commands, web, sub-agents, sessions, agents active right now, today's tokens (output, input and how
-  much came from cache) and model mix, activity by hour, the last 14 days, and your daily streak.
+- **Quest board and the Farmer's Journal:** the wooden bulletin board on the command room's wall shows today's
+  tool-call count in red ink on its biggest note. Click it to open the **Jurnal Petani**, in the Stardew spirit:
+  today's harvest against your 14-day best; the season and date; your day streak, sessions, "gold" (today's tokens)
+  and who is working now; **skill levels with stars** earned from what Claude does (edits = 🌾 farming, reads and
+  searches = 🍄 foraging, commands = ⛏️ mining, web = 🎣 fishing, sub-agents = ⚔️ combat; level thresholds are 15, 60,
+  150, 350, 700, 1,400, 2,800, 5,500, 10,000 and 20,000 tool calls); the **special orders** (the latest sessions'
+  TodoWrite lists); the last 14 days and today's hours as bar charts; and a **book of achievements** (first harvest,
+  1,000 and 10,000 tool calls, 7- and 14-day streaks, 5 mailbox tasks, 3 sub-agents in a day, working after 10 pm).
+  It replaces the old cyan Holo-board (`COZY_HOLOBOARD` clicks still open the journal in offices that kept the old layout).
 
-Existing offices need the Holo-board placed once: run `npm run layout` (it backs up your current layout first),
-or open **Layout**, find **Holo-board** among the wall items, and put it anywhere on a wall.
+Existing offices need the new layout once: run `npm run layout` (it backs up your current layout first).
 
 **Where the data comes from.** `npm run office` now also runs a small feed next to the server. Every minute it
 counts tool calls in your Claude Code transcripts (`~/.claude/projects`, last 45 days, read incrementally), and

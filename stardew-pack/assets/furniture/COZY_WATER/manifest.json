@@ -1,0 +1,14 @@
+{
+  "id": "COZY_WATER",
+  "name": "Water Dispenser",
+  "category": "misc",
+  "type": "asset",
+  "file": "COZY_WATER.png",
+  "width": 16,
+  "height": 32,
+  "footprintW": 1,
+  "footprintH": 2,
+  "canPlaceOnWalls": false,
+  "canPlaceOnSurfaces": false,
+  "backgroundTiles": 1
+}

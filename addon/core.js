@@ -74,7 +74,7 @@
 
   // ── Furniture clicks ──
   // Footprints of the clickable items (tiles, from their manifests). Wall items are anchored at their top-left.
-  const FOOTPRINT = { COZY_CALENDAR: [1, 2], COZY_HOLOBOARD: [2, 2], COZY_TASKBOARD: [2, 2], COZY_CLOCK: [1, 2], COZY_MAILBOX: [1, 2] };
+  const FOOTPRINT = { COZY_CALENDAR: [1, 2], COZY_HOLOBOARD: [2, 2], COZY_QUESTBOARD: [3, 2], COZY_TASKBOARD: [2, 2], COZY_CLOCK: [1, 2], COZY_MAILBOX: [1, 2] };
   const clickHandlers = new Map();
   ns.onFurnitureClick = (type, fn) => clickHandlers.set(type, fn);
   ns.findFurniture = (type) => (ns.view?.office?.getLayout?.().furniture ?? []).filter((f) => f.type === type);

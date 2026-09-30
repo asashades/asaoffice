@@ -428,7 +428,12 @@
         if (c.seat) moveTo(office, npc, c.seat);
       }
       if (!c.seat) {
-        const tile = office.closestFreeWalkableTile(7, 7);
+        // The middle of the workroom: between the desk rows, wherever the layout puts them.
+        const desks = ns.findFurniture('COZY_DESK_FRONT');
+        const mid = desks.length
+          ? { col: Math.round(desks.reduce((a, f) => a + f.col, 0) / desks.length) + 1, row: Math.round(desks.reduce((a, f) => a + f.row, 0) / desks.length) + 3 }
+          : { col: 7, row: 7 };
+        const tile = office.closestFreeWalkableTile(mid.col, mid.row);
         if (!tile || !office.walkToTile(NPC_ID, tile.col, tile.row)) go('handoff', 2600);
       }
     } else if (c.phase === 'toTarget') {

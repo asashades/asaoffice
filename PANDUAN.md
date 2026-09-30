@@ -80,6 +80,15 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
   menghangatkan diri di perapian (lebih sering pas sore/malam), memandang ke jendela, nyiram tanaman, atau ngelus
   Oyen si kucing oren 🐱. Ada balon kecil di atas kepalanya yang bilang dia lagi ngapain. Begitu dapet tugas, dia
   langsung balik ke meja.
+- **Kantin, toilet, dan kebun**: villager yang santai juga **makan di kantin** (duduk di kursi meja makan), jajan di
+  mesin camilan, minum dari dispenser, dan **ke toilet**: dia masuk bilik, terus ada **pintu tertutup dengan tanda
+  "terisi"** selama 8–14 detik, dan biasanya abis itu cuci tangan. Kalau siang, mereka juga ngecek petak sayur, lihat
+  kolam, timba air di sumur, dan duduk di bangku. **Sekitar jam makan siang (11.45–13.15) hampir semua villager yang
+  santai pergi makan**, dan jam 15.00 ada jam ngopi dan camilan.
+- **Kebun ikut streak-mu 🌱**: petak sayur tumbuh sesuai **hari beruntun** kamu. Hari ke-1 ditanam tanaman pertama,
+  terus tiap hari tumbuh dari tunas sampai matang (wortel, tomat, kol; total 12 tanaman). Streak putus = petaknya
+  kosong lagi. Kebunnya juga ikut **musim** tanggal asli: ada rona warna dan kelopak, daun gugur, atau salju yang
+  beterbangan. Mau musim tertentu? Tambah `&season=fall` (spring, summer, fall, winter). Mau dimatiin? `&garden=off`.
 - **Ekspresi**:
   - 💤 **zzz** = context-nya udah 80% penuh. Saatnya `/compact`.
   - 💧 **keringetan** = udah kerja 15 menit nonstop, atau nungguin izinmu lebih dari 1 menit.
@@ -95,15 +104,26 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
   izin, ngobrol sama siapa, atau santai), proyeknya, tool terakhir, dan isi context-nya. Klik lagi buat nutup.
 - **Klik kalender di dinding** → kalender bulan ini, lengkap sama acara dari aplikasi **Calendar** di Mac.
   Klik tanggalnya buat lihat agenda hari itu. Angka merah di kalender = jumlah acara hari ini.
-- **Klik layar hologram di atas perapian (Holo-board)** → dashboard kerja Claude hari ini: jumlah tool call,
-  file yang diedit, command, sesi, pemakaian token dan model, jam tersibuk, grafik 14 hari, dan streak harian 🔥.
+- **Klik papan pengumuman kayu di ruang komando** → **Jurnal Petani** ala Stardew. Isinya: panen hari ini (jumlah
+  tool call) lawan rekor 14 harimu, musim dan tanggal, streak 🔥, "emas" (token hari ini), dan **level keahlian
+  berbintang** yang naik sesuai kerja Claude: 🌾 Bertani (nulis dan ngedit file), 🍄 Mencari makan (baca dan cari
+  kode), ⛏️ Menambang (jalanin command), 🎣 Memancing (cari di web), ⚔️ Bertarung (manggil sub-agent). Ada juga
+  **pesanan khusus** (daftar TodoWrite sesi terbaru), grafik 14 hari dan jam kerja, plus **buku pencapaian**
+  (panen pertama, 1.000 dan 10.000 tool call, streak 7 dan 14 hari, 5 tugas kotak surat, dan lain-lain).
 
 Pertama kali nyalain kantor, Mac bakal nanya **"Asa Office ingin mengakses kalender"** (atau "Terminal", kalau
 kamu nyalain lewat Terminal). Klik **Izinkan** biar acara kamu muncul. Kelewat? Buka **System Settings → Privasi &
 Keamanan → Kalender**, nyalain Asa Office (atau Terminal), terus matiin dan nyalain lagi kantornya.
 
-Kalau Holo-board belum ada di kantor kamu, jalanin `npm run layout` (layout lama otomatis di-backup), atau klik
-**Layout**, cari **Holo-board**, terus tempel di dinding mana aja.
+Kantor kamu belum berubah setelah update? Jalanin `npm run layout` (layout lama otomatis di-backup).
+
+## Kantor yang lebih luas 🏡
+
+Kantornya sekarang lebih besar (31×30 petak) dan ada halamannya:
+- **Atas:** **ruang kerja** (6 meja) dan **ruang komando** (meja Shades, dengan dinding panjang buat papan pengumuman, papan tugas, kotak surat, dan kalender).
+- **Bawah:** **toilet** (dua bilik dan dua wastafel), **kantin** (kulkas, dapur, dispenser, mesin camilan, dan dua meja makan), dan **lounge** (perapian dan sofa) dengan **pintu depan**.
+- **Luar:** jalan setapak batu, petak sayur dengan orang-orangan sawah, sumur, kolam, bangku, pohon apel, semak, bunga, dan pagar kayu. Kucing Oyen dan ayam Clucky boleh jalan-jalan sampai keluar.
+- Karena petanya lebih besar, karakter kelihatan lebih kecil. Pakai tombol zoom **+** atau klik villager biar kamera ngikutin dia.
 
 ## Kamera, notifikasi, papan tugas, dan siang-malam 🌙
 

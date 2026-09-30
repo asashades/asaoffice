@@ -1,0 +1,14 @@
+{
+  "id": "COZY_FLOWERS",
+  "name": "Flower Patch",
+  "category": "decor",
+  "type": "asset",
+  "file": "COZY_FLOWERS.png",
+  "width": 16,
+  "height": 16,
+  "footprintW": 1,
+  "footprintH": 1,
+  "canPlaceOnWalls": false,
+  "canPlaceOnSurfaces": false,
+  "backgroundTiles": 1
+}
