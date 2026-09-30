@@ -304,15 +304,26 @@ description (a copy you edited in `~/.claude/agents/` is backed up first). `npm 
 
 ## Mailbox: send tasks from the office
 
-Click the mailbox on the wall (next to the calendar), or **✉️ Kirim tugas baru** on the task board:
+Click the mailbox on the wall (next to the calendar), or **✉️ Kirim tugas baru** on the task board. The mailbox is a
+chat (Shades is the default recipient):
 
-1. **Tugas baru:** pick who does it (plain Claude, or an installed staff member), the project (folders Claude Code
-   worked in recently, plus the office's own workspace), and what to do, then send it.
-2. The office runs it on the Mac as a headless Claude Code session. With hooks on, its villager walks to a desk and
+1. **Chat baru:** type the task and press Enter (Shift+Enter for a new line). Under the box, chips pick who does it
+   (Shades, a staff member or plain Claude), the project (folders Claude Code worked in recently, plus the office's own
+   workspace), how to work (plan first / just do it / report only) and, for Shades, thrifty or real delegation. The
+   chips remember your last choice, so the usual task is just typing and Enter. Three quick suggestions help you start.
+2. **Sending is a little show.** A whoosh sound, a paper plane flying from the send button to the mailbox on the wall,
+   the letter dropping in with a thunk, then **Shades gets up, takes the letter from the mailbox and hands it over**
+   (to the meeting on the sofas for his own tasks, or to the workroom for a staff member). The panel closes so you can
+   watch. The task only *starts* when he hands it over (the task server holds it as "queued" until then, or for 20
+   seconds at most), so the show never delays real work by more than a few seconds. If Shades is busy or reduced
+   motion is on, the task starts right away and only the plane flies. Sounds are synthesised (WebAudio) and muted by 🔕.
+3. The office runs it on the Mac as a headless Claude Code session. With hooks on, its villager walks to a desk and
    works like any other session, and a staff member shows up as their own villager (Wren, Pip, …).
-3. The answer arrives as a **letter**, with a chime and a red badge on the mailbox. Reply in the letter to continue the
-   same conversation (`claude -p --resume`), stop a running task, or archive the letter.
-4. Each morning there's a **daily report** letter with yesterday's sessions, tool calls, edited files, tokens, most used
+4. The chat shows the answer with a "typing" bubble and live progress while it works; a chime and a red badge on the
+   mailbox tell you when it's done. Plans, reports and errors are chat bubbles; a plan comes with **✅ Setujui** and
+   **❌ Tolak** right under it (write a revision in the box to revise). Reply to keep talking in the same session
+   (`claude -p --resume`), stop a running task, or archive the chat.
+5. Each morning there's a **daily report** with yesterday's sessions, tool calls, edited files, tokens, most used
    model, mailbox tasks done and the streak.
 
 What a task may do depends on who does it (`staff/roster.json` → `access`). Everything else is refused automatically

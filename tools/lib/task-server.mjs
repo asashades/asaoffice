@@ -14,6 +14,8 @@
 //            for you (✅ approve / ✏️ revise / ❌ reject) before anything is changed.
 //   - auto   ("Langsung jalan", the staff default): works straight away within its allow-list.
 //   - report ("Cuma laporan"): read-only from start to finish.
+// A task can be created on hold (`hold: true`): the letter waits as "queued" until the office says the letter was
+// delivered (POST /api/tasks/:id/deliver, when Shades hands it over in the office), or 20 seconds have passed.
 // The director (Shades) can also delegate: then it may call the staff as real subagents (the Task/Agent tool).
 // Letters (tasks, their replies and results) are kept in ~/.pixel-agents/asaoffice-mail.json.
 import { spawn } from 'node:child_process';
@@ -28,6 +30,7 @@ const MAX_PROMPT = 4000;
 const MAX_RESULT = 8000;
 const TASK_TIMEOUT_MS = 30 * 60_000;
 const KEEP_LETTERS = 60;
+const HOLD_MS = 20_000;
 
 const TOOLS = {
   read: ['Read', 'Grep', 'Glob', 'LS', 'TodoWrite'],
@@ -137,7 +140,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   try { letters = JSON.parse(fs.readFileSync(mailFile, 'utf8')); } catch { /* first run */ }
   if (!Array.isArray(letters)) letters = [];
   // Tasks that were still running when the office stopped can't be followed any more.
-  for (const l of letters) if (l.status === 'running') Object.assign(l, { status: 'error', error: 'Kantor dimatikan waktu tugas ini masih jalan.' });
+  for (const l of letters) if (l.status === 'running' || l.status === 'queued') Object.assign(l, { status: 'error', error: 'Kantor dimatikan waktu tugas ini masih jalan.' });
 
   const running = new Map(); // letter id -> child process
   const save = () => {
@@ -166,8 +169,21 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   // The director works on one task at a time (he's one person in the office).
   const directorBusy = (agent) => {
     const member = agent ? roster().staff.find((m) => m.agent === agent) : null;
-    return !!member?.director && letters.some((l) => l.agent === agent && running.has(l.id));
+    return !!member?.director && letters.some((l) => l.agent === agent && (running.has(l.id) || l.status === 'queued'));
   };
+
+  // Letters on hold: started when delivered, or after HOLD_MS anyway.
+  const holds = new Map(); // letter id -> timer
+  function deliver(letter) {
+    clearTimeout(holds.get(letter.id));
+    holds.delete(letter.id);
+    if (letter.status !== 'queued') return;
+    if (running.size >= MAX_RUNNING) {
+      Object.assign(letter, { status: 'error', error: 'Lagi ada 3 tugas jalan. Coba kirim lagi nanti.', read: false });
+      return save();
+    }
+    run(letter, letter.thread[0].text, { resume: false });
+  }
 
   const allowedDirs = () => {
     const dirs = new Map((projects?.() ?? []).map((p) => [p.cwd, p]));
@@ -289,7 +305,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (!safeEqual(req.headers.authorization ?? '', `Bearer ${token}`)) return send(res, 401, { error: 'token' }, origin);
 
     const url = new URL(req.url, 'http://x');
-    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject|rename))?$/.exec(url.pathname);
+    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject|rename|deliver))?$/.exec(url.pathname);
     try {
       if (req.method === 'GET' && url.pathname === '/api/options') {
         const r = roster();
@@ -321,7 +337,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           thread: [{ from: 'you', text: prompt, at: new Date().toISOString() }],
         };
         letters.unshift(letter);
-        run(letter, prompt, { resume: false });
+        if (body.hold === true) {
+          letter.status = 'queued';
+          holds.set(letter.id, setTimeout(() => deliver(letter), HOLD_MS));
+          save();
+        } else run(letter, prompt, { resume: false });
         return send(res, 200, { letter }, origin);
       }
       const letter = m ? letters.find((l) => l.id === m[1]) : null;
@@ -329,7 +349,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       if (req.method === 'POST' && m?.[2] === 'reply') {
         const text = String((await readBody(req)).text ?? '').trim();
         if (!text || text.length > MAX_PROMPT) return send(res, 400, { error: 'text' }, origin);
-        if (running.has(letter.id)) return send(res, 409, { error: 'running' }, origin);
+        if (running.has(letter.id) || letter.status === 'queued') return send(res, 409, { error: 'running' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
         if (directorBusy(letter.agent)) return send(res, 429, { error: 'director busy' }, origin);
         if (!allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
@@ -370,13 +390,26 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         save();
         return send(res, 200, { ok: true }, origin);
       }
+      if (req.method === 'POST' && m?.[2] === 'deliver') {
+        deliver(letter);
+        return send(res, 200, { letter }, origin);
+      }
       if (req.method === 'POST' && m?.[2] === 'stop') {
+        if (letter.status === 'queued') {
+          clearTimeout(holds.get(letter.id));
+          holds.delete(letter.id);
+          Object.assign(letter, { status: 'stopped', finishedAt: new Date().toISOString() });
+          save();
+          return send(res, 200, { ok: true }, origin);
+        }
         const child = running.get(letter.id);
         if (child) { letter.stopped = true; child.kill('SIGTERM'); }
         return send(res, 200, { ok: true }, origin);
       }
       if (req.method === 'DELETE' && m && !m[2]) {
         if (running.has(letter.id)) return send(res, 409, { error: 'running' }, origin);
+        clearTimeout(holds.get(letter.id));
+        holds.delete(letter.id);
         letters = letters.filter((l) => l.id !== letter.id);
         save();
         return send(res, 200, { ok: true }, origin);
@@ -399,6 +432,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     letters: () => letters,
     agentMap,
     stop() {
+      for (const timer of holds.values()) clearTimeout(timer);
       for (const child of running.values()) child.kill('SIGTERM');
       server.close();
     },
