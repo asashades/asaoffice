@@ -28,6 +28,7 @@ const SCRIPTS = [
   'mailbox.js',
   'shelf.js',
   'garden.js',
+  'sky.js',
   'hud.js',
 ];
 const HTML_MARKER = '<!-- asaoffice addon -->';

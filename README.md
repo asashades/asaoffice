@@ -251,8 +251,13 @@ An always-on overview around the office (`addon/hud.js`), in the same cozy look 
 HUD with live counters, a feed, a sub-agent history and per-character cards is inspired by
 [kantor-agent](https://github.com/humaedihume/kantor-agent) (no code taken from it).
 
-- **Top bar:** one sentence about what the office is doing ("Lagi kerja: Shades · 2 asisten ikut bantu"), whether the
-  data feed is alive, and counters: sessions working, helpers working, sub-agents started today.
+- **Hero card (top left):** a square pixel card whose background is a live sky that follows your clock and the season
+  (dawn, day, golden hour, dusk, night; a square-pixel sun or moon crosses an arc like the Stardew clock, with clouds,
+  stars and hills tinted by the season). It shows the time, date and season, one sentence about what the office is doing
+  ("Lagi kerja: Shades · 2 asisten ikut bantu"), and two buttons: **📮 Mailbox** (with a red badge for unread letters) and
+  **📚 Bookshelf**. They open as panels that grow out of the card and float over the office with no dimming, so the
+  office stays visible and clickable (full-width on phones). Top right: whether the data feed is alive and counters
+  (sessions working, helpers working, sub-agents started today).
 - **Cards along the bottom:** one per villager (Shades, sessions, helpers, staff acting for Shades) with its state
   (Bekerja, Santai, Selesai for 45 s after work, Nunggu kamu, Butuh izin), its project or task and what it's doing right
   now. Click a card to select and follow that villager.

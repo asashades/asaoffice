@@ -170,6 +170,12 @@
     border: 2px solid #744122; box-shadow: 0 2px 0 #744122; }
   .asa-btn.primary { background: #c8503c; color: #fff6dc; border-color: #973a2f; box-shadow: 0 2px 0 #973a2f; }
   .asa-btn:disabled { opacity: 0.5; cursor: default; }
+  /* A panel that grows out of the HUD's hero card and floats over the office (no dimming: the office stays clickable). */
+  .asa-panel.asa-dock { position: fixed; z-index: 1000; left: 64px; width: min(960px, calc(100vw - 80px)); max-width: none; transform-origin: top left;
+    animation: asa-dock-in 0.16s ease-out; }
+  @keyframes asa-dock-in { from { transform: scale(0.94, 0.5); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (max-width: 720px) { .asa-panel.asa-dock { left: 8px; right: 8px; width: auto; top: 8px !important; max-height: calc(100vh - 16px) !important; } }
+  @media (prefers-reduced-motion: reduce) { .asa-panel.asa-dock { animation: none; } }
   /* Plain, easy-to-read type for the mailbox and the bookshelf (the office itself keeps the pixel font) */
   .asa-panel.asa-plain, .asa-panel.asa-plain * {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
@@ -188,10 +194,11 @@
         document.head.appendChild(style);
         styled = true;
       }
+      const docked = !!opts.dock;
       const backdrop = document.createElement('div');
       backdrop.className = 'asa-backdrop';
       const el = document.createElement('div');
-      el.className = `asa-panel asa-${opts.theme ?? 'cozy'}`;
+      el.className = `asa-panel asa-${opts.theme ?? 'cozy'}${docked ? ' asa-dock' : ''}`;
       el.setAttribute('role', 'dialog');
       const head = document.createElement('div');
       head.className = 'asa-head';
@@ -204,8 +211,24 @@
       close.textContent = '×';
       const body = document.createElement('div');
       el.append(head, close, body);
-      backdrop.appendChild(el);
-      document.body.appendChild(backdrop);
+      if (docked) {
+        // Under the hero card (the HUD's top-left card), or at the top when the HUD is hidden or missing.
+        const place = () => {
+          const hero = document.querySelector('.hud-hero');
+          const r = hero && hero.offsetParent !== null ? hero.getBoundingClientRect() : null;
+          const top = r ? Math.round(r.bottom + 6) : 8;
+          el.style.top = `${top}px`;
+          el.style.maxHeight = `calc(100vh - ${top + 76}px)`;
+        };
+        place();
+        window.addEventListener('resize', place);
+        el.dataset.dockCleanup = '1';
+        el._asaPlace = place;
+        document.body.appendChild(el);
+      } else {
+        backdrop.appendChild(el);
+        document.body.appendChild(backdrop);
+      }
       const panel = {
         el, body, title,
         close: () => ns.panel.close(),
@@ -213,15 +236,16 @@
       };
       close.onclick = panel.close;
       backdrop.addEventListener('click', (e) => { if (e.target === backdrop) panel.close(); });
-      current = { backdrop, panel, onKey: (e) => { if (e.key === 'Escape') panel.close(); }, onClose: opts.onClose };
+      current = { backdrop: docked ? el : backdrop, place: docked ? el._asaPlace : null, panel, onKey: (e) => { if (e.key === 'Escape') panel.close(); }, onClose: opts.onClose };
       window.addEventListener('keydown', current.onKey);
       panel.rerender();
       return panel;
     },
     close() {
       if (!current) return;
-      const { backdrop, onKey, onClose } = current;
+      const { backdrop, onKey, onClose, place } = current;
       current = null;
+      if (place) window.removeEventListener('resize', place);
       window.removeEventListener('keydown', onKey);
       backdrop.remove();
       onClose?.();

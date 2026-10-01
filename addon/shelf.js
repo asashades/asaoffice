@@ -294,6 +294,7 @@
     state = { notes: [], sel: null, text: '', q: '', vault: null, editing: false, draft: null, panel: null, msg: null };
     state.panel = ns.panel.open({
       theme: 'cozy',
+      dock: 'hud',
       title: `📚 ${S.title}`,
       onClose: () => { state = null; },
       render(body) {
@@ -302,7 +303,6 @@
       },
     });
     state.panel.el.classList.add('asa-plain');
-    state.panel.el.style.maxWidth = 'min(900px, 100%)';
     ns.refreshData().then(() => load(null)).catch(() => { if (state) { state.offline = true; state.panel.rerender(); } });
   }
 
