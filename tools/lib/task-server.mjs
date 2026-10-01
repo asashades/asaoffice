@@ -33,6 +33,8 @@ const MAX_RESULT = 8000;
 const TASK_TIMEOUT_MS = 30 * 60_000;
 const KEEP_LETTERS = 60;
 const HOLD_MS = 30_000;
+const MAX_IMAGE = 8 * 1024 * 1024;
+const IMAGE_TYPES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' };
 
 const TOOLS = {
   read: ['Read', 'Grep', 'Glob', 'LS', 'TodoWrite'],
@@ -195,6 +197,21 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     return [...dirs.values()].filter((p) => { try { return fs.statSync(p.cwd).isDirectory(); } catch { return false; } });
   };
 
+  /** A real image file (png, jpg, gif, webp) that may be shown: inside a project folder or the temp folder, or null. */
+  function imageFile(p) {
+    const raw = String(p ?? '');
+    const type = IMAGE_TYPES[path.extname(raw).toLowerCase()];
+    if (!type || !path.isAbsolute(raw)) return null;
+    try {
+      const real = fs.realpathSync(raw);
+      if (!IMAGE_TYPES[path.extname(real).toLowerCase()]) return null;
+      const st = fs.statSync(real);
+      if (!st.isFile() || st.size > MAX_IMAGE) return null;
+      const roots = [...allowedDirs().map((d) => d.cwd), os.tmpdir(), '/tmp'].map((d) => { try { return fs.realpathSync(d); } catch { return null; } }).filter(Boolean);
+      return roots.some((r) => real.startsWith(r + path.sep)) ? real : null;
+    } catch { return null; }
+  }
+
   function run(letter, text, { resume }) {
     const claude = findClaude();
     if (!claude) {
@@ -334,6 +351,16 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           claude: !!findClaude(),
           running: running.size,
         }, origin);
+      }
+      // Pictures Claude mentions in its answers (screenshots...), shown in the mailbox: image files only, inside the project
+      // folders Claude worked in (or the temp folder), at most 8 MB.
+      if (url.pathname === '/api/image' && req.method === 'GET') {
+        const file = imageFile(url.searchParams.get('path'));
+        if (!file) return send(res, 404, { error: 'image' }, origin);
+        const headers = { 'Content-Type': IMAGE_TYPES[path.extname(file).toLowerCase()], 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
+        if (originOk(origin)) Object.assign(headers, { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' });
+        res.writeHead(200, headers);
+        return res.end(fs.readFileSync(file));
       }
       // The bookshelf: notes in the Obsidian vault (see vault.mjs).
       if (url.pathname === '/api/vault' && req.method === 'GET') {

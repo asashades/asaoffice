@@ -219,6 +219,12 @@
   .asa-filters input { flex: 1 1 100%; }
   .asa-filters select { flex: 1 1 120px; }
   .asa-side .asa-filters .asa-chip { padding: 2px 7px; font-size: 12.5px; }
+  .asa-imgs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .asa-imgs figure { margin: 0; max-width: min(100%, 360px); }
+  .asa-imgs img { display: block; max-width: 100%; max-height: 230px; border: 2px solid #d9c49a; background: #fff; cursor: zoom-in; }
+  .asa-imgs figcaption { font-size: 11.5px; opacity: 0.6; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .asa-lightbox { position: fixed; inset: 0; z-index: 1300; display: flex; align-items: center; justify-content: center; background: rgba(20,12,6,0.82); cursor: zoom-out; padding: 16px; }
+  .asa-lightbox img { max-width: 94vw; max-height: 90vh; border: 3px solid #f4e6c4; background: #fff; box-shadow: 0 6px 0 rgba(0,0,0,0.35); }
   .asa-group { font-size: 12px; opacity: 0.65; margin: 8px 2px 0; text-transform: none; }
   .asa-plain .asa-letter-body b { font-size: 15px; font-weight: 600; }
   .asa-plain .asa-letter-body div, .asa-plain .asa-letter-status, .asa-plain .asa-note, .asa-plain .asa-muted { font-size: 13px; }
@@ -352,6 +358,54 @@
   const current = () => (sel && sel !== 'new' ? letters().find((l) => l.id === sel) ?? null : null);
   const busy = (l) => l?.status === 'running' || l?.status === 'queued';
   const smallFace = (l) => { const el = face(l); el.classList.add('sm'); return el; };
+
+  // ── Pictures in answers: a path to a screenshot in Claude's text shows up as a thumbnail (loaded through the local API) ──
+  const IMG_RE = /[^\s`'"()[\]<>]+\.(?:png|jpe?g|gif|webp)\b/gi;
+  const imageCache = new Map(); // absolute path -> Promise<object URL | null>
+  function imagePaths(text, cwd) {
+    const found = [];
+    for (const raw of String(text ?? '').match(IMG_RE) ?? []) {
+      let p = raw.replace(/^file:\/\//, '').replace(/[.,;:]+$/, '');
+      if (/^https?:/i.test(p) || /^[a-z]+:\/\//i.test(p)) continue;
+      const homeDir = /^(\/Users\/[^/]+|\/home\/[^/]+)/.exec(String(cwd ?? ''))?.[1];
+      if (p.startsWith('~/')) p = homeDir ? `${homeDir}${p.slice(1)}` : '';
+      else if (!p.startsWith('/')) p = cwd ? `${String(cwd).replace(/\/$/, '')}/${p.replace(/^\.\//, '')}` : '';
+      if (p && !found.includes(p)) found.push(p);
+    }
+    return found.slice(0, 4);
+  }
+  function imageUrl(p) {
+    if (!imageCache.has(p)) {
+      const port = ns.data?.taskServer?.port;
+      imageCache.set(p, !port || !token ? Promise.resolve(null)
+        : fetch(`http://127.0.0.1:${port}/api/image?path=${encodeURIComponent(p)}`, { headers: { Authorization: `Bearer ${token}` } })
+          .then((r) => (r.ok ? r.blob() : null)).then((b) => (b ? URL.createObjectURL(b) : null)).catch(() => null));
+    }
+    return imageCache.get(p);
+  }
+  function lightbox(src) {
+    const box = h('div', { class: 'asa-lightbox' }, h('img', { src, alt: '' }));
+    const close = () => { box.remove(); removeEventListener('keydown', onKey, true); };
+    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); close(); } };
+    addEventListener('keydown', onKey, true);
+    box.onclick = close;
+    document.body.append(box);
+  }
+  /** The pictures an answer mentions (only those that load: a missing file just doesn't show). */
+  function imageStrip(text, cwd) {
+    const paths = imagePaths(text, cwd);
+    if (!paths.length) return null;
+    const strip = h('div', { class: 'asa-imgs' });
+    for (const p of paths) {
+      imageUrl(p).then((src) => {
+        if (!src) return;
+        const img = h('img', { src, alt: p.split('/').pop(), loading: 'lazy' });
+        img.onclick = () => lightbox(src);
+        strip.append(h('figure', {}, img, h('figcaption', { title: p }, p.split('/').pop())));
+      });
+    }
+    return strip;
+  }
 
   async function ensureOptions() {
     if (options) return options;
@@ -632,7 +686,7 @@
         const plan = m.kind === 'plan';
         const label = plan ? S.planLabel : isDirector(l.agent) && m.kind ? S.reportLabel : null;
         out.push(h('div', { class: 'asa-brow' }, smallFace(l),
-          h('div', { class: `asa-b agent${plan ? ' plan' : ''}` }, label ? h('em', {}, label) : null, h('div', { class: 'asa-b-text' }, m.text), h('small', {}, `${who(l)} · ${timeOf(m.at)}`))));
+          h('div', { class: `asa-b agent${plan ? ' plan' : ''}` }, label ? h('em', {}, label) : null, h('div', { class: 'asa-b-text' }, m.text), imageStrip(m.text, l.cwd), h('small', {}, `${who(l)} · ${timeOf(m.at)}`))));
         if (plan && l.status === 'awaiting' && i === lastAgent) {
           const yes = h('button', { type: 'button', class: 'asa-btn primary' }, S.approve);
           yes.onclick = () => approve(l, yes);
