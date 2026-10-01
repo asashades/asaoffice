@@ -274,7 +274,7 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   refused automatically (see "Refused steps" under the mailbox).
 - **End of Day and the morning brief (Stardew-style):** the 🌙 button on the hero card opens **Akhir Hari**, the day's work as
   goods shipped: 🌾 files edited ×12g, 🍄 files read ×3g, ⛏️ commands ×8g, 🎣 web searches ×6g, ⚔️ sub-agents ×25g and 🧾 mailbox
-  tasks finished ×100g. The rows ping in one by one, the total counts up (click to skip; reduced-motion shows it at once), it
+  tasks finished ×100g. The rows ping in one by one, the total counts up while pixel coins tumble down the panel and the total glows gold (click to skip; reduced-motion shows it at once, without coins), it
   is compared with yesterday, and awards appear (🏆 busiest day, 🔥 streak, ⏰ busiest hour, 🧾 tasks finished). The button
   pulses after 18:00 until you've looked at today. The first time the office is opened on a morning (05:00–12:00) a **Selamat
   pagi** card shows yesterday's income and what waits today: plans to approve, refused steps, unread letters, open to-dos in

@@ -61,6 +61,15 @@
     opacity: 0; transition: opacity 0.3s; }
   .asa-day-total.on { opacity: 1; }
   .asa-day-total b { font-size: 26px; color: #973a2f; font-variant-numeric: tabular-nums; }
+  .asa-day-total.glow { border-color: #f2c94c; animation: asa-glow-box 1.8s ease-in-out infinite; }
+  .asa-day-total.glow b { color: #d98200; animation: asa-glow-text 1.8s ease-in-out infinite; }
+  @keyframes asa-glow-text { 0%, 100% { text-shadow: 0 0 4px #f2c94c, 0 0 12px rgba(240,160,32,0.8); } 50% { text-shadow: 0 0 8px #ffe27a, 0 0 24px rgba(255,190,50,1), 0 0 36px rgba(240,160,32,0.7); } }
+  @keyframes asa-glow-box { 0%, 100% { box-shadow: 0 0 6px rgba(242,201,76,0.6), inset 0 0 8px rgba(242,201,76,0.25); } 50% { box-shadow: 0 0 20px rgba(255,200,60,0.95), inset 0 0 14px rgba(242,201,76,0.5); } }
+  .asa-day-coins { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 3; }
+  .asa-coin { position: absolute; top: -16px; width: 12px; height: 12px; background: #f6c21a; border: 2px solid #b8741a; box-shadow: inset 2px 2px 0 #ffe27a, inset -2px -2px 0 #d9971a;
+    animation: asa-coin-fall var(--dur, 1.6s) cubic-bezier(0.4, 0, 0.9, 1) var(--delay, 0s) forwards, asa-coin-spin 0.45s steps(4) var(--delay, 0s) infinite; opacity: 0; }
+  @keyframes asa-coin-fall { 0% { transform: translate(0, 0); opacity: 1; } 85% { opacity: 1; } 100% { transform: translate(var(--drift, 0px), var(--fall, 520px)); opacity: 0; } }
+  @keyframes asa-coin-spin { 0% { width: 12px; margin-left: 0; } 25% { width: 7px; margin-left: 2px; } 50% { width: 3px; margin-left: 4px; } 75% { width: 7px; margin-left: 2px; } 100% { width: 12px; margin-left: 0; } }
   .asa-day-delta { font-size: 13px; margin-top: 6px; min-height: 18px; }
   .asa-day-delta.up { color: #3f8a36; } .asa-day-delta.down { color: #c8503c; }
   .asa-day-awards { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 28px; }
@@ -72,7 +81,7 @@
   .asa-day-list li { padding: 5px 0; border-bottom: 1px dashed #d9c49a; }
   .asa-day-list li button { font: inherit; background: none; border: 0; padding: 0; color: inherit; text-align: left; cursor: pointer; text-decoration: underline dotted; }
   .asa-day h3 { font-weight: 600; font-size: 14px; margin: 14px 0 2px; color: #973a2f; }
-  @media (prefers-reduced-motion: reduce) { .asa-day-row, .asa-day-total { transition: none; } .asa-day-award { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .asa-day-row, .asa-day-total { transition: none; } .asa-day-award, .asa-day-total.glow, .asa-day-total.glow b { animation: none; } .asa-day-coins { display: none; } }
   `;
   const ensureCss = () => { if (!document.getElementById('asa-day-css')) document.head.appendChild(h('style', { id: 'asa-day-css' }, css)); };
 
@@ -129,10 +138,28 @@
         body.append(h('div', { class: 'asa-day' }, h('div', { class: 'asa-day-date' }, date), rowsEl, quiet, total, delta, awards,
           h('div', { class: 'asa-day-actions' }, h('span', { class: 'asa-day-hint' }, reduced || sum.total === 0 ? '' : S.skip), next)));
 
+        const coins = h('div', { class: 'asa-day-coins' });
+        panel.el.append(coins);
+        /** Coins tumbling down the panel: a handful per row, a shower for the total. */
+        const rain = (n) => {
+          if (reduced) return;
+          const height = panel.el.clientHeight || 520;
+          for (let k = 0; k < n; k++) {
+            const coin = h('i', { class: 'asa-coin' });
+            coin.style.left = `${4 + Math.random() * 92}%`;
+            coin.style.setProperty('--dur', `${(0.9 + Math.random() * 1.0).toFixed(2)}s`);
+            coin.style.setProperty('--delay', `${(Math.random() * 0.45).toFixed(2)}s`);
+            coin.style.setProperty('--drift', `${Math.round(Math.random() * 60 - 30)}px`);
+            coin.style.setProperty('--fall', `${height + 24}px`);
+            coin.addEventListener('animationend', (e) => { if (e.animationName === 'asa-coin-fall') coin.remove(); });
+            coins.append(coin);
+          }
+        };
         const finish = () => {
           rows.forEach((r) => r.classList.add('on'));
           total.classList.add('on');
           totalNum.textContent = `${sum.total}g`;
+          if (sum.total > 0) total.classList.add('glow');
           if (sum.total > 0) {
             const diff = sum.total - prev;
             delta.textContent = prev > 0 || diff !== 0 ? S.vsYesterday(diff) : S.firstDay;
@@ -145,11 +172,12 @@
         const step = () => {
           if (i < rows.length) {
             rows[i].classList.add('on');
-            if (sum.rows[i].count) ns.notify?.sfx?.('coin');
+            if (sum.rows[i].count) { ns.notify?.sfx?.('coin'); rain(Math.min(7, 2 + Math.floor(sum.rows[i].count * sum.rows[i].price / 120))); }
             i += 1;
             timers.push(setTimeout(step, sum.rows[i - 1].count ? 420 : 120));
           } else {
-            total.classList.add('on');
+            total.classList.add('on', 'glow');
+            rain(Math.min(46, 18 + Math.floor(sum.total / 60)));
             const t0 = performance.now();
             const tick = (now) => {
               const t = Math.min(1, (now - t0) / 900);
