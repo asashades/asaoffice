@@ -25,6 +25,8 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 
+import * as vault from './vault.mjs';
+
 const MAX_RUNNING = 3;
 const MAX_PROMPT = 4000;
 const MAX_RESULT = 8000;
@@ -206,6 +208,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (phase === 'work' && member?.director && letter.style === 'delegate') tools.push(...DELEGATE_TOOLS);
     let system = PHASE_PROMPT[phase];
     if (member?.director) system += `\n${STYLE_PROMPT[letter.style === 'delegate' ? 'delegate' : 'solo']}`;
+    const notes = vault.contextNotes();
+    if (notes) system += `\n\n${notes}`;
     // The prompt goes in on stdin, so text that starts with "-" can never be read as a CLI option.
     const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'dontAsk',
       '--allowedTools', ...tools, '--append-system-prompt', system];
@@ -251,22 +255,29 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       }
     });
     child.stderr.on('data', (c) => { stderr = (stderr + c).slice(-2000); });
-    const timer = setTimeout(() => child.kill('SIGTERM'), TASK_TIMEOUT_MS);
+    const timer = setTimeout(() => { letter.timedOut = true; child.kill('SIGTERM'); }, TASK_TIMEOUT_MS);
     child.on('error', (err) => { stderr += err.message; });
     child.on('close', (code, signal) => {
       clearTimeout(timer);
       running.delete(letter.id);
       const answer = String(result?.result ?? lastText ?? '').trim();
       if (answer) letter.thread.push({ from: 'agent', text: answer.slice(0, MAX_RESULT), at: new Date().toISOString(), kind: phase });
-      const failed = signal || (result ? result.is_error : code !== 0);
+      // claude usually answers SIGTERM by exiting with 143 (128 + 15) instead of dying from the signal itself.
+      const killed = !!signal || code === 143 || code === 137;
+      const failed = killed || (result ? result.is_error : code !== 0);
       letter.status = letter.stopped ? 'stopped' : failed ? 'error' : phase === 'plan' ? 'awaiting' : 'done';
       letter.error = failed && !letter.stopped
-        ? (signal ? 'Tugasnya dihentikan (kelamaan atau dimatikan).' : (stderr.trim().split('\n').pop() || `claude keluar dengan kode ${code}`)).slice(0, 400)
+        ? (letter.timedOut ? 'Tugasnya kelamaan (lebih dari 30 menit), jadi dihentikan.'
+          : letter.shutdown ? 'Kantor dimatikan waktu tugas ini masih jalan.'
+          : killed ? 'Tugasnya dihentikan dari luar (claude dimatikan, kantor di-restart, atau Mac tidur). Kirim ulang atau balas surat ini buat lanjut.'
+          : (stderr.trim().split('\n').pop() || `claude keluar dengan kode ${code}`)).slice(0, 400)
         : null;
       letter.cost = (letter.cost ?? 0) + (result?.total_cost_usd ?? 0);
       letter.finishedAt = new Date().toISOString();
       letter.read = false;
       delete letter.stopped;
+      delete letter.timedOut;
+      delete letter.shutdown;
       delete letter.progress;
       save();
       log(`[asaoffice] task ${letter.id} ${letter.status}`);
@@ -285,7 +296,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     let data = '';
     req.on('data', (c) => {
       data += c;
-      if (data.length > 16_384) { reject(new Error('too large')); req.destroy(); }
+      if (data.length > 260_000) { reject(new Error('too large')); req.destroy(); }
     });
     req.on('end', () => { try { resolve(data ? JSON.parse(data) : {}); } catch { reject(new Error('bad json')); } });
   });
@@ -316,6 +327,21 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           claude: !!findClaude(),
           running: running.size,
         }, origin);
+      }
+      // The bookshelf: notes in the Obsidian vault (see vault.mjs).
+      if (url.pathname === '/api/vault' && req.method === 'GET') {
+        return send(res, 200, { path: vault.ensureVault(), notes: vault.list(url.searchParams.get('q') ?? '') }, origin);
+      }
+      if (url.pathname === '/api/vault/note' && req.method === 'GET') {
+        const text = vault.read(url.searchParams.get('path'));
+        return text == null ? send(res, 404, { error: 'note' }, origin) : send(res, 200, { text }, origin);
+      }
+      if (url.pathname === '/api/vault/note' && req.method === 'POST') {
+        const body = await readBody(req);
+        return vault.write(body.path, body.text) ? send(res, 200, { ok: true }, origin) : send(res, 400, { error: 'note' }, origin);
+      }
+      if (url.pathname === '/api/vault/idea' && req.method === 'POST') {
+        return vault.addIdea((await readBody(req)).text) ? send(res, 200, { ok: true }, origin) : send(res, 400, { error: 'text' }, origin);
       }
       if (req.method === 'POST' && url.pathname === '/api/tasks') {
         const body = await readBody(req);
@@ -433,7 +459,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     agentMap,
     stop() {
       for (const timer of holds.values()) clearTimeout(timer);
-      for (const child of running.values()) child.kill('SIGTERM');
+      for (const [id, child] of running) {
+        const l = letters.find((x) => x.id === id);
+        if (l) l.shutdown = true;
+        child.kill('SIGTERM');
+      }
       server.close();
     },
   };

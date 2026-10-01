@@ -865,6 +865,7 @@
     if (next.name === 'compose' || next === 'new') sel = 'new';
     else if (next.name === 'letter') sel = next.id;
     else sel = narrow() ? null : (letters().find((l) => l.status === 'awaiting') ?? letters().find((l) => !l.read && !l.report && !busy(l)))?.id ?? 'new';
+    if (next.text) setDraft(next.text, 'new');
     let timer = null;
     panel = ns.panel.open({ theme: 'cozy', title: `📮 ${S.title}`, render, onClose: () => { pendingUndo?.('go'); flushDrafts(); clearInterval(timer); panel = null; } });
     panel.el.classList.add('asa-wide');
@@ -873,7 +874,7 @@
     timer = setInterval(() => ns.refreshData().then(refreshAll), 4000);
   }
   ns.onFurnitureClick('COZY_MAILBOX', () => open());
-  ns.mailbox = { open, compose: () => open({ name: 'compose' }) };
+  ns.mailbox = { open, compose: (text) => open({ name: 'compose', text }) };
 
   // ── A letter drops into the mailbox ──
   function drawDrop(ctx, offX, offY, zoom) {
