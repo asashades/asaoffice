@@ -48,6 +48,7 @@
       queued: '📮 Diantar', queuedShort: '📮 Nunggu diambil Shades…', queuedNote: (n) => (n ? `📮 Suratmu lagi diantar Shades ke ${n}…` : '📮 Suratmu lagi diambil Shades…'),
       newChat: '＋ Chat baru', newChatSub: 'Tulis tugasnya, pilih cara kerjanya di bawah', tabChats: '💬 Chat', tabSessions: '🗂 Sesi',
       commitChip: '🔀 Boleh commit', commitTip: 'Boleh git add dan git commit (tanpa push) selama tugas ini', commitShort: 'boleh commit',
+      attach: 'Lampirkan gambar', attachTip: 'Lampirkan gambar (atau tempel / seret ke sini)', attachFail: 'Gambar gak bisa dilampirkan (png, jpg, gif, webp; maks 8 MB, 4 gambar).', lookAtImages: 'Tolong lihat gambar terlampir.', remove: 'Hapus',
       sesFirst: 'Pesan pertama', sesContinue: 'Lanjutkan sesi ini dari kantor', sesNote: 'Sesi ini dimulai di luar kantor (Terminal atau Desktop). Tulis di bawah buat lanjutin dari sini.',
       sesContinueHint: 'Tulis lanjutannya…', sesSend: 'Kirim', sesLive: 'Sesi ini lagi dipakai di tempat lain. Tunggu sebentar biar nggak tabrakan.', sesCopy: '📋 Salin perintah Terminal',
       gToday: 'Hari ini', gYesterday: 'Kemarin', gWeek: '7 hari terakhir', gOlder: 'Lebih lama',
@@ -98,6 +99,7 @@
       queued: '📮 Delivering', queuedShort: '📮 Waiting for Shades…', queuedNote: (n) => (n ? `📮 Shades is delivering your letter to ${n}…` : '📮 Shades is picking up your letter…'),
       newChat: '＋ New chat', newChatSub: 'Write the task, pick how to work below', tabChats: '💬 Chats', tabSessions: '🗂 Sessions',
       commitChip: '🔀 May commit', commitTip: 'Allow git add and git commit (never push) for this task', commitShort: 'may commit',
+      attach: 'Attach an image', attachTip: 'Attach an image (or paste / drag it here)', attachFail: 'Could not attach the image (png, jpg, gif, webp; max 8 MB, 4 images).', lookAtImages: 'Please look at the attached images.', remove: 'Remove',
       sesFirst: 'First message', sesContinue: 'Continue this session from the office', sesNote: 'This session was started outside the office (Terminal or Desktop). Write below to continue it from here.',
       sesContinueHint: 'Write the follow-up…', sesSend: 'Send', sesLive: 'This session is in use elsewhere. Wait a moment to avoid clashing.', sesCopy: '📋 Copy Terminal command',
       gToday: 'Today', gYesterday: 'Yesterday', gWeek: 'Last 7 days', gOlder: 'Older',
@@ -219,6 +221,20 @@
   .asa-filters input { flex: 1 1 100%; }
   .asa-filters select { flex: 1 1 120px; }
   .asa-side .asa-filters .asa-chip { padding: 2px 7px; font-size: 12.5px; }
+  .asa-imgs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .asa-imgs figure { margin: 0; max-width: min(100%, 360px); }
+  .asa-imgs img { display: block; max-width: 100%; max-height: 230px; border: 2px solid #d9c49a; background: #fff; cursor: zoom-in; }
+  .asa-imgs figcaption { font-size: 11.5px; opacity: 0.6; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .asa-lightbox { position: fixed; inset: 0; z-index: 1300; display: flex; align-items: center; justify-content: center; background: rgba(20,12,6,0.82); cursor: zoom-out; padding: 16px; }
+  .asa-lightbox img { max-width: 94vw; max-height: 90vh; border: 3px solid #f4e6c4; background: #fff; box-shadow: 0 6px 0 rgba(0,0,0,0.35); }
+  .asa-dock .asa-chat { height: max(380px, min(640px, calc(100vh - 330px))); }
+  .asa-attach { display: flex; flex-wrap: wrap; gap: 6px; }
+  .asa-attach figure { position: relative; margin: 0; }
+  .asa-attach img { display: block; width: 56px; height: 56px; object-fit: cover; border: 2px solid #744122; background: #fff; }
+  .asa-attach button { position: absolute; top: -7px; right: -7px; width: 19px; height: 19px; padding: 0; line-height: 15px; font-size: 13px; cursor: pointer;
+    background: #c8503c; color: #fff6dc; border: 2px solid #973a2f; }
+  .asa-attach .busy { opacity: 0.45; }
+  .asa-comp.drop { outline: 3px dashed #4a86d8; outline-offset: 2px; }
   .asa-group { font-size: 12px; opacity: 0.65; margin: 8px 2px 0; text-transform: none; }
   .asa-plain .asa-letter-body b { font-size: 15px; font-weight: 600; }
   .asa-plain .asa-letter-body div, .asa-plain .asa-letter-status, .asa-plain .asa-note, .asa-plain .asa-muted { font-size: 13px; }
@@ -352,6 +368,109 @@
   const current = () => (sel && sel !== 'new' ? letters().find((l) => l.id === sel) ?? null : null);
   const busy = (l) => l?.status === 'running' || l?.status === 'queued';
   const smallFace = (l) => { const el = face(l); el.classList.add('sm'); return el; };
+
+  // ── Pictures in answers: a path to a screenshot in Claude's text shows up as a thumbnail (loaded through the local API) ──
+  const IMG_RE = /[^\s`'"()[\]<>]+\.(?:png|jpe?g|gif|webp)\b/gi;
+  const imageCache = new Map(); // absolute path -> Promise<object URL | null>
+  function imagePaths(text, cwd) {
+    const found = [];
+    for (const raw of String(text ?? '').match(IMG_RE) ?? []) {
+      let p = raw.replace(/^file:\/\//, '').replace(/[.,;:]+$/, '');
+      if (/^https?:/i.test(p) || /^[a-z]+:\/\//i.test(p)) continue;
+      const homeDir = /^(\/Users\/[^/]+|\/home\/[^/]+)/.exec(String(cwd ?? ''))?.[1];
+      if (p.startsWith('~/')) p = homeDir ? `${homeDir}${p.slice(1)}` : '';
+      else if (!p.startsWith('/')) p = cwd ? `${String(cwd).replace(/\/$/, '')}/${p.replace(/^\.\//, '')}` : '';
+      if (p && !found.includes(p)) found.push(p);
+    }
+    return found.slice(0, 4);
+  }
+  function imageUrl(p) {
+    if (!imageCache.has(p)) {
+      const port = ns.data?.taskServer?.port;
+      imageCache.set(p, !port || !token ? Promise.resolve(null)
+        : fetch(`http://127.0.0.1:${port}/api/image?path=${encodeURIComponent(p)}`, { headers: { Authorization: `Bearer ${token}` } })
+          .then((r) => (r.ok ? r.blob() : null)).then((b) => (b ? URL.createObjectURL(b) : null)).catch(() => null));
+    }
+    return imageCache.get(p);
+  }
+  function lightbox(src) {
+    const box = h('div', { class: 'asa-lightbox' }, h('img', { src, alt: '' }));
+    const close = () => { box.remove(); removeEventListener('keydown', onKey, true); };
+    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); close(); } };
+    addEventListener('keydown', onKey, true);
+    box.onclick = close;
+    document.body.append(box);
+  }
+  /** The pictures an answer mentions (only those that load: a missing file just doesn't show). */
+  const imageStrip = (text, cwd) => imageStripFor(imagePaths(text, cwd));
+  function imageStripFor(paths) {
+    if (!paths?.length) return null;
+    const strip = h('div', { class: 'asa-imgs' });
+    for (const p of paths) {
+      imageUrl(p).then((src) => {
+        if (!src) return;
+        const img = h('img', { src, alt: p.split('/').pop(), loading: 'lazy' });
+        img.onclick = () => lightbox(src);
+        strip.append(h('figure', {}, img, h('figcaption', { title: p }, p.split('/').pop())));
+      });
+    }
+    return strip;
+  }
+
+  // ── Attaching pictures (pasted, dragged or picked) ──
+  let att = []; // [{ path, url, busy }] for the composer on screen
+  const clearAtt = () => { for (const a of att) URL.revokeObjectURL(a.url); att = []; };
+  async function uploadImage(file) {
+    const port = ns.data?.taskServer?.port;
+    if (!port || !token) throw new Error('noApi');
+    const res = await fetch(`http://127.0.0.1:${port}/api/upload`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': file.type || 'application/octet-stream' }, body: file });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error || String(res.status));
+    return json.path;
+  }
+  /**
+   * Wires a composer for pictures: paste into the textarea, drop on the composer, or the 📎 button. Returns { strip, button }:
+   * the thumbnails (with a ✕ each) and the button to put in the chips row. `changed()` runs when the list changes.
+   */
+  function attachControls(ta, composer, changed) {
+    const strip = h('div', { class: 'asa-attach' });
+    const draw = () => {
+      strip.replaceChildren(...att.map((a) => h('figure', { class: a.busy ? 'busy' : '' }, h('img', { src: a.url, alt: '' }),
+        h('button', { type: 'button', title: S.remove, 'aria-label': S.remove, onclick: () => { URL.revokeObjectURL(a.url); att = att.filter((x) => x !== a); draw(); changed(); } }, '×'))));
+      strip.hidden = !att.length;
+    };
+    async function add(files) {
+      const images = [...files].filter((f) => /^image\/(png|jpe?g|gif|webp)$/.test(f.type));
+      if (!images.length && files.length) { notice = S.attachFail; return; }
+      for (const file of images) {
+        if (att.length >= 4 || file.size > 8 * 1024 * 1024) { notice = S.attachFail; break; }
+        const item = { path: null, url: URL.createObjectURL(file), busy: true };
+        att.push(item);
+        draw();
+        changed();
+        try { item.path = await uploadImage(file); item.busy = false; } catch { att = att.filter((x) => x !== item); URL.revokeObjectURL(item.url); notice = S.attachFail; }
+        draw();
+        changed();
+      }
+      if (notice === S.attachFail) { const n = h('div', { class: 'asa-note' }, notice); strip.after(n); setTimeout(() => n.remove(), 4000); notice = ''; }
+    }
+    ta.addEventListener('paste', (e) => {
+      const files = [...(e.clipboardData?.files ?? [])].filter((f) => f.type.startsWith('image/'));
+      if (files.length) { e.preventDefault(); add(files); }
+    });
+    composer.addEventListener('dragover', (e) => { if ([...(e.dataTransfer?.types ?? [])].includes('Files')) { e.preventDefault(); composer.classList.add('drop'); } });
+    composer.addEventListener('dragleave', () => composer.classList.remove('drop'));
+    composer.addEventListener('drop', (e) => {
+      composer.classList.remove('drop');
+      if (e.dataTransfer?.files?.length) { e.preventDefault(); add(e.dataTransfer.files); }
+    });
+    const input = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/gif,image/webp', multiple: '', hidden: '' });
+    input.onchange = () => { add(input.files); input.value = ''; };
+    const button = h('button', { type: 'button', class: 'asa-chip', title: S.attachTip, 'aria-label': S.attach, onclick: () => input.click() }, '📎');
+    draw();
+    return { strip, button: h('span', {}, button, input), ready: () => att.every((a) => !a.busy && a.path) };
+  }
+  const pendingImages = () => att.filter((a) => a.path).map((a) => a.path);
 
   async function ensureOptions() {
     if (options) return options;
@@ -491,6 +610,7 @@
   // ── Main: header, thread, composer ──
   function select(id) {
     pendingUndo?.('go');
+    if (id !== sel) clearAtt();
     sel = id;
     notice = '';
     const l = current();
@@ -519,6 +639,8 @@
       const key = sel;
       const ta = h('textarea', { rows: '1', placeholder: live ? S.sesLive : S.sesContinueHint, 'aria-label': S.sesContinue });
       ta.value = getDraft(key);
+      const attach = attachControls(ta, comp, () => { sendBtn.disabled = live || sendBusy() ; });
+      const sendBusy = () => (!ta.value.trim() && !pendingImages().length) || !attach.ready();
       const sendBtn = h('button', { type: 'button', class: 'asa-send', title: S.sesSend, 'aria-label': S.sesSend }, '➤');
       const mode = h('select', { class: 'asa-chipsel', 'aria-label': S.mode }, ['auto', 'plan', 'report'].map((m) => h('option', { value: m }, S.chipModes[m])));
       const commitBox = h('input', { type: 'checkbox', id: 'asa-commit-s' });
@@ -528,11 +650,13 @@
       const msg = h('div', { class: 'asa-note' }, live ? S.sesLive : '');
       const grow = () => { ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight, 150)}px`; };
       const send = async () => {
-        const text = ta.value.trim();
+        const images = pendingImages();
+        const text = ta.value.trim() || (images.length ? S.lookAtImages : '');
         if (!text || sendBtn.disabled) return;
         sendBtn.disabled = true;
         try {
-          const { letter } = await api('POST', '/api/tasks', { agent: null, cwd: x.cwd, prompt: text, mode: mode.value, commit: commitBox.checked, resumeSession: x.id });
+          const { letter } = await api('POST', '/api/tasks', { agent: null, cwd: x.cwd, prompt: text, mode: mode.value, commit: commitBox.checked, resumeSession: x.id, images });
+          clearAtt();
           setDraft('', key);
           dropLetter();
           await ns.refreshData();
@@ -540,11 +664,11 @@
           select(letter.id);
         } catch (err) { msg.textContent = errorText(err); sendBtn.disabled = live; }
       };
-      sendBtn.disabled = live;
+      sendBtn.disabled = live || sendBusy();
       sendBtn.onclick = send;
-      ta.oninput = () => { setDraft(ta.value, key); grow(); };
+      ta.oninput = () => { setDraft(ta.value, key); grow(); sendBtn.disabled = live || sendBusy(); };
       ta.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } };
-      comp.append(h('div', { class: 'asa-comp-box' }, ta, sendBtn), h('div', { class: 'asa-chips' }, mode, commitLab, copy), msg);
+      comp.append(attach.strip, h('div', { class: 'asa-comp-box' }, ta, sendBtn), h('div', { class: 'asa-chips' }, attach.button, mode, commitLab, copy), msg);
       setTimeout(grow, 0);
     }
     ui.main.replaceChildren(head, thread, comp);
@@ -628,11 +752,11 @@
         if (m.from === 'you' && ['approve', 'reject', 'revise'].includes(m.kind)) {
           return out.push(h('div', { class: 'asa-sys' }, m.kind === 'approve' ? S.approvedNote : m.kind === 'reject' ? S.rejectedNote : `${S.revisedNote}: ${m.text}`));
         }
-        if (m.from === 'you') return out.push(h('div', { class: 'asa-b you' }, h('div', { class: 'asa-b-text' }, m.text), h('small', {}, timeOf(m.at))));
+        if (m.from === 'you') return out.push(h('div', { class: 'asa-b you' }, h('div', { class: 'asa-b-text' }, m.text), imageStripFor(m.images), h('small', {}, timeOf(m.at))));
         const plan = m.kind === 'plan';
         const label = plan ? S.planLabel : isDirector(l.agent) && m.kind ? S.reportLabel : null;
         out.push(h('div', { class: 'asa-brow' }, smallFace(l),
-          h('div', { class: `asa-b agent${plan ? ' plan' : ''}` }, label ? h('em', {}, label) : null, h('div', { class: 'asa-b-text' }, m.text), h('small', {}, `${who(l)} · ${timeOf(m.at)}`))));
+          h('div', { class: `asa-b agent${plan ? ' plan' : ''}` }, label ? h('em', {}, label) : null, h('div', { class: 'asa-b-text' }, m.text), imageStrip(m.text, l.cwd), h('small', {}, `${who(l)} · ${timeOf(m.at)}`))));
         if (plan && l.status === 'awaiting' && i === lastAgent) {
           const yes = h('button', { type: 'button', class: 'asa-btn primary' }, S.approve);
           yes.onclick = () => approve(l, yes);
@@ -668,7 +792,8 @@
     ta.disabled = locked;
     const grow = () => { ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight + 2, 150)}px`; };
     const send = h('button', { type: 'button', class: 'asa-send', title: S.send, 'aria-label': S.send }, '➤');
-    const sync = () => { send.disabled = locked || !ta.value.trim() || sending; };
+    const attach = locked || (existing && l?.report) ? null : attachControls(ta, comp, () => sync());
+    const sync = () => { send.disabled = locked || (!ta.value.trim() && !pendingImages().length) || (attach && !attach.ready()) || sending; };
     ta.oninput = () => { setDraft(ta.value); grow(); sync(); updateMention(); };
     const controls = {};
     const submit = () => (existing ? sendReply(l, ta, send) : sendNew(ta, send, controls));
@@ -766,7 +891,8 @@
     const sendBtn = locked
       ? h('button', { type: 'button', class: 'asa-send stop', title: S.stop, 'aria-label': S.stop, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/stop`)) }, '⏹')
       : send;
-    comp.append(pop, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips);
+    if (attach) { chips.prepend(attach.button); comp.append(pop, attach.strip, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips); }
+    else comp.append(pop, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips);
     grow();
     sync();
   }
@@ -794,7 +920,8 @@
   }
 
   async function sendNew(ta, sendBtn, c) {
-    const text = ta.value.trim();
+    const images = pendingImages();
+    const text = ta.value.trim() || (images.length ? S.lookAtImages : '');
     if (!text || sending) return;
     sending = true;
     sendBtn.disabled = true;
@@ -808,7 +935,7 @@
     ta.disabled = true;
     try {
       const { letter } = await api('POST', '/api/tasks', {
-        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, style: director ? c.styleSel.value : undefined, commit: c.commitBox.checked, hold: true,
+        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, style: director ? c.styleSel.value : undefined, commit: c.commitBox.checked, images, hold: true,
       });
       await landed;
       dropLetter();
@@ -819,6 +946,7 @@
         return;
       }
       setDraft('', 'new');
+      clearAtt();
       // Shades takes the letter from the mailbox and hands it over; the task starts when he does (or right away).
       const deliver = async () => {
         if (director) ns.director?.expect({ cwd, prompt: text, meeting: true });
@@ -841,7 +969,8 @@
     }
   }
   async function sendReply(l, ta, sendBtn) {
-    const text = ta.value.trim();
+    const images = pendingImages();
+    const text = ta.value.trim() || (images.length ? S.lookAtImages : '');
     if (!text || sending) return;
     sending = true;
     sendBtn.disabled = true;
@@ -849,7 +978,8 @@
     ns.notify?.sfx?.('send');
     const landed = flyPlane(sendBtn);
     try {
-      await api('POST', `/api/tasks/${l.id}/reply`, { text });
+      await api('POST', `/api/tasks/${l.id}/reply`, { text, images });
+      clearAtt();
       setDraft('', l.id);
       if (isDirector(l.agent)) ns.director?.expect({ cwd: l.cwd });
       await landed;

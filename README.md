@@ -392,6 +392,17 @@ sessions run headless (`claude -p`), so they don't appear in the Claude Desktop 
 you follow them. They use whatever account the `claude` command is logged in to (your Pro plan, unless an
 `ANTHROPIC_API_KEY` is set in the environment).
 
+**Sending pictures to Claude.** In the composer (new chat, reply, or continuing an outside session) paste an image
+(Ctrl/⌘+V), drag it onto the composer, or use the 📎 button: up to 4 png/jpg/gif/webp files, 8 MB each, shown as thumbnails
+with a ✕ and as thumbnails in the sent message. They are saved in `~/.pixel-agents/asaoffice-uploads/` (cleaned after 14
+days; the type is checked from the file's bytes, not its name) and the task is told where they are and given read access
+to that folder only (`--add-dir`), so Claude opens them with its Read tool. Only files in that folder can be attached.
+
+**Screenshots in answers.** When Claude's answer mentions an image file (png, jpg, gif, webp), for example a screenshot it took, the
+mailbox shows it as a thumbnail under the message; click it to enlarge (Esc closes). The picture is read through the
+local task API (loopback + token), only if it is an image inside a project folder Claude worked in or the temp folder, at
+most 8 MB, up to 4 per message; a file that doesn't exist simply isn't shown. A phone viewing through the tunnel doesn't see them.
+
 **Finding your way around.** The mailbox is one chat list, like Claude's own sidebar: **＋ New chat** on top, a search
 box, status filters, and every chat grouped by day. It holds your mailbox chats (each titled from the first line of
 the task, renameable) and every other Claude Code session on this Mac from the last 30 days (Terminal and Desktop;

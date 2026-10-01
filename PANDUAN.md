@@ -245,6 +245,10 @@ Sekarang kamu bisa **nyuruh Claude langsung dari kantor**, gak perlu buka Termin
    perintah Terminal) dan **🗄** (arsipkan).
 7. Tiap pagi ada **laporan harian** dari kantor: kemarin ada berapa sesi, tool, file diedit, token, dan streak 🔥.
 
+**Kirim gambar ke Claude:** di kotak tulis (chat baru, balasan, atau lanjutin sesi luar) tempel gambar (Ctrl/⌘+V), seret ke kotak tulis, atau klik tombol 📎. Maksimal 4 gambar (png, jpg, gif, webp), masing-masing 8 MB, tampil sebagai thumbnail dengan tombol ✕ buat membatalkan, dan ikut tampil di pesan terkirim. Gambarnya disimpan di `~/.pixel-agents/asaoffice-uploads/` (dihapus otomatis setelah 14 hari). Claude diberi tahu lokasinya dan boleh membaca folder itu saja, lalu membukanya lewat tool Read. Cocok buat "ini tampilannya error, benerin" atau "tiru desain ini".
+
+**Screenshot di jawaban:** kalau jawaban Claude menyebut file gambar (png, jpg, gif, webp), misalnya screenshot yang dia ambil, gambarnya tampil sebagai thumbnail di bawah pesan. Klik buat memperbesar, Esc buat menutup. Cuma file gambar di folder proyek yang dipakai Claude (atau folder temp), maksimal 8 MB dan 4 gambar per pesan. File yang nggak ada nggak ditampilkan. Dari HP (lewat tunnel) gambarnya nggak muncul. Tips: minta Claude "ambil screenshot hasilnya" kalau tugasnya cocok.
+
 **Ngikutin progres:** selama tugas jalan, suratnya nunjukin apa yang lagi dikerjain ("⏳ Baca app.js", "⏳ Jalanin: npm test"). Di tiap surat ada tombol **📋 Salin perintah Terminal**: tempel di Terminal buat lanjut ngobrol di sesi yang sama. Tugas dari kotak surat jalan di belakang layar, jadi **gak muncul di daftar sesi Claude Desktop**. Ngikutinnya lewat kantor dan kotak surat. Pakai jatah akun `claude` di Mac kamu (Pro), kecuali ada `ANTHROPIC_API_KEY` yang aktif. Cek: `echo $ANTHROPIC_API_KEY` (kosong = aman).
 
 **Biar gak bingung sesi yang mana:**
