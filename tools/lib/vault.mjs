@@ -98,6 +98,14 @@ function snippetOf(text, needle) {
   return out.length > 110 ? `${out.slice(0, 109)}…` : out;
 }
 
+/** A few cleaned-up lines of the body (without the title) for a gallery card. */
+function previewOf(text) {
+  const lines = text.split('\n').map((l) => l.replace(/^\s*(?:[-*]\s+(?:\[[ xX]\]\s+)?|#+\s+|>\s*)/, '').replace(/\s*#konteks\b/g, '').replace(/\s+/g, ' ').trim());
+  const body = text.split('\n').findIndex((l) => /^\s*#\s/.test(l));
+  const out = lines.filter((l, i) => l && i !== body).slice(0, 6).join('\n');
+  return out.length > 240 ? `${out.slice(0, 239)}…` : out;
+}
+
 /** Every note, newest first: { path, title, mtime, size, context }. With `q`, only notes whose name or text contains it. */
 export function list(q = '') {
   const root = ensureVault();
@@ -112,7 +120,11 @@ export function list(q = '') {
     const rel = path.relative(root, file).split(path.sep).join('/');
     if (needle && !rel.toLowerCase().includes(needle) && !text.toLowerCase().includes(needle)) continue;
     const heading = /^#\s+(.+)$/m.exec(text)?.[1]?.replace(/\s*#konteks\b/g, '').trim();
-    out.push({ path: rel, title: heading || path.basename(rel, '.md'), mtime: st.mtimeMs, size: st.size, context: text.includes(CONTEXT_TAG), snippet: snippetOf(text, needle) });
+    const open = [...text.matchAll(/^\s*[-*]\s+\[ \]\s+(.+)$/gm)].map((m) => m[1].replace(/\s*#konteks\b/g, '').trim());
+    out.push({
+      path: rel, title: heading || path.basename(rel, '.md'), mtime: st.mtimeMs, size: st.size, context: text.includes(CONTEXT_TAG),
+      snippet: snippetOf(text, needle), preview: previewOf(text), open: open.length, todos: open.slice(0, 4).map((t) => (t.length > 70 ? `${t.slice(0, 69)}…` : t)),
+    });
   }
   return out.sort((a, b) => b.mtime - a.mtime);
 }

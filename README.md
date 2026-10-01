@@ -178,8 +178,7 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
   `Ide-TODO.md`, `Laporan/` and `Catatan/`), or in an existing vault: **⚙ Folder vault** under the list takes a pasted
   path (also as copied from Terminal), or start the office with `OFFICE_VAULT="/path/to/vault"`. **Search first:** the
   panel opens on the search box; ↑/↓ + Enter open a note; typing a name that doesn't exist offers **📝 Create note** (it
-  opens straight in the editor, named from its first line) or **💡 Save as idea/TODO**. The list is one column,
-  grouped (Ideas & TODO, Notes, Reports, Other; each group folds), each row with a one-line preview and its age. A note
+  opens straight in the editor, named from its first line) or **💡 Save as idea/TODO**. The notes show as a **gallery** of cards (a ＋ New note card, a special Ideas & TODO card with your open to-dos, then one card per note with a preview and its age; ←↑↓→ move between cards) or as a **list** (grouped, each group folds, one-line previews): the ▦/☰ buttons switch and the choice is remembered. Searching always shows a list. Reports stay a foldable list under the cards. A note
   opens on the full width; **Esc steps back** (edit → note → list → close). Notes are read first; **Ubah**, a
   double-click, or Ctrl/⌘+Enter to save. To-do checkboxes tick in place and **→ Shades** turns an idea into a task. **Quick
   capture without opening anything:** the 💡 button on the hero card (or the **N** key) takes one line into

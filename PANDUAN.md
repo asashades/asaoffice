@@ -111,7 +111,8 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
   iCloud, izinkan Terminal.
   - **Cari dulu:** panel langsung terbuka di kotak cari. ↑↓ buat pilih, Enter buat buka. Ketik nama yang belum ada, lalu pilih
     **📝 Buat catatan** (langsung ke editor, nama file dari baris pertama) atau **💡 Simpan jadi ide/TODO**.
-  - Daftarnya satu kolom, dikelompokkan (Ide & TODO, Catatan, Laporan, Lainnya; tiap kelompok bisa dilipat), tiap baris ada
+  - **Galeri atau daftar:** tombol ▦ / ☰ di sebelah kotak cari (pilihanmu diingat). Galeri menampilkan kartu: **＋ Catatan baru**, kartu khusus **Ide & TODO** (isinya TODO yang belum selesai), lalu satu kartu per catatan dengan cuplikan isi dan umurnya. ←↑↓→ pindah antar kartu. Laporan tetap daftar yang bisa dilipat di bawah kartu, dan hasil pencarian selalu berupa daftar.
+  - Mode daftar: satu kolom, dikelompokkan (Ide & TODO, Catatan, Laporan, Lainnya; tiap kelompok bisa dilipat), tiap baris ada
     pratinjau satu baris dan umurnya. Catatan dibuka selebar panel; **Esc melangkah mundur** (edit → catatan → daftar → tutup).
   - Catatan dibaca dulu; klik **Ubah**, klik dua kali, lalu simpan dengan **Ctrl/⌘+Enter**. Centang TODO langsung di tempat, dan
     **→ Shades** mengubah ide jadi tugas. **📜 Tulis laporan hari ini** bikin laporan harian di `Laporan/`.
