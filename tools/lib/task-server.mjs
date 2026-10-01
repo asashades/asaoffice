@@ -255,22 +255,29 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       }
     });
     child.stderr.on('data', (c) => { stderr = (stderr + c).slice(-2000); });
-    const timer = setTimeout(() => child.kill('SIGTERM'), TASK_TIMEOUT_MS);
+    const timer = setTimeout(() => { letter.timedOut = true; child.kill('SIGTERM'); }, TASK_TIMEOUT_MS);
     child.on('error', (err) => { stderr += err.message; });
     child.on('close', (code, signal) => {
       clearTimeout(timer);
       running.delete(letter.id);
       const answer = String(result?.result ?? lastText ?? '').trim();
       if (answer) letter.thread.push({ from: 'agent', text: answer.slice(0, MAX_RESULT), at: new Date().toISOString(), kind: phase });
-      const failed = signal || (result ? result.is_error : code !== 0);
+      // claude usually answers SIGTERM by exiting with 143 (128 + 15) instead of dying from the signal itself.
+      const killed = !!signal || code === 143 || code === 137;
+      const failed = killed || (result ? result.is_error : code !== 0);
       letter.status = letter.stopped ? 'stopped' : failed ? 'error' : phase === 'plan' ? 'awaiting' : 'done';
       letter.error = failed && !letter.stopped
-        ? (signal ? 'Tugasnya dihentikan (kelamaan atau dimatikan).' : (stderr.trim().split('\n').pop() || `claude keluar dengan kode ${code}`)).slice(0, 400)
+        ? (letter.timedOut ? 'Tugasnya kelamaan (lebih dari 30 menit), jadi dihentikan.'
+          : letter.shutdown ? 'Kantor dimatikan waktu tugas ini masih jalan.'
+          : killed ? 'Tugasnya dihentikan dari luar (claude dimatikan, kantor di-restart, atau Mac tidur). Kirim ulang atau balas surat ini buat lanjut.'
+          : (stderr.trim().split('\n').pop() || `claude keluar dengan kode ${code}`)).slice(0, 400)
         : null;
       letter.cost = (letter.cost ?? 0) + (result?.total_cost_usd ?? 0);
       letter.finishedAt = new Date().toISOString();
       letter.read = false;
       delete letter.stopped;
+      delete letter.timedOut;
+      delete letter.shutdown;
       delete letter.progress;
       save();
       log(`[asaoffice] task ${letter.id} ${letter.status}`);
@@ -452,7 +459,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     agentMap,
     stop() {
       for (const timer of holds.values()) clearTimeout(timer);
-      for (const child of running.values()) child.kill('SIGTERM');
+      for (const [id, child] of running) {
+        const l = letters.find((x) => x.id === id);
+        if (l) l.shutdown = true;
+        child.kill('SIGTERM');
+      }
       server.close();
     },
   };
