@@ -80,6 +80,7 @@
   const directorLetters = () => (ns.data?.mail ?? []).filter((l) => l.agent === DIRECTOR);
 
   let claimed = null; // pixel-agents id of the session playing Shades right now
+  let claimedAt = 0;
   let endedAt = 0; // when that session last ended (acting staff leave a little later)
   let expecting = null; // { until, folder, prompt, meeting } from the mailbox
   const seen = new Set(); // character ids we've already looked at for the expected session
@@ -168,6 +169,7 @@
       Object.assign(ch, { matrixEffect: null, matrixEffectTimer: 0, matrixEffectSeeds: [] });
     }
     claimed = ch.id;
+    claimedAt = performance.now();
     courier = null;
     ensureShades(office); // removes the NPC and frees its seat
     const start = expecting?.meeting ? startMeeting(office, ch, expecting.prompt) : false;
@@ -194,19 +196,43 @@
       else office.reassignSeat(NPC_ID, seat); // re-plan the walk from where he stands
     }
   }
+  // The mailbox letter a session belongs to (from the data feed), and whether its task is still going.
+  const letterOfChar = (id) => {
+    const m = ns.data?.taskAgents?.[id];
+    return m?.letter ? (ns.data?.mail ?? []).find((l) => l.id === m.letter) ?? null : null;
+  };
+  const liveLetter = (l) => !!l && (l.status === 'running' || l.status === 'queued');
+  /** The claimed villager isn't Shades's session any more (but stays in the office as an ordinary villager). */
+  function unclaim(office, ch) {
+    claimed = null;
+    courier = null;
+    if (meeting) endMeeting(office, ch.id);
+    delete ch.asaDirector;
+    delete ch.asaStaff;
+    delete ch.asaName;
+    ensureShades(office);
+  }
   function track(office) {
     const now = performance.now();
     if (claimed != null) {
       const ch = office.characters.get(claimed);
       if (!ch || ch.matrixEffect === 'despawn') release(office, ch);
-      else if (ch.palette !== director().palette) dress(ch, director());
+      else {
+        // A session that was killed or never said goodbye can linger as a ghost: it must not keep Shades "busy"
+        // (no courier, no meeting) or leave a second Shades behind when the next task starts.
+        const letter = letterOfChar(ch.id);
+        const age = now - claimedAt;
+        if (letter && !liveLetter(letter) && age > 8000) return release(office, ch);
+        if (!letter && age > 120_000) return unclaim(office, ch);
+        if (ch.palette !== director().palette) dress(ch, director());
+      }
       return;
     }
     if (expecting && now > expecting.until) expecting = null;
     const map = ns.data?.taskAgents ?? {};
     for (const ch of office.characters.values()) {
       if (ch.isSubagent || ch.asaNpc || ch.matrixEffect === 'despawn') continue;
-      if (map[ch.id]?.agent === DIRECTOR) return claim(office, ch);
+      if (map[ch.id]?.agent === DIRECTOR && liveLetter(letterOfChar(ch.id))) return claim(office, ch);
       if (!seen.has(ch.id)) {
         seen.add(ch.id);
         const folder = expecting?.folder;

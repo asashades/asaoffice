@@ -380,12 +380,13 @@ sessions run headless (`claude -p`), so they don't appear in the Claude Desktop 
 you follow them. They use whatever account the `claude` command is logged in to (your Pro plan, unless an
 `ANTHROPIC_API_KEY` is set in the environment).
 
-**Finding your way around.** The mailbox has two tabs. **📮 Surat** lists the letters, with a search box and filters
-(status, project, person). Each letter gets a title from the first line of the task, which you can rename in the
-letter. **🗂 Semua sesi** lists every Claude Code session on this Mac from the last 30 days (Terminal, Desktop and
-the mailbox alike; chat-only sessions too) with its title, folder, last prompt, how recent it is ("● lagi jalan" when
-active in the last 90 seconds) and a **📋 Salin** button for the Terminal resume command. Sessions that came from
-the mailbox open their letter when clicked. The data comes from `~/.claude/projects` (`tools/lib/claude-stats.mjs` →
+**Finding your way around.** The mailbox is one chat list, like Claude's own sidebar: **＋ New chat** on top, a search
+box, status filters, and every chat grouped by day. It holds your mailbox chats (each titled from the first line of
+the task, renameable) and every other Claude Code session on this Mac from the last 30 days (Terminal and Desktop;
+marked 💬). Click one to open it. A session started outside the office opens as a chat you can continue: write the
+follow-up and Claude resumes the same session in its folder (not while it is active elsewhere, "● lagi jalan"); a
+**📋 Copy Terminal command** button is there too. The mailbox and the bookshelf use plain system type for easy reading
+(the office keeps the pixel font). The data comes from `~/.claude/projects` (`tools/lib/claude-stats.mjs` →
 `sessions` in the data feed). The project list for new tasks comes from the same place, the folders Claude Code worked
 in during the last 45 days (15 at most, plus the office workspace), shown with their path.
 
