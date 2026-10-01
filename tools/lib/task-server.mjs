@@ -34,6 +34,8 @@ const TASK_TIMEOUT_MS = 30 * 60_000;
 const KEEP_LETTERS = 60;
 const HOLD_MS = 30_000;
 const MAX_IMAGE = 8 * 1024 * 1024;
+const MAX_ATTACH = 4;
+const UPLOAD_KEEP_MS = 14 * 86_400_000;
 const IMAGE_TYPES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' };
 
 const TOOLS = {
@@ -188,7 +190,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       Object.assign(letter, { status: 'error', error: 'Lagi ada 3 tugas jalan. Coba kirim lagi nanti.', read: false });
       return save();
     }
-    run(letter, letter.thread[0].text, { resume: false });
+    run(letter, promptWith(letter.thread[0].text, letter.thread[0].images), { resume: false });
   }
 
   const allowedDirs = () => {
@@ -196,6 +198,37 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     for (const d of extraDirs) if (d && !dirs.has(d)) dirs.set(d, { name: path.basename(d), cwd: d });
     return [...dirs.values()].filter((p) => { try { return fs.statSync(p.cwd).isDirectory(); } catch { return false; } });
   };
+
+  // Pictures you attach to a task are kept here for a couple of weeks (Claude is given read access to this folder only).
+  const uploadsDir = path.join(os.homedir(), '.pixel-agents', 'asaoffice-uploads');
+  try {
+    for (const f of fs.readdirSync(uploadsDir)) {
+      const p = path.join(uploadsDir, f);
+      if (Date.now() - fs.statSync(p).mtimeMs > UPLOAD_KEEP_MS) fs.rmSync(p, { force: true });
+    }
+  } catch { /* nothing uploaded yet */ }
+  const sniff = (b) => (b.length > 12 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 ? '.png'
+    : b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff ? '.jpg'
+      : b.length > 6 && b.toString('latin1', 0, 4) === 'GIF8' ? '.gif'
+        : b.length > 12 && b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP' ? '.webp' : null);
+  /** The attached pictures that really are in the uploads folder (real paths), at most MAX_ATTACH. */
+  function cleanImages(list) {
+    if (!Array.isArray(list)) return [];
+    let root;
+    try { root = fs.realpathSync(uploadsDir); } catch { return []; }
+    const out = [];
+    for (const raw of list.slice(0, MAX_ATTACH)) {
+      try {
+        const real = fs.realpathSync(String(raw));
+        if (real.startsWith(root + path.sep) && IMAGE_TYPES[path.extname(real).toLowerCase()] && fs.statSync(real).isFile() && !out.includes(real)) out.push(real);
+      } catch { /* gone */ }
+    }
+    return out;
+  }
+  /** What Claude is sent: the text, plus where the attached pictures are (it reads them with the Read tool). */
+  const promptWith = (text, images) => (images?.length
+    ? `${text}\n\n[Gambar terlampir dari Komisaris. Lihat dengan tool Read:\n${images.map((p) => `- ${p}`).join('\n')}]`
+    : text);
 
   /** A real image file (png, jpg, gif, webp) that may be shown: inside a project folder or the temp folder, or null. */
   function imageFile(p) {
@@ -207,7 +240,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       if (!IMAGE_TYPES[path.extname(real).toLowerCase()]) return null;
       const st = fs.statSync(real);
       if (!st.isFile() || st.size > MAX_IMAGE) return null;
-      const roots = [...allowedDirs().map((d) => d.cwd), os.tmpdir(), '/tmp'].map((d) => { try { return fs.realpathSync(d); } catch { return null; } }).filter(Boolean);
+      const roots = [...allowedDirs().map((d) => d.cwd), os.tmpdir(), '/tmp', uploadsDir].map((d) => { try { return fs.realpathSync(d); } catch { return null; } }).filter(Boolean);
       return roots.some((r) => real.startsWith(r + path.sep)) ? real : null;
     } catch { return null; }
   }
@@ -237,6 +270,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     // The prompt goes in on stdin, so text that starts with "-" can never be read as a CLI option.
     const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'dontAsk',
       '--allowedTools', ...tools, '--append-system-prompt', system];
+    if (letter.thread.some((m) => m.images?.length)) args.push('--add-dir', uploadsDir);
     if (resume) args.push('--resume', letter.sessionId);
     else args.push('--session-id', letter.sessionId);
     if (letter.agent) args.push('--agent', letter.agent);
@@ -352,6 +386,23 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           running: running.size,
         }, origin);
       }
+      // A picture attached to a task (pasted, dragged or picked in the mailbox): saved in the uploads folder.
+      if (url.pathname === '/api/upload' && req.method === 'POST') {
+        const chunks = [];
+        let size = 0;
+        for await (const c of req) {
+          size += c.length;
+          if (size > MAX_IMAGE) { req.destroy(); return send(res, 413, { error: 'too large' }, origin); }
+          chunks.push(c);
+        }
+        const buf = Buffer.concat(chunks);
+        const ext = sniff(buf);
+        if (!ext) return send(res, 400, { error: 'image' }, origin);
+        fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o700 });
+        const file = path.join(uploadsDir, `${Date.now()}-${crypto.randomUUID().slice(0, 6)}${ext}`);
+        fs.writeFileSync(file, buf, { mode: 0o600 });
+        return send(res, 200, { path: fs.realpathSync(file) }, origin);
+      }
       // Pictures Claude mentions in its answers (screenshots...), shown in the mailbox: image files only, inside the project
       // folders Claude worked in (or the temp folder), at most 8 MB.
       if (url.pathname === '/api/image' && req.method === 'GET') {
@@ -383,7 +434,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       }
       if (req.method === 'POST' && url.pathname === '/api/tasks') {
         const body = await readBody(req);
-        const prompt = String(body.prompt ?? '').trim();
+        const images = cleanImages(body.images);
+        const prompt = String(body.prompt ?? '').trim() || (images.length ? 'Tolong lihat gambar terlampir.' : '');
         if (!prompt || prompt.length > MAX_PROMPT) return send(res, 400, { error: 'prompt' }, origin);
         const dir = allowedDirs().find((p) => p.cwd === body.cwd);
         if (!dir) return send(res, 400, { error: 'cwd' }, origin);
@@ -404,20 +456,22 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           sessionId: resumeId ?? crypto.randomUUID(), status: 'running', read: true, createdAt: new Date().toISOString(),
           title: resumeId ? (known.title || titleOf(prompt)) : titleOf(prompt), mode, style, phase: mode === 'plan' ? 'plan' : 'work',
           commit: body.commit === true && mode !== 'report',
-          thread: [{ from: 'you', text: prompt, at: new Date().toISOString() }],
+          thread: [{ from: 'you', text: prompt, at: new Date().toISOString(), ...(images.length ? { images } : {}) }],
         };
         letters.unshift(letter);
         if (body.hold === true && !resumeId) {
           letter.status = 'queued';
           holds.set(letter.id, setTimeout(() => deliver(letter), HOLD_MS));
           save();
-        } else run(letter, prompt, { resume: !!resumeId });
+        } else run(letter, promptWith(prompt, images), { resume: !!resumeId });
         return send(res, 200, { letter }, origin);
       }
       const letter = m ? letters.find((l) => l.id === m[1]) : null;
       if (m && !letter) return send(res, 404, { error: 'letter' }, origin);
       if (req.method === 'POST' && m?.[2] === 'reply') {
-        const text = String((await readBody(req)).text ?? '').trim();
+        const replyBody = await readBody(req);
+        const images = cleanImages(replyBody.images);
+        const text = String(replyBody.text ?? '').trim() || (images.length ? 'Tolong lihat gambar terlampir.' : '');
         if (!text || text.length > MAX_PROMPT) return send(res, 400, { error: 'text' }, origin);
         if (running.has(letter.id) || letter.status === 'queued') return send(res, 409, { error: 'running' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
@@ -425,9 +479,9 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (!allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
         // A reply to a plan that's waiting for you is a revision: it stays a plan until you approve it.
         const revise = letter.status === 'awaiting';
-        letter.thread.push({ from: 'you', text, at: new Date().toISOString(), kind: revise ? 'revise' : undefined });
+        letter.thread.push({ from: 'you', text, at: new Date().toISOString(), kind: revise ? 'revise' : undefined, ...(images.length ? { images } : {}) });
         letter.read = true;
-        run(letter, revise ? `Komisaris minta rencananya direvisi:\n${text}\n\nTulis ulang rencananya.` : text, { resume: true });
+        run(letter, promptWith(revise ? `Komisaris minta rencananya direvisi:\n${text}\n\nTulis ulang rencananya.` : text, images), { resume: true });
         return send(res, 200, { letter }, origin);
       }
       if (req.method === 'POST' && (m?.[2] === 'approve' || m?.[2] === 'reject')) {
