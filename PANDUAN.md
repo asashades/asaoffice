@@ -104,13 +104,20 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
   izin, ngobrol sama siapa, atau santai), proyeknya, tool terakhir, dan isi context-nya. Klik lagi buat nutup.
 - **Klik kalender di dinding** → kalender bulan ini, lengkap sama acara dari aplikasi **Calendar** di Mac.
   Klik tanggalnya buat lihat agenda hari itu. Angka merah di kalender = jumlah acara hari ini.
-- **Klik rak buku** → **Rak Buku**, catatan pribadimu (komisaris) dalam bentuk **vault Obsidian** di
-  `~/AsaOffice-Vault` (folder berisi file `.md` biasa, dibikinin otomatis: `Ide-TODO.md`, `Laporan/`, `Catatan/`).
-  Bisa baca dan cari catatan, nulis **ide** sekali ketik, centang TODO, **kirim ide ke Shades jadi tugas** (tombol
-  **→ Shades**), **tulis laporan hari ini** sekali klik, ubah catatan, dan **Buka di Obsidian** (di Obsidian pilih
-  *Open folder as vault* sekali aja). Dua arah: catatan yang ada tulisan `#konteks` ikut dibaca Shades dan tim di
-  setiap tugas, jadi aturan tetapmu selalu dipegang. Cuma bisa dibuka dari Mac yang jalanin kantor.
-  Mau pakai vault Obsidian yang sudah ada (misalnya yang di iCloud)? Klik **Ubah folder** di bawah panel dan tempel path-nya (boleh langsung hasil salin dari Finder/Terminal, termasuk yang ada spasi), atau jalanin kantor dengan `OFFICE_VAULT="/path/vault" npm run office`. Di Mac, kalau muncul izin akses folder iCloud, izinkan Terminal. **+ Catatan** langsung buka editor (nama file diambil dari baris pertama).
+- **Rak Buku** (tombol 📚 di kartu hero, atau klik rak buku mana pun) → catatan pribadimu dalam bentuk **vault Obsidian** di
+  `~/AsaOffice-Vault` (folder berisi file `.md` biasa: `Ide-TODO.md`, `Laporan/`, `Catatan/`). Mau pakai vault Obsidian yang sudah ada
+  (misalnya yang di iCloud)? Klik **⚙ Folder vault** di bawah daftar dan tempel path-nya (boleh hasil salin dari Terminal, termasuk
+  yang ada spasi), atau jalanin kantor dengan `OFFICE_VAULT="/path/vault" npm run office`. Di Mac, kalau muncul izin akses folder
+  iCloud, izinkan Terminal.
+  - **Cari dulu:** panel langsung terbuka di kotak cari. ↑↓ buat pilih, Enter buat buka. Ketik nama yang belum ada, lalu pilih
+    **📝 Buat catatan** (langsung ke editor, nama file dari baris pertama) atau **💡 Simpan jadi ide/TODO**.
+  - Daftarnya satu kolom, dikelompokkan (Ide & TODO, Catatan, Laporan, Lainnya; tiap kelompok bisa dilipat), tiap baris ada
+    pratinjau satu baris dan umurnya. Catatan dibuka selebar panel; **Esc melangkah mundur** (edit → catatan → daftar → tutup).
+  - Catatan dibaca dulu; klik **Ubah**, klik dua kali, lalu simpan dengan **Ctrl/⌘+Enter**. Centang TODO langsung di tempat, dan
+    **→ Shades** mengubah ide jadi tugas. **📜 Tulis laporan hari ini** bikin laporan harian di `Laporan/`.
+  - **Catat cepat tanpa buka apa-apa:** tombol 💡 di kartu hero (atau tekan **N**), ketik, Enter. Masuk ke `Ide-TODO.md`.
+  - Dua arah: catatan yang ada tulisan `#konteks` ikut dibaca Shades dan tim di setiap tugas. Cuma bisa dibuka dari Mac yang
+    jalanin kantor.
 - **Klik papan pengumuman kayu di ruang meeting** → **Jurnal Petani** ala Stardew. Isinya: panen hari ini (jumlah
   tool call) lawan rekor 14 harimu, musim dan tanggal, streak 🔥, "emas" (token hari ini), dan **level keahlian
   berbintang** yang naik sesuai kerja Claude: 🌾 Bertani (nulis dan ngedit file), 🍄 Mencari makan (baca dan cari

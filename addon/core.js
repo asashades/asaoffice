@@ -236,7 +236,7 @@
       };
       close.onclick = panel.close;
       backdrop.addEventListener('click', (e) => { if (e.target === backdrop) panel.close(); });
-      current = { backdrop: docked ? el : backdrop, place: docked ? el._asaPlace : null, panel, onKey: (e) => { if (e.key === 'Escape') panel.close(); }, onClose: opts.onClose };
+      current = { backdrop: docked ? el : backdrop, place: docked ? el._asaPlace : null, panel, onKey: (e) => { if (e.key === 'Escape' && opts.onEscape?.(e) !== true) panel.close(); }, onClose: opts.onClose };
       window.addEventListener('keydown', current.onKey);
       panel.rerender();
       return panel;

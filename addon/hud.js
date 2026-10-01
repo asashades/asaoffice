@@ -25,7 +25,7 @@
       running: 'bekerja', finished: 'selesai', source: 'Sumber: transkrip Claude Code, 24 jam terakhir (terbaru di atas)',
       todoSource: (n) => `Sumber: TodoWrite · ${n} sesi terbaru`, main: 'Sesi utama', director: 'Direktur', actingFor: 'Bantu Shades',
       atDesk: 'Di meja direktur', noProject: 'Sesi Claude Code', chatWith: (n) => `Ngobrol sama ${n}`,
-      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku',
+      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
     },
     en: {
       title: 'Asa Office', live: 'Connected', dead: 'Data offline', nodata: 'No data', sessions: 'Sessions working', helpers: 'Helpers', today: 'Sub-agents today',
@@ -39,7 +39,7 @@
       running: 'working', finished: 'done', source: 'Source: Claude Code transcripts, last 24 hours (newest first)',
       todoSource: (n) => `Source: TodoWrite · ${n} latest sessions`, main: 'Main session', director: 'Director', actingFor: 'Helping Shades',
       atDesk: "At the director's desk", noProject: 'Claude Code session', chatWith: (n) => `Chatting with ${n}`,
-      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf',
+      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
     },
   });
 
@@ -84,6 +84,9 @@
   .hud-status { position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 10px 5px; background: rgba(244,230,196,0.95); border-top: 3px solid #744122;
     font-size: 12.5px; line-height: 1.3; display: flex; flex-direction: column; }
   .hud-status b { font-weight: normal; font-size: 13px; color: #744122; }
+  .hud-idea { position: absolute; inset: 0; width: 100%; box-sizing: border-box; border: 0; padding: 0 10px; background: #fffbe9; color: #3a2117;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 14px; outline: 0; }
+  .hud-idea[hidden] { display: none; }
   .hud-status span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .hud-stats { display: flex; flex: none; margin-left: auto; align-self: flex-start; }
   .hud-stat { padding: 6px 12px; border-left: 2px dashed #c9a877; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
@@ -197,9 +200,11 @@
         <div class="hud-quick">
           <button type="button" data-open="mail" title="${esc(S.openMail)}" aria-label="${esc(S.openMail)}">📮<i class="hud-badge" id="hud-badge"></i></button>
           <button type="button" data-open="shelf" title="${esc(S.openShelf)}" aria-label="${esc(S.openShelf)}">📚</button>
+          <button type="button" data-open="idea" title="${esc(S.idea)}" aria-label="${esc(S.idea)}">💡</button>
         </div>
         <div class="hud-plate"><b id="hud-time"></b><span id="hud-date"></span><span id="hud-season"></span></div>
-        <div class="hud-status"><b>${esc(S.title)}</b><span id="hud-phase"></span></div>
+        <div class="hud-status"><b>${esc(S.title)}</b><span id="hud-phase"></span>
+          <input class="hud-idea" id="hud-idea" type="text" maxlength="500" hidden placeholder="${esc(S.ideaPh)}" aria-label="${esc(S.idea)}"></div>
       </div>
       <div class="hud-stats hud-box">
         <div class="hud-stat"><small></small><b id="hud-live"></b></div>
@@ -246,7 +251,11 @@
   }
   root.addEventListener('click', (e) => {
     const openBtn = e.target.closest('[data-open]');
-    if (openBtn) { (openBtn.dataset.open === 'mail' ? ns.mailbox : ns.shelf)?.open(); return; }
+    if (openBtn) {
+      if (openBtn.dataset.open === 'idea') toggleIdea(true);
+      else (openBtn.dataset.open === 'mail' ? ns.mailbox : ns.shelf)?.open();
+      return;
+    }
     const tabBtn = e.target.closest('[data-tab]');
     if (tabBtn) { tab = tabBtn.dataset.tab; min = false; ns.store.set('hudMin', '0'); applyChrome(); return; }
     if (e.target.closest('.min')) { min = !min; ns.store.set('hudMin', min ? '1' : '0'); applyChrome(); return; }
@@ -412,6 +421,37 @@
     setHtml($('hud-todos'), todosHtml, 'todos');
     $('hud-n-todos').textContent = String(openCount);
   }
+
+  // ── Quick capture: one line into the bookshelf's Ide-TODO.md without opening anything ──
+  const ideaBox = $('hud-idea');
+  let ideaTimer = null;
+  function toggleIdea(on) {
+    if (!on) { ideaBox.hidden = true; return; }
+    ideaBox.hidden = false;
+    ideaBox.focus();
+  }
+  ideaBox.addEventListener('keydown', async (e) => {
+    e.stopPropagation();
+    if (e.key === 'Escape') { ideaBox.value = ''; toggleIdea(false); return; }
+    if (e.key !== 'Enter' || !ideaBox.value.trim()) return;
+    const text = ideaBox.value;
+    try {
+      await ns.refreshData();
+      await ns.shelf?.addIdea(text);
+      ideaBox.value = '';
+      ideaBox.placeholder = S.ideaSaved;
+      ideaBox.blur();
+      clearTimeout(ideaTimer);
+      ideaTimer = setTimeout(() => { toggleIdea(false); ideaBox.placeholder = S.ideaPh; }, 1600);
+    } catch { ideaBox.value = ''; ideaBox.placeholder = S.ideaFail; clearTimeout(ideaTimer); ideaTimer = setTimeout(() => { toggleIdea(false); ideaBox.placeholder = S.ideaPh; }, 2600); }
+  });
+  ideaBox.addEventListener('blur', () => { if (!ideaBox.value && ideaBox.placeholder === S.ideaPh) toggleIdea(false); });
+  addEventListener('keydown', (e) => {
+    if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey && !e.altKey && !e.target.closest?.('input, textarea, select, [contenteditable]') && !ns.panel.isOpen && !hidden) {
+      e.preventDefault();
+      toggleIdea(true);
+    }
+  });
 
   // ── Hero card: clock, date, season and the sky (once a second) ──
   const seasonNow = () => ns.garden?.season?.() ?? ['winter', 'spring', 'summer', 'fall'][Math.floor(((new Date().getMonth() + 1) % 12) / 3)];

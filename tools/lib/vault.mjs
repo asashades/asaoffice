@@ -88,6 +88,16 @@ function walk(dir, depth, out) {
   }
 }
 
+/** A one-line preview: the line that matches `needle`, else the first line that isn't a heading. */
+function snippetOf(text, needle) {
+  const clean = (l) => l.replace(/^\s*(?:[-*]\s+(?:\[[ xX]\]\s+)?|#+\s+|>\s*)/, '').replace(/\s*#konteks\b/g, '').replace(/\s+/g, ' ').trim();
+  const lines = text.split('\n');
+  const hit = needle ? lines.find((l) => l.toLowerCase().includes(needle)) : null;
+  const line = hit ?? lines.find((l) => l.trim() && !/^\s*#+\s/.test(l));
+  const out = clean(line ?? '');
+  return out.length > 110 ? `${out.slice(0, 109)}…` : out;
+}
+
 /** Every note, newest first: { path, title, mtime, size, context }. With `q`, only notes whose name or text contains it. */
 export function list(q = '') {
   const root = ensureVault();
@@ -102,7 +112,7 @@ export function list(q = '') {
     const rel = path.relative(root, file).split(path.sep).join('/');
     if (needle && !rel.toLowerCase().includes(needle) && !text.toLowerCase().includes(needle)) continue;
     const heading = /^#\s+(.+)$/m.exec(text)?.[1]?.replace(/\s*#konteks\b/g, '').trim();
-    out.push({ path: rel, title: heading || path.basename(rel, '.md'), mtime: st.mtimeMs, size: st.size, context: text.includes(CONTEXT_TAG) });
+    out.push({ path: rel, title: heading || path.basename(rel, '.md'), mtime: st.mtimeMs, size: st.size, context: text.includes(CONTEXT_TAG), snippet: snippetOf(text, needle) });
   }
   return out.sort((a, b) => b.mtime - a.mtime);
 }

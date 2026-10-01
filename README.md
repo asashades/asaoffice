@@ -173,13 +173,19 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
 - **Calendar:** click the wall calendar for a month view (Monday first, with the Stardew season) of your macOS
   Calendar events, from last month to two months ahead. Click a day for its agenda. A red badge on the calendar
   shows how many events are on today.
-- **Bookshelf (Rak Buku), your notes in Obsidian:** click any bookshelf. It is a plain folder of Markdown files, an
-  Obsidian vault at `~/AsaOffice-Vault` (or `$OFFICE_VAULT`), created on first use with `Ide-TODO.md`, `Laporan/` and
-  `Catatan/`. Read and search notes, add an idea in one line, tick off to-dos, send an idea to Shades as a task
-  (**→ Shades** opens the mailbox with it filled in), write today's report to `Laporan/` with one button, edit a note,
-  or **open it in Obsidian** (in Obsidian: *Open folder as vault* once). Two-way: any note containing `#konteks` is
-  given to Shades and the team as context with every task, so your standing rules are always read. To use an existing vault, click **Ubah folder** under the panel (the path may be pasted as copied from Terminal, with `\ ` escapes) or start the office with `OFFICE_VAULT="/path/to/vault"`. **+ Catatan** opens the editor straight away (the file is named from its first line). Only the Mac
-  running the office can open it (a phone gets a hint), and nothing leaves the vault folder.
+- **Bookshelf (Rak Buku), your notes in Obsidian:** open it with the 📚 button on the hero card (or click any bookshelf).
+  The notes are plain Markdown files in an Obsidian vault at `~/AsaOffice-Vault` (created on first use with
+  `Ide-TODO.md`, `Laporan/` and `Catatan/`), or in an existing vault: **⚙ Folder vault** under the list takes a pasted
+  path (also as copied from Terminal), or start the office with `OFFICE_VAULT="/path/to/vault"`. **Search first:** the
+  panel opens on the search box; ↑/↓ + Enter open a note; typing a name that doesn't exist offers **📝 Create note** (it
+  opens straight in the editor, named from its first line) or **💡 Save as idea/TODO**. The list is one column,
+  grouped (Ideas & TODO, Notes, Reports, Other; each group folds), each row with a one-line preview and its age. A note
+  opens on the full width; **Esc steps back** (edit → note → list → close). Notes are read first; **Ubah**, a
+  double-click, or Ctrl/⌘+Enter to save. To-do checkboxes tick in place and **→ Shades** turns an idea into a task. **Quick
+  capture without opening anything:** the 💡 button on the hero card (or the **N** key) takes one line into
+  `Ide-TODO.md`. **📜 Write today's report** puts the day's numbers, finished tasks and plans waiting on you into
+  `Laporan/`. Two-way: any note containing `#konteks` is given to Shades and the team as context with every task. Only the Mac running the
+  office can open it (a phone gets a hint), and nothing leaves the vault folder.
 - **Quest board and the Farmer's Journal:** the wooden bulletin board on the meeting room's wall shows today's
   tool-call count in red ink on its biggest note. Click it to open the **Jurnal Petani**, in the Stardew spirit:
   today's harvest against your 14-day best; the season and date; your day streak, sessions, "gold" (today's tokens)
