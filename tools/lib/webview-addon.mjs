@@ -29,6 +29,7 @@ const SCRIPTS = [
   'shelf.js',
   'garden.js',
   'sky.js',
+  'dayend.js',
   'hud.js',
 ];
 const HTML_MARKER = '<!-- asaoffice addon -->';

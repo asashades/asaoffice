@@ -115,6 +115,9 @@
     } else if (name === 'pickup') {
       tone('square', 660, 660, 0, 0.08, 0.03);
       tone('square', 880, 880, 0.09, 0.1, 0.03);
+    } else if (name === 'coin') { // a coin: two quick bright pings
+      tone('square', 1318.5, 1318.5, 0, 0.06, 0.025);
+      tone('square', 1760, 1760, 0.06, 0.12, 0.025);
     } else if (name === 'plan') {
       tone('triangle', 523.3, 523.3, 0, 0.16, 0.07);
       tone('triangle', 784, 784, 0.14, 0.24, 0.07);
