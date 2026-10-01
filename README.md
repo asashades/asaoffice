@@ -362,6 +362,8 @@ What a task may do depends on who does it (`staff/roster.json` → `access`). Ev
 | `git` | `git status / diff / log / show` |
 | `test` | common test runners (`npm test`, `npm run test/lint/check`, `vitest`, `jest`, `pnpm/yarn test`, `pytest`, `go test`, `cargo test`), plus `git` |
 
+**May commit (per task):** the new-chat form has a **🔀 May commit** checkbox, off by default. When ticked, that task may also run `git add` and `git commit` while it does the work (not in the plan phase or report-only mode). `git push` is never allowed, so pushing stays with you.
+
 Plain Claude and Wren and Bayu get read + edit + test. Sari gets read + edit. Pip gets read + git. Gus and Iris get
 read + web.
 

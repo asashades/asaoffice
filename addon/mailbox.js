@@ -47,6 +47,7 @@
       rename: 'Judul surat', copySmall: '📋 Salin', copiedSmall: '✅',
       queued: '📮 Diantar', queuedShort: '📮 Nunggu diambil Shades…', queuedNote: (n) => (n ? `📮 Suratmu lagi diantar Shades ke ${n}…` : '📮 Suratmu lagi diambil Shades…'),
       newChat: '＋ Chat baru', newChatSub: 'Tulis tugasnya, pilih cara kerjanya di bawah', tabChats: '💬 Chat', tabSessions: '🗂 Sesi',
+      commitChip: '🔀 Boleh commit', commitTip: 'Boleh git add dan git commit (tanpa push) selama tugas ini', commitShort: 'boleh commit',
       sesFirst: 'Pesan pertama', sesContinue: 'Lanjutkan sesi ini dari kantor', sesNote: 'Sesi ini dimulai di luar kantor (Terminal atau Desktop). Tulis di bawah buat lanjutin dari sini.',
       sesContinueHint: 'Tulis lanjutannya…', sesSend: 'Kirim', sesLive: 'Sesi ini lagi dipakai di tempat lain. Tunggu sebentar biar nggak tabrakan.', sesCopy: '📋 Salin perintah Terminal',
       gToday: 'Hari ini', gYesterday: 'Kemarin', gWeek: '7 hari terakhir', gOlder: 'Lebih lama',
@@ -96,6 +97,7 @@
       rename: 'Letter title', copySmall: '📋 Copy', copiedSmall: '✅',
       queued: '📮 Delivering', queuedShort: '📮 Waiting for Shades…', queuedNote: (n) => (n ? `📮 Shades is delivering your letter to ${n}…` : '📮 Shades is picking up your letter…'),
       newChat: '＋ New chat', newChatSub: 'Write the task, pick how to work below', tabChats: '💬 Chats', tabSessions: '🗂 Sessions',
+      commitChip: '🔀 May commit', commitTip: 'Allow git add and git commit (never push) for this task', commitShort: 'may commit',
       sesFirst: 'First message', sesContinue: 'Continue this session from the office', sesNote: 'This session was started outside the office (Terminal or Desktop). Write below to continue it from here.',
       sesContinueHint: 'Write the follow-up…', sesSend: 'Send', sesLive: 'This session is in use elsewhere. Wait a moment to avoid clashing.', sesCopy: '📋 Copy Terminal command',
       gToday: 'Today', gYesterday: 'Yesterday', gWeek: 'Last 7 days', gOlder: 'Older',
@@ -519,6 +521,8 @@
       ta.value = getDraft(key);
       const sendBtn = h('button', { type: 'button', class: 'asa-send', title: S.sesSend, 'aria-label': S.sesSend }, '➤');
       const mode = h('select', { class: 'asa-chipsel', 'aria-label': S.mode }, ['auto', 'plan', 'report'].map((m) => h('option', { value: m }, S.chipModes[m])));
+      const commitBox = h('input', { type: 'checkbox', id: 'asa-commit-s' });
+      const commitLab = h('label', { class: 'asa-chipsel', for: 'asa-commit-s', title: S.commitTip, style: { display: 'inline-flex', gap: '4px', alignItems: 'center' } }, commitBox, S.commitChip);
       const copy = h('button', { type: 'button', class: 'asa-chip', title: S.copyCmd }, S.sesCopy);
       copy.onclick = async () => { if (await copyText(terminalCommand({ cwd: x.cwd, sessionId: x.id }))) { copy.textContent = S.copiedSmall; setTimeout(() => { copy.textContent = S.sesCopy; }, 2000); } };
       const msg = h('div', { class: 'asa-note' }, live ? S.sesLive : '');
@@ -528,7 +532,7 @@
         if (!text || sendBtn.disabled) return;
         sendBtn.disabled = true;
         try {
-          const { letter } = await api('POST', '/api/tasks', { agent: null, cwd: x.cwd, prompt: text, mode: mode.value, resumeSession: x.id });
+          const { letter } = await api('POST', '/api/tasks', { agent: null, cwd: x.cwd, prompt: text, mode: mode.value, commit: commitBox.checked, resumeSession: x.id });
           setDraft('', key);
           dropLetter();
           await ns.refreshData();
@@ -540,7 +544,7 @@
       sendBtn.onclick = send;
       ta.oninput = () => { setDraft(ta.value, key); grow(); };
       ta.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } };
-      comp.append(h('div', { class: 'asa-comp-box' }, ta, sendBtn), h('div', { class: 'asa-chips' }, mode, copy), msg);
+      comp.append(h('div', { class: 'asa-comp-box' }, ta, sendBtn), h('div', { class: 'asa-chips' }, mode, commitLab, copy), msg);
       setTimeout(grow, 0);
     }
     ui.main.replaceChildren(head, thread, comp);
@@ -605,7 +609,7 @@
     actions.append(copy);
     if (!busy(l)) actions.append(h('button', { type: 'button', class: 'asa-btn', title: S.archive, 'aria-label': S.archive, onclick: () => act(() => api('DELETE', `/api/tasks/${l.id}`), () => { sel = null; syncLayout(); buildMain(); }) }, '🗄'));
     head.replaceChildren(back, face(l), h('div', { class: 'asa-chat-title' }, titleBox,
-      h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, S[l.status]].filter(Boolean).join(' · '))), actions);
+      h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.commit ? S.commitShort : null, S[l.status]].filter(Boolean).join(' · '))), actions);
   }
 
   function fillThread(l) {
@@ -730,6 +734,8 @@
       const modeSel = h('select', { class: 'asa-chipsel', title: S.mode, 'aria-label': S.mode }, Object.entries(S.chipModes).map(([v, t]) => h('option', { value: v }, t)));
       const styleSel = h('select', { class: 'asa-chipsel', title: S.style, 'aria-label': S.style }, Object.entries(S.chipStyles).map(([v, t]) => h('option', { value: v }, t)));
       styleSel.value = prefs.style ?? 'solo';
+      const commitBox = h('input', { type: 'checkbox', id: 'asa-commit' });
+      const commitLab = h('label', { class: 'asa-chipsel', for: 'asa-commit', title: S.commitTip, style: { display: 'inline-flex', gap: '4px', alignItems: 'center' } }, commitBox, S.commitChip);
       const member = () => staff.find((m) => m.agent === whoSel.value) ?? null;
       const defaultMode = () => prefs.modes?.[whoSel.value] ?? (member()?.director ? 'plan' : 'auto');
       const update = () => {
@@ -752,8 +758,8 @@
       modeSel.onchange = () => { prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value }; savePrefs(); };
       styleSel.onchange = () => { prefs.style = styleSel.value; savePrefs(); };
       update();
-      Object.assign(controls, { whoSel, projSel, modeSel, styleSel, member, setWho });
-      chips.append(whoSel, projSel, modeSel, styleSel);
+      Object.assign(controls, { whoSel, projSel, modeSel, styleSel, commitBox, member, setWho });
+      chips.append(whoSel, projSel, modeSel, styleSel, commitLab);
     } else {
       chips.append(h('span', { class: 'asa-pill' }, `👤 ${who(l)}`), h('span', { class: 'asa-pill', title: l.cwd }, `📁 ${l.project}`), l.mode ? h('span', { class: 'asa-pill' }, S.chipModes[l.mode]) : null);
     }
@@ -802,7 +808,7 @@
     ta.disabled = true;
     try {
       const { letter } = await api('POST', '/api/tasks', {
-        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, style: director ? c.styleSel.value : undefined, hold: true,
+        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, style: director ? c.styleSel.value : undefined, commit: c.commitBox.checked, hold: true,
       });
       await landed;
       dropLetter();

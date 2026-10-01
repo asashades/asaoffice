@@ -48,6 +48,7 @@ const TOOLS = {
 const MODES = ['plan', 'auto', 'report'];
 const READ_ONLY = new Set(['read', 'git', 'web']);
 const DELEGATE_TOOLS = ['Task', 'Agent'];
+const COMMIT_TOOLS = ['Bash(git add:*)', 'Bash(git commit:*)'];
 
 // What the session is told on top of its own prompt, per phase (passed with --append-system-prompt).
 const PHASE_PROMPT = {
@@ -208,6 +209,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     const tools = allowedTools(access);
     if (phase === 'work' && member?.director && letter.style === 'delegate') tools.push(...DELEGATE_TOOLS);
     let system = PHASE_PROMPT[phase];
+    // Commit permission is chosen per task (never push): only while the work is actually being done.
+    if (letter.commit && phase === 'work') {
+      tools.push(...COMMIT_TOOLS);
+      system += '\nKomisaris mengizinkan git add dan git commit untuk tugas ini. JANGAN git push, jangan ubah branch, dan jangan git reset/rebase.';
+    }
     if (member?.director) system += `\n${STYLE_PROMPT[letter.style === 'delegate' ? 'delegate' : 'solo']}`;
     const notes = vault.contextNotes();
     if (notes) system += `\n\n${notes}`;
@@ -366,6 +372,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           id: crypto.randomUUID().slice(0, 8), agent, name: member?.name ?? null, cwd: dir.cwd, project: dir.name,
           sessionId: resumeId ?? crypto.randomUUID(), status: 'running', read: true, createdAt: new Date().toISOString(),
           title: resumeId ? (known.title || titleOf(prompt)) : titleOf(prompt), mode, style, phase: mode === 'plan' ? 'plan' : 'work',
+          commit: body.commit === true && mode !== 'report',
           thread: [{ from: 'you', text: prompt, at: new Date().toISOString() }],
         };
         letters.unshift(letter);
