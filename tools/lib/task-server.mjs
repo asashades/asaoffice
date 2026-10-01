@@ -54,6 +54,26 @@ const MODES = ['plan', 'auto', 'report'];
 const READ_ONLY = new Set(['read', 'git', 'web']);
 const DELEGATE_TOOLS = ['Task', 'Agent'];
 const COMMIT_TOOLS = ['Bash(git add:*)', 'Bash(git commit:*)'];
+const MAX_DENIALS = 20;
+// What "Izinkan sekali" may open up, picked from a recorded denial (never from text the page sends).
+const ALLOW_TOOLS = new Set(['Bash', 'Edit', 'MultiEdit', 'Write', 'NotebookEdit', 'WebFetch', 'WebSearch']);
+const RISKY_COMMAND = /[|;&<>`]|\$\(|(^|\s)(sudo|rm|rmdir|mv|dd|mkfs|chmod|chown|curl|wget|ssh|scp|kill|pkill|killall|shutdown|reboot|eval|exec|sh|bash|zsh)(\s|$)|\bpush\b|\bgit\s+(reset|clean|rebase|checkout\s+--|branch\s+-D)/;
+
+/** A short, readable summary of a denied tool call. */
+function denialText(tool, input) {
+  const i = input ?? {};
+  if (tool === 'Bash') return String(i.command ?? '').replace(/\s+/g, ' ').slice(0, 160);
+  return String(i.file_path ?? i.path ?? i.url ?? i.query ?? i.notebook_path ?? '').slice(0, 160);
+}
+/** The allow rule for one denial, or null when it must not be opened from the office. */
+function allowRule(d) {
+  if (!ALLOW_TOOLS.has(d.tool)) return null;
+  if (d.tool !== 'Bash') return d.tool;
+  const words = String(d.text ?? '').trim().split(/\s+/);
+  if (!words[0] || RISKY_COMMAND.test(d.text)) return null;
+  const prefix = ['git', 'npm', 'npx', 'pnpm', 'yarn', 'cargo', 'go', 'python', 'python3', 'pytest', 'node', 'make'].includes(words[0]) && words[1] && !words[1].startsWith('-') ? `${words[0]} ${words[1]}` : words[0];
+  return /^[\w@./:+-]+( [\w@./:+-]+)?$/.test(prefix) ? `Bash(${prefix}:*)` : null;
+}
 
 // What the session is told on top of its own prompt, per phase (passed with --append-system-prompt).
 const PHASE_PROMPT = {
@@ -246,7 +266,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     } catch { return null; }
   }
 
-  function run(letter, text, { resume }) {
+  function run(letter, text, { resume, extraTools = [] }) {
     const claude = findClaude();
     if (!claude) {
       Object.assign(letter, { status: 'error', error: 'Claude Code (perintah `claude`) gak ketemu di Mac ini.' });
@@ -258,6 +278,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     const phase = letter.mode === 'report' ? 'report' : letter.phase === 'plan' ? 'plan' : 'work';
     if (phase !== 'work') access = access.filter((a) => READ_ONLY.has(a)).concat('git');
     const tools = allowedTools(access);
+    tools.push(...extraTools);
     if (phase === 'work' && member?.director && letter.style === 'delegate') tools.push(...DELEGATE_TOOLS);
     let system = PHASE_PROMPT[phase];
     // Commit permission is chosen per task (never push): only while the work is actually being done.
@@ -312,6 +333,14 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           }
         } else if (msg.type === 'result') {
           result = msg;
+          // Calls refused because they weren't on the allow-list: kept so the Commissioner can open them up once.
+          for (const d of Array.isArray(msg.permission_denials) ? msg.permission_denials : []) {
+            const entry = { id: crypto.randomUUID().slice(0, 6), tool: String(d.tool_name ?? ''), text: denialText(d.tool_name, d.tool_input), at: new Date().toISOString(), state: 'open' };
+            if (!entry.tool || (letter.denials ?? []).some((x) => x.state === 'open' && x.tool === entry.tool && x.text === entry.text)) continue;
+            entry.rule = allowRule(entry);
+            (letter.denials ??= []).push(entry);
+          }
+          if (letter.denials?.length > MAX_DENIALS) letter.denials = letter.denials.slice(-MAX_DENIALS);
         }
       }
     });
@@ -377,7 +406,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (!safeEqual(req.headers.authorization ?? '', `Bearer ${token}`)) return send(res, 401, { error: 'token' }, origin);
 
     const url = new URL(req.url, 'http://x');
-    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject|rename|deliver))?$/.exec(url.pathname);
+    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject|rename|deliver|allow))?$/.exec(url.pathname);
     try {
       if (req.method === 'GET' && url.pathname === '/api/options') {
         const r = roster();
@@ -512,6 +541,22 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         letter.thread.push({ from: 'you', text: '✅ Disetujui, silakan jalan.', at, kind: 'approve' });
         letter.phase = 'work';
         run(letter, 'Komisaris menyetujui rencananya. Kerjakan sekarang sesuai rencana, cek hasilnya, lalu tulis Laporan untuk Komisaris.', { resume: true });
+        return send(res, 200, { letter }, origin);
+      }
+      if (req.method === 'POST' && m?.[2] === 'allow') {
+        // Open up one refused call for a single follow-up run: the rule comes from the recorded denial.
+        const wanted = String((await readBody(req)).id);
+        const d = (letter.denials ?? []).find((x) => x.id === wanted && x.state === 'open');
+        if (!d || !d.rule) return send(res, 400, { error: 'denial' }, origin);
+        if (running.has(letter.id) || letter.status === 'queued') return send(res, 409, { error: 'running' }, origin);
+        if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
+        if (directorBusy(letter.agent)) return send(res, 429, { error: 'director busy' }, origin);
+        if (!allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
+        d.state = 'allowed';
+        const at = new Date().toISOString();
+        letter.thread.push({ from: 'you', text: `🔓 Diizinkan sekali: ${d.rule}`, at, kind: 'allow' });
+        letter.read = true;
+        run(letter, `Komisaris mengizinkan ${d.rule} untuk lanjutan ini. Silakan ulangi langkah yang tadi ditolak (${d.tool}: ${d.text}) lalu lanjutkan tugasnya. Jangan git push.`, { resume: true, extraTools: [d.rule] });
         return send(res, 200, { letter }, origin);
       }
       if (req.method === 'POST' && m?.[2] === 'rename') {

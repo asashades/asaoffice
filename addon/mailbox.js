@@ -49,6 +49,7 @@
       newChat: '＋ Chat baru', newChatSub: 'Tulis tugasnya, pilih cara kerjanya di bawah', tabChats: '💬 Chat', tabSessions: '🗂 Sesi',
       commitChip: '🔀 Boleh commit', commitTip: 'Boleh git add dan git commit (tanpa push) selama tugas ini', commitShort: 'boleh commit',
       attach: 'Lampirkan gambar', attachTip: 'Lampirkan gambar (atau tempel / seret ke sini)', attachFail: 'Gambar gak bisa dilampirkan (png, jpg, gif, webp; maks 8 MB, 4 gambar).', lookAtImages: 'Tolong lihat gambar terlampir.', remove: 'Hapus',
+      denied: (n) => `⛔ ${n} langkah ditolak otomatis (di luar izin tugas ini)`, allowOnce: 'Izinkan sekali', cantAllow: 'terlalu berisiko dari sini, jalankan sendiri di Terminal',
       sesFirst: 'Pesan pertama', sesContinue: 'Lanjutkan sesi ini dari kantor', sesNote: 'Sesi ini dimulai di luar kantor (Terminal atau Desktop). Tulis di bawah buat lanjutin dari sini.',
       sesContinueHint: 'Tulis lanjutannya…', sesSend: 'Kirim', sesLive: 'Sesi ini lagi dipakai di tempat lain. Tunggu sebentar biar nggak tabrakan.', sesCopy: '📋 Salin perintah Terminal',
       gToday: 'Hari ini', gYesterday: 'Kemarin', gWeek: '7 hari terakhir', gOlder: 'Lebih lama',
@@ -100,6 +101,7 @@
       newChat: '＋ New chat', newChatSub: 'Write the task, pick how to work below', tabChats: '💬 Chats', tabSessions: '🗂 Sessions',
       commitChip: '🔀 May commit', commitTip: 'Allow git add and git commit (never push) for this task', commitShort: 'may commit',
       attach: 'Attach an image', attachTip: 'Attach an image (or paste / drag it here)', attachFail: 'Could not attach the image (png, jpg, gif, webp; max 8 MB, 4 images).', lookAtImages: 'Please look at the attached images.', remove: 'Remove',
+      denied: (n) => `⛔ ${n} step(s) refused automatically (outside this task's permissions)`, allowOnce: 'Allow once', cantAllow: 'too risky from here, run it yourself in Terminal',
       sesFirst: 'First message', sesContinue: 'Continue this session from the office', sesNote: 'This session was started outside the office (Terminal or Desktop). Write below to continue it from here.',
       sesContinueHint: 'Write the follow-up…', sesSend: 'Send', sesLive: 'This session is in use elsewhere. Wait a moment to avoid clashing.', sesCopy: '📋 Copy Terminal command',
       gToday: 'Today', gYesterday: 'Yesterday', gWeek: 'Last 7 days', gOlder: 'Older',
@@ -235,6 +237,11 @@
     background: #c8503c; color: #fff6dc; border: 2px solid #973a2f; }
   .asa-attach .busy { opacity: 0.45; }
   .asa-comp.drop { outline: 3px dashed #4a86d8; outline-offset: 2px; }
+  .asa-deny { border: 2px solid #c8503c; background: #ffe9e0; padding: 8px 10px; font-size: 13.5px; }
+  .asa-deny b { display: block; font-weight: 600; margin-bottom: 4px; }
+  .asa-deny-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+  .asa-deny-row code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: #fff6dc; padding: 1px 5px; }
+  .asa-deny-row small { opacity: 0.7; }
   .asa-group { font-size: 12px; opacity: 0.65; margin: 8px 2px 0; text-transform: none; }
   .asa-plain .asa-letter-body b { font-size: 15px; font-weight: 600; }
   .asa-plain .asa-letter-body div, .asa-plain .asa-letter-status, .asa-plain .asa-note, .asa-plain .asa-muted { font-size: 13px; }
@@ -702,7 +709,7 @@
       fillHead(l);
     }
     // Thread
-    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.cost, notice, options ? 1 : 0, l?.text?.length]);
+    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.cost, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join()]);
     if (force || ui.keys.thread !== threadKey) {
       ui.keys.thread = threadKey;
       const box = ui.thread;
@@ -736,6 +743,17 @@
       h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.commit ? S.commitShort : null, S[l.status]].filter(Boolean).join(' · '))), actions);
   }
 
+  /** Calls the task tried that were refused automatically, each with a one-time "Izinkan sekali" when that's safe to offer. */
+  function denialBlock(l) {
+    const open = (l?.denials ?? []).filter((d) => d.state === 'open');
+    if (!open.length || busy(l)) return null;
+    return h('div', { class: 'asa-deny' }, h('b', {}, S.denied(open.length)),
+      open.map((d) => h('div', { class: 'asa-deny-row' }, h('code', { title: d.text }, `${d.tool}${d.text ? `: ${d.text}` : ''}`),
+        d.rule
+          ? h('button', { type: 'button', class: 'asa-btn', title: d.rule, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/allow`, { id: d.id })) }, S.allowOnce)
+          : h('small', {}, S.cantAllow))));
+  }
+
   function fillThread(l) {
     const box = ui.thread;
     const out = [];
@@ -749,6 +767,7 @@
       const thread = l.thread ?? [];
       const lastAgent = thread.map((m, i) => (m.from === 'agent' ? i : -1)).filter((i) => i >= 0).pop();
       thread.forEach((m, i) => {
+        if (m.from === 'you' && m.kind === 'allow') return out.push(h('div', { class: 'asa-sys' }, m.text));
         if (m.from === 'you' && ['approve', 'reject', 'revise'].includes(m.kind)) {
           return out.push(h('div', { class: 'asa-sys' }, m.kind === 'approve' ? S.approvedNote : m.kind === 'reject' ? S.rejectedNote : `${S.revisedNote}: ${m.text}`));
         }
@@ -765,6 +784,8 @@
             h('span', { class: 'asa-muted' }, S.reviseHint)));
         }
       });
+      const deny = denialBlock(l);
+      if (deny) out.push(deny);
       if (l.status === 'queued') out.push(h('div', { class: 'asa-sys' }, S.queuedNote(isDirector(l.agent) ? '' : l.name ?? '')));
       if (l.status === 'running') out.push(h('div', { class: 'asa-brow' }, smallFace(l), h('div', { class: 'asa-b agent typing' }, h('span', { class: 'asa-dots' }, h('i'), h('i'), h('i')), h('span', {}, progressText(l).replace(/^⏳\s*/, '')))));
       if (l.error) out.push(h('div', { class: 'asa-warn' }, l.error));
@@ -1066,7 +1087,13 @@
     timer = setInterval(() => ns.refreshData().then(refreshAll), 4000);
   }
   ns.onFurnitureClick('COZY_MAILBOX', () => open());
-  ns.mailbox = { open, compose: (text) => open({ name: 'compose', text }), unread };
+  ns.mailbox = {
+    open, compose: (text) => open({ name: 'compose', text }), unread,
+    /** From the HUD: approve or reject a waiting plan, or open the letter. */
+    approve: (l, btn) => approve(l, btn),
+    reject: (l) => act(() => api('POST', `/api/tasks/${l.id}/reject`)),
+    openLetter: (id) => open({ name: 'letter', id }),
+  };
 
   // ── A letter drops into the mailbox ──
   function drawDrop(ctx, offX, offY, zoom) {
