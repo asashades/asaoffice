@@ -20,19 +20,50 @@ const SEED = {
   'Catatan/Arahan-Komisaris.md': '# Arahan Komisaris\n\nKalau catatan ini diberi tag konteks (tanda pagar diikuti kata konteks), isinya dibaca Shades dan tim di setiap tugas.\nTulis aturan tetapmu di sini, misalnya gaya kode, hal yang jangan disentuh, atau prioritas minggu ini.\n',
 };
 
+const configFile = () => path.join(os.homedir(), '.pixel-agents', 'asaoffice-vault.json');
+
+/** The vault folder: $OFFICE_VAULT, else the folder chosen in the bookshelf, else ~/AsaOffice-Vault. */
 export function vaultDir() {
-  return path.resolve(process.env.OFFICE_VAULT || path.join(os.homedir(), 'AsaOffice-Vault'));
+  if (process.env.OFFICE_VAULT) return path.resolve(process.env.OFFICE_VAULT);
+  try {
+    const chosen = JSON.parse(fs.readFileSync(configFile(), 'utf8')).path;
+    if (typeof chosen === 'string' && path.isAbsolute(chosen)) return chosen;
+  } catch { /* not chosen yet */ }
+  return path.join(os.homedir(), 'AsaOffice-Vault');
 }
 
-/** Creates the vault (and the starter notes that are missing). */
+/** True when $OFFICE_VAULT decides the folder (so the bookshelf can't change it). */
+export const vaultFromEnv = () => !!process.env.OFFICE_VAULT;
+
+/**
+ * Chooses another vault folder (an existing Obsidian vault, say). Accepts what Terminal gives you when you paste a path
+ * (quotes, "\ " escapes, ~). Returns { path } or { error: 'env' | 'relative' | 'notfound' | 'outside' | 'perm' }.
+ */
+export function setVaultDir(input) {
+  if (process.env.OFFICE_VAULT) return { error: 'env' };
+  let p = String(input ?? '').trim().replace(/^(['"])(.*)\1$/, '$2').replace(/\\(.)/g, '$1');
+  if (p === '~' || p.startsWith('~/')) p = path.join(os.homedir(), p.slice(1));
+  if (!path.isAbsolute(p)) return { error: 'relative' };
+  p = path.resolve(p);
+  const home = os.homedir();
+  if (p !== home && !p.startsWith(home + path.sep)) return { error: 'outside' };
+  try { if (!fs.statSync(p).isDirectory()) return { error: 'notfound' }; } catch (err) { return { error: err.code === 'EPERM' || err.code === 'EACCES' ? 'perm' : 'notfound' }; }
+  try { fs.accessSync(p, fs.constants.R_OK | fs.constants.W_OK); } catch { return { error: 'perm' }; }
+  fs.mkdirSync(path.dirname(configFile()), { recursive: true });
+  fs.writeFileSync(configFile(), JSON.stringify({ path: p }));
+  return { path: p };
+}
+
+/** Creates the vault (and the starter notes that are missing). An existing vault only gets what the bookshelf needs. */
 export function ensureVault() {
   const root = vaultDir();
+  const fresh = !fs.existsSync(root) || fs.readdirSync(root).filter((n) => !n.startsWith('.')).length === 0;
   fs.mkdirSync(path.join(root, 'Laporan'), { recursive: true });
   fs.mkdirSync(path.join(root, 'Catatan'), { recursive: true });
-  for (const [rel, text] of Object.entries(SEED)) {
-    const file = path.join(root, rel);
-    if (!fs.existsSync(file)) fs.writeFileSync(file, text);
-  }
+  const ideas = path.join(root, IDEAS);
+  if (!fs.existsSync(ideas)) fs.writeFileSync(ideas, fresh ? SEED[IDEAS] : '# Ide & TODO\n\n');
+  const guide = path.join(root, 'Catatan/Arahan-Komisaris.md');
+  if (fresh && !fs.existsSync(guide)) fs.writeFileSync(guide, SEED['Catatan/Arahan-Komisaris.md']);
   return root;
 }
 
@@ -57,6 +88,24 @@ function walk(dir, depth, out) {
   }
 }
 
+/** A one-line preview: the line that matches `needle`, else the first line that isn't a heading. */
+function snippetOf(text, needle) {
+  const clean = (l) => l.replace(/^\s*(?:[-*]\s+(?:\[[ xX]\]\s+)?|#+\s+|>\s*)/, '').replace(/\s*#konteks\b/g, '').replace(/\s+/g, ' ').trim();
+  const lines = text.split('\n');
+  const hit = needle ? lines.find((l) => l.toLowerCase().includes(needle)) : null;
+  const line = hit ?? lines.find((l) => l.trim() && !/^\s*#+\s/.test(l));
+  const out = clean(line ?? '');
+  return out.length > 110 ? `${out.slice(0, 109)}…` : out;
+}
+
+/** A few cleaned-up lines of the body (without the title) for a gallery card. */
+function previewOf(text) {
+  const lines = text.split('\n').map((l) => l.replace(/^\s*(?:[-*]\s+(?:\[[ xX]\]\s+)?|#+\s+|>\s*)/, '').replace(/\s*#konteks\b/g, '').replace(/\s+/g, ' ').trim());
+  const body = text.split('\n').findIndex((l) => /^\s*#\s/.test(l));
+  const out = lines.filter((l, i) => l && i !== body).slice(0, 6).join('\n');
+  return out.length > 240 ? `${out.slice(0, 239)}…` : out;
+}
+
 /** Every note, newest first: { path, title, mtime, size, context }. With `q`, only notes whose name or text contains it. */
 export function list(q = '') {
   const root = ensureVault();
@@ -71,7 +120,11 @@ export function list(q = '') {
     const rel = path.relative(root, file).split(path.sep).join('/');
     if (needle && !rel.toLowerCase().includes(needle) && !text.toLowerCase().includes(needle)) continue;
     const heading = /^#\s+(.+)$/m.exec(text)?.[1]?.replace(/\s*#konteks\b/g, '').trim();
-    out.push({ path: rel, title: heading || path.basename(rel, '.md'), mtime: st.mtimeMs, size: st.size, context: text.includes(CONTEXT_TAG) });
+    const open = [...text.matchAll(/^\s*[-*]\s+\[ \]\s+(.+)$/gm)].map((m) => m[1].replace(/\s*#konteks\b/g, '').trim());
+    out.push({
+      path: rel, title: heading || path.basename(rel, '.md'), mtime: st.mtimeMs, size: st.size, context: text.includes(CONTEXT_TAG),
+      snippet: snippetOf(text, needle), preview: previewOf(text), open: open.length, todos: open.slice(0, 4).map((t) => (t.length > 70 ? `${t.slice(0, 69)}…` : t)),
+    });
   }
   return out.sort((a, b) => b.mtime - a.mtime);
 }

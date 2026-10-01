@@ -104,12 +104,21 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
   izin, ngobrol sama siapa, atau santai), proyeknya, tool terakhir, dan isi context-nya. Klik lagi buat nutup.
 - **Klik kalender di dinding** → kalender bulan ini, lengkap sama acara dari aplikasi **Calendar** di Mac.
   Klik tanggalnya buat lihat agenda hari itu. Angka merah di kalender = jumlah acara hari ini.
-- **Klik rak buku** → **Rak Buku**, catatan pribadimu (komisaris) dalam bentuk **vault Obsidian** di
-  `~/AsaOffice-Vault` (folder berisi file `.md` biasa, dibikinin otomatis: `Ide-TODO.md`, `Laporan/`, `Catatan/`).
-  Bisa baca dan cari catatan, nulis **ide** sekali ketik, centang TODO, **kirim ide ke Shades jadi tugas** (tombol
-  **→ Shades**), **tulis laporan hari ini** sekali klik, ubah catatan, dan **Buka di Obsidian** (di Obsidian pilih
-  *Open folder as vault* sekali aja). Dua arah: catatan yang ada tulisan `#konteks` ikut dibaca Shades dan tim di
-  setiap tugas, jadi aturan tetapmu selalu dipegang. Cuma bisa dibuka dari Mac yang jalanin kantor.
+- **Rak Buku** (tombol 📚 di kartu hero, atau klik rak buku mana pun) → catatan pribadimu dalam bentuk **vault Obsidian** di
+  `~/AsaOffice-Vault` (folder berisi file `.md` biasa: `Ide-TODO.md`, `Laporan/`, `Catatan/`). Mau pakai vault Obsidian yang sudah ada
+  (misalnya yang di iCloud)? Klik **⚙ Folder vault** di bawah daftar dan tempel path-nya (boleh hasil salin dari Terminal, termasuk
+  yang ada spasi), atau jalanin kantor dengan `OFFICE_VAULT="/path/vault" npm run office`. Di Mac, kalau muncul izin akses folder
+  iCloud, izinkan Terminal.
+  - **Cari dulu:** panel langsung terbuka di kotak cari. ↑↓ buat pilih, Enter buat buka. Ketik nama yang belum ada, lalu pilih
+    **📝 Buat catatan** (langsung ke editor, nama file dari baris pertama) atau **💡 Simpan jadi ide/TODO**.
+  - **Galeri atau daftar:** tombol ▦ / ☰ di sebelah kotak cari (pilihanmu diingat). Galeri menampilkan kartu: **＋ Catatan baru**, kartu khusus **Ide & TODO** (isinya TODO yang belum selesai), lalu satu kartu per catatan dengan cuplikan isi dan umurnya. ←↑↓→ pindah antar kartu. Laporan tetap daftar yang bisa dilipat di bawah kartu, dan hasil pencarian selalu berupa daftar.
+  - Mode daftar: satu kolom, dikelompokkan (Ide & TODO, Catatan, Laporan, Lainnya; tiap kelompok bisa dilipat), tiap baris ada
+    pratinjau satu baris dan umurnya. Catatan dibuka selebar panel; **Esc melangkah mundur** (edit → catatan → daftar → tutup).
+  - Catatan dibaca dulu; klik **Ubah**, klik dua kali, lalu simpan dengan **Ctrl/⌘+Enter**. Centang TODO langsung di tempat, dan
+    **→ Shades** mengubah ide jadi tugas. **📜 Tulis laporan hari ini** bikin laporan harian di `Laporan/`.
+  - **Catat cepat tanpa buka apa-apa:** tombol 💡 di kartu hero (atau tekan **N**), ketik, Enter. Masuk ke `Ide-TODO.md`.
+  - Dua arah: catatan yang ada tulisan `#konteks` ikut dibaca Shades dan tim di setiap tugas. Cuma bisa dibuka dari Mac yang
+    jalanin kantor.
 - **Klik papan pengumuman kayu di ruang meeting** → **Jurnal Petani** ala Stardew. Isinya: panen hari ini (jumlah
   tool call) lawan rekor 14 harimu, musim dan tanggal, streak 🔥, "emas" (token hari ini), dan **level keahlian
   berbintang** yang naik sesuai kerja Claude: 🌾 Bertani (nulis dan ngedit file), 🍄 Mencari makan (baca dan cari
@@ -163,7 +172,7 @@ Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layo
 ## HUD: ringkasan kantor di layar 🧭
 
 Di sekeliling kantor ada **HUD** (papan ringkasan) yang selalu kelihatan:
-- **Bar atas:** satu kalimat tentang apa yang lagi terjadi ("Lagi kerja: Shades · 2 asisten ikut bantu"), status koneksi data, dan angka: sesi yang lagi kerja, asisten yang lagi kerja, dan subagent hari ini.
+- **Kartu hero (kiri atas):** kartu kotak dengan **langit pixel yang ikut jam dan musim** (fajar, siang, senja, malam; matahari atau bulan berjalan di busur kayak jam Stardew, plus awan, bintang, dan bukit yang warnanya ikut musim). Isinya jam, tanggal, musim, satu kalimat tentang apa yang lagi terjadi ("Lagi kerja: Shades · 2 asisten ikut bantu"), dan dua tombol: **📮 Kotak Surat** (ada angka merah kalau ada surat belum dibaca) dan **📚 Rak Buku**. Keduanya terbuka sebagai panel yang melebar dari kartu dan melayang di atas kantor tanpa menggelapkan layar, jadi kantor tetap kelihatan dan bisa diklik (di HP memenuhi layar). Di kanan atas ada status koneksi data dan angka: sesi yang lagi kerja, asisten, dan subagent hari ini.
 - **Kartu di bawah:** satu kartu per villager (Shades, sesi, asisten, karyawan yang lagi "akting" bantu Shades). Isinya status (Bekerja, Santai, Selesai, Nunggu kamu, Butuh izin), proyek atau tugasnya, dan apa yang lagi dikerjain. **Klik kartu** buat ngikutin villager itu.
 - **Panel samping** dengan tiga tab: **Aktivitas** (feed langsung: tool yang dipakai, asisten datang dan pergi), **Riwayat** (subagent 24 jam terakhir), dan **Tugas** (daftar TodoWrite sesi terbaru). Panelnya bisa diperkecil pakai tombol ▾.
 - Mau lihat kantor tanpa HUD? Tekan **H** atau klik tombol 🧭 di bawah tombol zoom. Di HP panelnya mulai dalam keadaan kecil. Mau dimatiin permanen? Tambah `&hud=off` di ujung link kantor (`&hud=on` buat nyalain lagi).

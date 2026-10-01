@@ -25,6 +25,7 @@
       running: 'bekerja', finished: 'selesai', source: 'Sumber: transkrip Claude Code, 24 jam terakhir (terbaru di atas)',
       todoSource: (n) => `Sumber: TodoWrite · ${n} sesi terbaru`, main: 'Sesi utama', director: 'Direktur', actingFor: 'Bantu Shades',
       atDesk: 'Di meja direktur', noProject: 'Sesi Claude Code', chatWith: (n) => `Ngobrol sama ${n}`,
+      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
     },
     en: {
       title: 'Asa Office', live: 'Connected', dead: 'Data offline', nodata: 'No data', sessions: 'Sessions working', helpers: 'Helpers', today: 'Sub-agents today',
@@ -38,6 +39,7 @@
       running: 'working', finished: 'done', source: 'Source: Claude Code transcripts, last 24 hours (newest first)',
       todoSource: (n) => `Source: TodoWrite · ${n} latest sessions`, main: 'Main session', director: 'Director', actingFor: 'Helping Shades',
       atDesk: "At the director's desk", noProject: 'Claude Code session', chatWith: (n) => `Chatting with ${n}`,
+      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
     },
   });
 
@@ -66,10 +68,27 @@
   .hud-box { background: #f4e6c4; border: 3px solid #744122; box-shadow: inset 0 0 0 2px #dca05f, 0 4px 0 rgba(0,0,0,0.25); }
   .hud-top { position: fixed; top: 8px; left: 64px; right: 12px; display: flex; gap: 8px; align-items: stretch; pointer-events: none; }
   .hud-top > * { pointer-events: auto; }
-  .hud-brand { flex: 1; min-width: 0; padding: 6px 12px; display: flex; flex-direction: column; justify-content: center; }
-  .hud-brand b { font-weight: normal; font-size: 16px; color: #744122; }
-  .hud-brand span { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hud-stats { display: flex; flex: none; }
+  .hud-hero { position: relative; flex: none; width: 360px; height: 120px; overflow: hidden; padding: 0; }
+  .hud-sky { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+  .hud-quick { position: absolute; top: 6px; left: 6px; display: flex; gap: 4px; }
+  .hud-quick button { position: relative; width: 36px; height: 36px; padding: 0; cursor: pointer; font-size: 18px; line-height: 1;
+    background: rgba(244,230,196,0.93); border: 2px solid #744122; box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
+  .hud-quick button:hover { background: #fbf0d3; }
+  .hud-badge { position: absolute; top: -7px; right: -7px; min-width: 17px; height: 17px; padding: 0 3px; background: #c8503c; color: #fff6dc;
+    font-size: 11px; line-height: 17px; text-align: center; border: 2px solid #973a2f; box-sizing: content-box; }
+  .hud-badge:empty { display: none; }
+  .hud-plate { position: absolute; top: 6px; right: 6px; padding: 3px 9px 4px; text-align: right; background: rgba(244,230,196,0.93);
+    border: 2px solid #744122; box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
+  .hud-plate b { display: block; font-weight: normal; font-size: 22px; line-height: 1.05; color: #3a2117; }
+  .hud-plate span { display: block; font-size: 12px; line-height: 1.25; color: #744122; white-space: nowrap; }
+  .hud-status { position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 10px 5px; background: rgba(244,230,196,0.95); border-top: 3px solid #744122;
+    font-size: 12.5px; line-height: 1.3; display: flex; flex-direction: column; }
+  .hud-status b { font-weight: normal; font-size: 13px; color: #744122; }
+  .hud-idea { position: absolute; inset: 0; width: 100%; box-sizing: border-box; border: 0; padding: 0 10px; background: #fffbe9; color: #3a2117;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 14px; outline: 0; }
+  .hud-idea[hidden] { display: none; }
+  .hud-status span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .hud-stats { display: flex; flex: none; margin-left: auto; align-self: flex-start; }
   .hud-stat { padding: 6px 12px; border-left: 2px dashed #c9a877; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
   .hud-stat:first-child { border-left: 0; }
   .hud-stat small { font-size: 11px; opacity: 0.7; white-space: nowrap; }
@@ -127,7 +146,7 @@
   @media (max-width: 1180px) { .hud-side { width: 270px; } }
   @media (max-width: 820px) {
     .hud-top { flex-wrap: wrap; left: 60px; right: 8px; gap: 6px; }
-    .hud-brand { flex: 1 1 100%; } .hud-brand b { display: none; }
+    .hud-hero { flex: 1 1 100%; width: auto; height: 108px; }
     .hud-stats { flex: 1 1 100%; } .hud-stat { flex: 1 1 0; padding: 4px 8px; } .hud-stat b { font-size: 15px; }
     .hud-bottom { left: 8px; right: 8px; bottom: 62px; }
     .hud-side { position: static; width: auto; }
@@ -176,7 +195,17 @@
   root.id = 'asa-hud';
   root.innerHTML = `
     <div class="hud-top">
-      <div class="hud-brand hud-box"><b>${esc(S.title)}</b><span id="hud-phase"></span></div>
+      <div class="hud-hero hud-box">
+        <canvas class="hud-sky" id="hud-sky" width="120" height="40" aria-hidden="true"></canvas>
+        <div class="hud-quick">
+          <button type="button" data-open="mail" title="${esc(S.openMail)}" aria-label="${esc(S.openMail)}">📮<i class="hud-badge" id="hud-badge"></i></button>
+          <button type="button" data-open="shelf" title="${esc(S.openShelf)}" aria-label="${esc(S.openShelf)}">📚</button>
+          <button type="button" data-open="idea" title="${esc(S.idea)}" aria-label="${esc(S.idea)}">💡</button>
+        </div>
+        <div class="hud-plate"><b id="hud-time"></b><span id="hud-date"></span><span id="hud-season"></span></div>
+        <div class="hud-status"><b>${esc(S.title)}</b><span id="hud-phase"></span>
+          <input class="hud-idea" id="hud-idea" type="text" maxlength="500" hidden placeholder="${esc(S.ideaPh)}" aria-label="${esc(S.idea)}"></div>
+      </div>
       <div class="hud-stats hud-box">
         <div class="hud-stat"><small></small><b id="hud-live"></b></div>
         <div class="hud-stat"><small>${esc(S.sessions)}</small><b id="hud-sessions">0</b></div>
@@ -221,6 +250,12 @@
     applyChrome();
   }
   root.addEventListener('click', (e) => {
+    const openBtn = e.target.closest('[data-open]');
+    if (openBtn) {
+      if (openBtn.dataset.open === 'idea') toggleIdea(true);
+      else (openBtn.dataset.open === 'mail' ? ns.mailbox : ns.shelf)?.open();
+      return;
+    }
     const tabBtn = e.target.closest('[data-tab]');
     if (tabBtn) { tab = tabBtn.dataset.tab; min = false; ns.store.set('hudMin', '0'); applyChrome(); return; }
     if (e.target.closest('.min')) { min = !min; ns.store.set('hudMin', min ? '1' : '0'); applyChrome(); return; }
@@ -387,8 +422,58 @@
     $('hud-n-todos').textContent = String(openCount);
   }
 
+  // ── Quick capture: one line into the bookshelf's Ide-TODO.md without opening anything ──
+  const ideaBox = $('hud-idea');
+  let ideaTimer = null;
+  function toggleIdea(on) {
+    if (!on) { ideaBox.hidden = true; return; }
+    ideaBox.hidden = false;
+    ideaBox.focus();
+  }
+  ideaBox.addEventListener('keydown', async (e) => {
+    e.stopPropagation();
+    if (e.key === 'Escape') { ideaBox.value = ''; toggleIdea(false); return; }
+    if (e.key !== 'Enter' || !ideaBox.value.trim()) return;
+    const text = ideaBox.value;
+    try {
+      await ns.refreshData();
+      await ns.shelf?.addIdea(text);
+      ideaBox.value = '';
+      ideaBox.placeholder = S.ideaSaved;
+      ideaBox.blur();
+      clearTimeout(ideaTimer);
+      ideaTimer = setTimeout(() => { toggleIdea(false); ideaBox.placeholder = S.ideaPh; }, 1600);
+    } catch { ideaBox.value = ''; ideaBox.placeholder = S.ideaFail; clearTimeout(ideaTimer); ideaTimer = setTimeout(() => { toggleIdea(false); ideaBox.placeholder = S.ideaPh; }, 2600); }
+  });
+  ideaBox.addEventListener('blur', () => { if (!ideaBox.value && ideaBox.placeholder === S.ideaPh) toggleIdea(false); });
+  addEventListener('keydown', (e) => {
+    if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey && !e.altKey && !e.target.closest?.('input, textarea, select, [contenteditable]') && !ns.panel.isOpen && !hidden) {
+      e.preventDefault();
+      toggleIdea(true);
+    }
+  });
+
+  // ── Hero card: clock, date, season and the sky (once a second) ──
+  const seasonNow = () => ns.garden?.season?.() ?? ['winter', 'spring', 'summer', 'fall'][Math.floor(((new Date().getMonth() + 1) % 12) / 3)];
+  let lastSky = 0;
+  const lastHero = { time: '', date: '', season: '', badge: '' };
+  function tickHero() {
+    const d = new Date();
+    const time = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false }).replace(':', '.');
+    const date = d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
+    const season = S.seasons[seasonNow()] ?? '';
+    if (lastHero.time !== time) { $('hud-time').textContent = time; lastHero.time = time; }
+    if (lastHero.date !== date) { $('hud-date').textContent = date; lastHero.date = date; }
+    if (lastHero.season !== season) { $('hud-season').textContent = season; lastHero.season = season; }
+    const unread = ns.mailbox?.unread?.() ?? 0;
+    const badge = unread > 0 ? String(Math.min(unread, 99)) : '';
+    if (lastHero.badge !== badge) { $('hud-badge').textContent = badge; lastHero.badge = badge; }
+    ns.sky?.draw($('hud-sky'), ns.dayNight?.hour?.() ?? d.getHours() + d.getMinutes() / 60, seasonNow());
+  }
+
   let lastRender = 0;
   ns.onFrame((canvas, office) => {
+    if (performance.now() - lastSky > 1000 && !hidden) { lastSky = performance.now(); tickHero(); }
     const now = performance.now();
     if (!office?.characters || now - lastRender < 500) return;
     lastRender = now;

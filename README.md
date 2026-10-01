@@ -173,13 +173,18 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
 - **Calendar:** click the wall calendar for a month view (Monday first, with the Stardew season) of your macOS
   Calendar events, from last month to two months ahead. Click a day for its agenda. A red badge on the calendar
   shows how many events are on today.
-- **Bookshelf (Rak Buku), your notes in Obsidian:** click any bookshelf. It is a plain folder of Markdown files, an
-  Obsidian vault at `~/AsaOffice-Vault` (or `$OFFICE_VAULT`), created on first use with `Ide-TODO.md`, `Laporan/` and
-  `Catatan/`. Read and search notes, add an idea in one line, tick off to-dos, send an idea to Shades as a task
-  (**→ Shades** opens the mailbox with it filled in), write today's report to `Laporan/` with one button, edit a note,
-  or **open it in Obsidian** (in Obsidian: *Open folder as vault* once). Two-way: any note containing `#konteks` is
-  given to Shades and the team as context with every task, so your standing rules are always read. Only the Mac
-  running the office can open it (a phone gets a hint), and nothing leaves the vault folder.
+- **Bookshelf (Rak Buku), your notes in Obsidian:** open it with the 📚 button on the hero card (or click any bookshelf).
+  The notes are plain Markdown files in an Obsidian vault at `~/AsaOffice-Vault` (created on first use with
+  `Ide-TODO.md`, `Laporan/` and `Catatan/`), or in an existing vault: **⚙ Folder vault** under the list takes a pasted
+  path (also as copied from Terminal), or start the office with `OFFICE_VAULT="/path/to/vault"`. **Search first:** the
+  panel opens on the search box; ↑/↓ + Enter open a note; typing a name that doesn't exist offers **📝 Create note** (it
+  opens straight in the editor, named from its first line) or **💡 Save as idea/TODO**. The notes show as a **gallery** of cards (a ＋ New note card, a special Ideas & TODO card with your open to-dos, then one card per note with a preview and its age; ←↑↓→ move between cards) or as a **list** (grouped, each group folds, one-line previews): the ▦/☰ buttons switch and the choice is remembered. Searching always shows a list. Reports stay a foldable list under the cards. A note
+  opens on the full width; **Esc steps back** (edit → note → list → close). Notes are read first; **Ubah**, a
+  double-click, or Ctrl/⌘+Enter to save. To-do checkboxes tick in place and **→ Shades** turns an idea into a task. **Quick
+  capture without opening anything:** the 💡 button on the hero card (or the **N** key) takes one line into
+  `Ide-TODO.md`. **📜 Write today's report** puts the day's numbers, finished tasks and plans waiting on you into
+  `Laporan/`. Two-way: any note containing `#konteks` is given to Shades and the team as context with every task. Only the Mac running the
+  office can open it (a phone gets a hint), and nothing leaves the vault folder.
 - **Quest board and the Farmer's Journal:** the wooden bulletin board on the meeting room's wall shows today's
   tool-call count in red ink on its biggest note. Click it to open the **Jurnal Petani**, in the Stardew spirit:
   today's harvest against your 14-day best; the season and date; your day streak, sessions, "gold" (today's tokens)
@@ -251,8 +256,13 @@ An always-on overview around the office (`addon/hud.js`), in the same cozy look 
 HUD with live counters, a feed, a sub-agent history and per-character cards is inspired by
 [kantor-agent](https://github.com/humaedihume/kantor-agent) (no code taken from it).
 
-- **Top bar:** one sentence about what the office is doing ("Lagi kerja: Shades · 2 asisten ikut bantu"), whether the
-  data feed is alive, and counters: sessions working, helpers working, sub-agents started today.
+- **Hero card (top left):** a square pixel card whose background is a live sky that follows your clock and the season
+  (dawn, day, golden hour, dusk, night; a square-pixel sun or moon crosses an arc like the Stardew clock, with clouds,
+  stars and hills tinted by the season). It shows the time, date and season, one sentence about what the office is doing
+  ("Lagi kerja: Shades · 2 asisten ikut bantu"), and two buttons: **📮 Mailbox** (with a red badge for unread letters) and
+  **📚 Bookshelf**. They open as panels that grow out of the card and float over the office with no dimming, so the
+  office stays visible and clickable (full-width on phones). Top right: whether the data feed is alive and counters
+  (sessions working, helpers working, sub-agents started today).
 - **Cards along the bottom:** one per villager (Shades, sessions, helpers, staff acting for Shades) with its state
   (Bekerja, Santai, Selesai for 45 s after work, Nunggu kamu, Butuh izin), its project or task and what it's doing right
   now. Click a card to select and follow that villager.

@@ -125,5 +125,7 @@
     preview(hour) { previewHour = hour == null ? null : ((Number(hour) % 24) + 24) % 24; },
     setEnabled(on) { enabled = !!on; ns.store.set('dayNight', enabled ? 'on' : 'off'); },
     phase,
+    /** The hour (0–24, fractional) the office is showing: the clock, or the previewed time. */
+    hour: () => previewHour ?? (new Date().getHours() + new Date().getMinutes() / 60),
   };
 })();
