@@ -1,9 +1,12 @@
 // Builds "Asa Office.app" in ~/Applications: a one-click way to open the office without Terminal.
 //   npm run app              build/replace the app (drag it to the Dock afterwards)
+//   npm run app -- --chrome  build the classic version (the office in a Chrome/Edge/Brave app window)
 //   npm run app -- --remove  stop the office it started and delete the app
-// The app is a stay-open AppleScript applet that runs `node tools/app.mjs open` on launch and when its
-// Dock icon is clicked, and `node tools/app.mjs stop` when you quit it. It has a fixed bundle id and a
-// Calendar usage string, so macOS asks once for Calendar access on behalf of "Asa Office".
+// By default the app is native: a small Swift program (tools/native/AsaOffice.swift, compiled with swiftc from the Xcode
+// Command Line Tools) with its own window, Dock icon and menus; it runs `node tools/app.mjs open` on launch and when its
+// Dock icon is clicked, and `node tools/app.mjs stop` when you quit it. Without swiftc (or with --chrome) the app is a
+// stay-open AppleScript applet that does the same and opens the office in a browser app window instead.
+// Both have a fixed bundle id and a Calendar usage string, so macOS asks once for Calendar access on behalf of "Asa Office".
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -88,6 +91,7 @@ function buildIcns(master) {
   return icns;
 }
 
+function buildApplet() {
 // ── Applet ──
 const q = (s) => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 const node = process.execPath;
@@ -143,7 +147,66 @@ setKey('NSCalendarsUsageDescription', why);
 run('codesign', ['--force', '--deep', '-s', '-', app]);
 run('touch', [app]);
 
+
+}
+
+// ── Native app (Swift + WKWebView) ──
+const xml = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function buildNative() {
+  let swiftc;
+  try { swiftc = run('xcrun', ['--find', 'swiftc']).trim(); } catch { return false; }
+  if (!swiftc) return false;
+  fs.mkdirSync(appDir, { recursive: true });
+  fs.rmSync(app, { recursive: true, force: true });
+  const macos = path.join(app, 'Contents', 'MacOS');
+  const resources = path.join(app, 'Contents', 'Resources');
+  fs.mkdirSync(macos, { recursive: true });
+  fs.mkdirSync(resources, { recursive: true });
+  const source = path.join(tmp, 'main.swift');
+  fs.copyFileSync(path.join(root, 'tools', 'native', 'AsaOffice.swift'), source);
+  try {
+    run(swiftc, ['-O', '-o', path.join(macos, 'AsaOffice'), source, '-framework', 'Cocoa', '-framework', 'WebKit']);
+  } catch (err) {
+    console.warn(`Couldn't compile the native app, building the classic one instead:\n${String(err.stderr || err.message).trim()}`);
+    return false;
+  }
+  fs.copyFileSync(buildIcns(iconMaster()), path.join(resources, 'AsaOffice.icns'));
+  const why = 'Asa Office shows your calendar events on the wall calendar in the pixel office.';
+  const plist = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleExecutable</key><string>AsaOffice</string>
+  <key>CFBundleIdentifier</key><string>${BUNDLE_ID}</string>
+  <key>CFBundleName</key><string>Asa Office</string>
+  <key>CFBundleDisplayName</key><string>Asa Office</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>CFBundleVersion</key><string>1</string>
+  <key>CFBundleIconFile</key><string>AsaOffice</string>
+  <key>LSMinimumSystemVersion</key><string>11.0</string>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>NSPrincipalClass</key><string>NSApplication</string>
+  <key>NSCalendarsFullAccessUsageDescription</key><string>${xml(why)}</string>
+  <key>NSCalendarsUsageDescription</key><string>${xml(why)}</string>
+  <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
+  <key>AsaNodePath</key><string>${xml(process.execPath)}</string>
+  <key>AsaAppScript</key><string>${xml(path.join(root, 'tools', 'app.mjs'))}</string>
+</dict>
+</plist>
+`;
+  fs.writeFileSync(path.join(app, 'Contents', 'Info.plist'), plist);
+  run('codesign', ['--force', '--deep', '-s', '-', app]);
+  run('touch', [app]);
+  return true;
+}
+
+const classic = process.argv.includes('--chrome');
+const native = !classic && buildNative();
+if (!native) buildApplet();
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`Built ${app}`);
+console.log(native ? 'Built as a native Mac app (its own window, Dock icon and menus).' : 'Built the classic version: the office opens in a Chrome/Edge/Brave app window.');
 console.log('Open it from Finder (Go → Home → Applications) or Spotlight, then right-click its Dock icon → Options → Keep in Dock.');
 console.log('Quit it (⌘Q) to stop the office it started.');
