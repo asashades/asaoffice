@@ -102,6 +102,7 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
 
 - **Klik villager** → muncul kartu di pojok kanan atas: namanya, lagi ngapain (kerja pakai tool apa, nunggu
   izin, ngobrol sama siapa, atau santai), proyeknya, tool terakhir, dan isi context-nya. Klik lagi buat nutup.
+  **Ganti nama:** klik ✏️ di sebelah nama (maksimal 20 huruf; kosongkan = balik ke nama asli; Enter simpan, Esc batal). Villager biasa diganti berdasarkan **wajahnya** (jadi namanya tetap walau sesinya datang dan pergi), staf berdasarkan perannya. **Shades dan asisten sub-agent nggak bisa diganti.** Nama tersimpan di Mac (`~/.pixel-agents/asaoffice-names.json`), jadi laptop dan HP melihat nama yang sama, dan muncul di kartu HUD, bubble, jurnal, dan kotak surat (`@nama`, surat). Tugas juga diberi tahu nama baru staf supaya rencana dan laporan Claude memakainya. File roster dan nama agen Claude Code nggak diubah.
 - **Klik kalender di dinding** → kalender bulan ini, lengkap sama acara dari aplikasi **Calendar** di Mac.
   Klik tanggalnya buat lihat agenda hari itu. Angka merah di kalender = jumlah acara hari ini.
 - **Rak Buku** (tombol 📚 di kartu hero, atau klik rak buku mana pun) → catatan pribadimu dalam bentuk **vault Obsidian** di

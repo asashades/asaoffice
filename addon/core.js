@@ -297,6 +297,21 @@
     return el;
   };
 
+  // The office's local task API (this Mac only): ns.localApi('POST', '/api/names', { … }) → parsed JSON, or throws Error(code).
+  ns.localApi = async (method, route, body) => {
+    const token = new URLSearchParams(location.search).get('token');
+    const port = ns.data?.taskServer?.port;
+    if (!port || !token) throw new Error('noApi');
+    const res = await fetch(`http://127.0.0.1:${port}${route}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error || String(res.status));
+    return json;
+  };
+
   // Keep ns.data fresh for things drawn every frame (calendar badge, Holo-board screen).
   ns.data = null;
   let lastRefresh = -Infinity;

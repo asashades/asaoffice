@@ -11,12 +11,14 @@
       chatting: 'Ngobrol dengan', walkingTo: 'Menghampiri', idle: 'Santai', leaving: 'Pamit pulang', forMin: (m) => `${m} menit`,
       project: 'Proyek', lastTool: 'Tool terakhir', context: 'Context', subagents: 'Sub-agent', team: 'Tim', since: 'Terlihat sejak',
       none: '—', subagent: 'Sub-agent dari', task: 'Mengerjakan', prompt: 'Permintaan terakhir',
+      rename: 'Ganti nama', renamePh: 'Kosongkan = nama asli', renameFail: 'Gagal ganti nama (buka dari Mac yang jalanin kantor).',
     },
     en: {
       agent: 'Agent', working: 'Working', permission: 'Needs your permission', waiting: 'Waiting for your reply',
       chatting: 'Chatting with', walkingTo: 'Walking over to', idle: 'Relaxing', leaving: 'Heading out', forMin: (m) => `${m} min`,
       project: 'Project', lastTool: 'Last tool', context: 'Context', subagents: 'Sub-agents', team: 'Team', since: 'Seen since',
       none: '—', subagent: 'Sub-agent of', task: 'Working on', prompt: 'Last prompt',
+      rename: 'Rename', renamePh: 'Empty = original name', renameFail: 'Could not rename (open it from the Mac that runs the office).',
     },
   });
 
@@ -28,6 +30,10 @@
   .asa-portrait { width: 48px; height: 78px; flex: none; image-rendering: pixelated; background-repeat: no-repeat;
     background-size: 336px 288px; background-position: -48px -6px; background-color: #dca05f; border: 2px solid #744122; }
   .asa-card-name { font-size: 18px; }
+  .asa-card-namewrap { display: flex; gap: 6px; align-items: center; }
+  .asa-card-edit { background: none; border: 0; padding: 0 2px; font-size: 14px; cursor: pointer; opacity: 0.55; line-height: 1; }
+  .asa-card-edit:hover { opacity: 1; }
+  .asa-card-nameinput { font: inherit; font-size: 15px; width: 150px; max-width: 100%; padding: 2px 5px; background: #fffbe9; color: #3a2117; border: 2px solid #744122; box-sizing: border-box; }
   .asa-card-status { font-size: 13px; margin-top: 2px; }
   .asa-card-role { font-size: 13px; color: #973a2f; margin-top: 1px; }
   .asa-card-duty { font-size: 12px; font-style: italic; opacity: 0.8; padding: 0 0 8px; }
@@ -99,6 +105,34 @@
     const portrait = h('div', { class: 'asa-portrait' });
     portrait.style.backgroundImage = `url(${ns.portraitUrl(ch)})`;
     const name = h('div', { class: 'asa-card-name' });
+    const edit = h('button', { type: 'button', class: 'asa-card-edit', title: S.rename, 'aria-label': S.rename }, '✏️');
+    const nameWrap = h('div', { class: 'asa-card-namewrap' }, name, edit);
+    edit.onclick = () => {
+      const target = renameTarget(ch);
+      if (!target) return;
+      const input = h('input', { type: 'text', class: 'asa-card-nameinput', maxlength: '20', value: target.current, placeholder: S.renamePh, 'aria-label': S.rename });
+      nameWrap.replaceChildren(input);
+      input.focus();
+      input.select();
+      let done = false;
+      const finish = async (save) => {
+        if (done) return;
+        done = true;
+        if (save) {
+          try {
+            await ns.localApi('POST', '/api/names', { kind: target.kind, key: target.key, name: input.value });
+            await ns.refreshData();
+          } catch { input.title = S.renameFail; }
+        }
+        nameWrap.replaceChildren(name, edit);
+      };
+      input.onkeydown = (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') finish(true);
+        else if (e.key === 'Escape') finish(false);
+      };
+      input.onblur = () => finish(input.value.trim() !== target.current);
+    };
     const role = h('div', { class: 'asa-card-role' });
     const duty = h('div', { class: 'asa-card-duty' });
     const dot = h('i', { class: 'asa-dot' });
@@ -108,7 +142,7 @@
     const task = h('div', { class: 'asa-card-task' }, taskTitle, taskPrompt);
     const parts = {
       task, taskTitle, taskPrompt,
-      name, role, duty, portrait,
+      name, edit, role, duty, portrait,
       dot,
       statusText,
       project: row(S.project),
@@ -129,7 +163,7 @@
       'div',
       { class: 'asa-card', role: 'status' },
       closeBtn,
-      h('div', { class: 'asa-card-top' }, portrait, h('div', {}, name, role, h('div', { class: 'asa-card-status' }, dot, statusText))),
+      h('div', { class: 'asa-card-top' }, portrait, h('div', {}, nameWrap, role, h('div', { class: 'asa-card-status' }, dot, statusText))),
       duty,
       task,
       parts.project.el,
@@ -151,6 +185,7 @@
     const parent = ch.isSubagent ? office.characters.get(ch.parentAgentId) : null;
     const staff = ns.staffOf(ch);
     p.name.textContent = `${ns.villagerName(ch)}${ch.agentName && !staff ? ` (${ch.agentName})` : ''}`;
+    p.edit.style.display = renameTarget(ch) ? '' : 'none';
     const note = ns.castNote?.(ch);
     p.role.textContent = staff ? `${ns.staffRole(staff)}${parent ? ` · ${ns.subagentCaller(ch)}` : ''}${note ? ` · ${note}` : ''}` : '';
     p.role.style.display = staff ? '' : 'none';
@@ -179,6 +214,15 @@
     p.team.el.style.display = ch.teamName ? '' : 'none';
     p.team.value.textContent = ch.teamName ?? '';
     p.since.value.textContent = m ? new Date(m.firstSeen).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }) : S.none;
+  }
+
+  /** Who a rename applies to: a staff member (by agent), or an ordinary villager's face; never Shades or a helper. */
+  function renameTarget(ch) {
+    const staff = ns.staffOf(ch);
+    if (staff) return staff.director || ch.asaShades || ch.asaDirector ? null : { kind: 'staff', key: staff.agent, current: staff.name };
+    if (ch.isSubagent || ch.asaNpc || ch.asaDirector) return null;
+    const face = (((ch.palette ?? 0) % 13) + 13) % 13;
+    return face > 11 ? null : { kind: 'palette', key: face, current: ns.faceName?.(face) ?? ns.villagerName(ch) };
   }
 
   function close() {

@@ -26,6 +26,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import * as vault from './vault.mjs';
+import { loadNames, setName } from './names.mjs';
 
 const MAX_RUNNING = 3;
 const MAX_PROMPT = 4000;
@@ -137,7 +138,7 @@ const safeEqual = (a, b) => {
  * extraDirs (always-allowed folders, e.g. the office workspace), onChange() when letters change, log.
  * Returns { port, letters(), agentMap(), stop() }.
  */
-export async function startTaskServer({ root, token, officePort, port, projects, sessions = () => [], extraDirs = [], onChange = () => {}, log = console.log }) {
+export async function startTaskServer({ root, token, officePort, port, projects, sessions = () => [], extraDirs = [], onChange = () => {}, onNamesChange = () => {}, log = console.log }) {
   const mailFile = path.join(os.homedir(), '.pixel-agents', 'asaoffice-mail.json');
   const roster = () => {
     try { return JSON.parse(fs.readFileSync(path.join(root, 'staff', 'roster.json'), 'utf8')); } catch { return { staff: [], general: { access: ['read'] } }; }
@@ -265,6 +266,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       system += '\nKomisaris mengizinkan git add dan git commit untuk tugas ini. JANGAN git push, jangan ubah branch, dan jangan git reset/rebase.';
     }
     if (member?.director) system += `\n${STYLE_PROMPT[letter.style === 'delegate' ? 'delegate' : 'solo']}`;
+    const nick = roster().staff.filter((m) => !m.director && loadNames().staff[m.agent]);
+    if (nick.length) system += `\n\nNama panggilan tim di kantor Komisaris: ${nick.map((m) => `${m.agent} sekarang dipanggil ${loadNames().staff[m.agent]}`).join('; ')}. Pakai nama panggilan itu kalau menyebut mereka.`;
     const notes = vault.contextNotes();
     if (notes) system += `\n\n${notes}`;
     // The prompt goes in on stdin, so text that starts with "-" can never be read as a CLI option.
@@ -379,12 +382,21 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       if (req.method === 'GET' && url.pathname === '/api/options') {
         const r = roster();
         return send(res, 200, {
-          staff: r.staff.filter((s) => installed(s.agent)).map(({ agent, name, role, access, director }) => ({ agent, name, role, access, director: !!director })),
+          staff: r.staff.filter((s) => installed(s.agent)).map(({ agent, name, role, access, director }) => ({ agent, name: (!director && loadNames().staff[agent]) || name, role, access, director: !!director })),
           general: r.general,
           projects: allowedDirs(),
           claude: !!findClaude(),
           running: running.size,
         }, origin);
+      }
+      // Renaming a villager (staff by agent id, ordinary villagers by face). Shades can't be renamed.
+      if (url.pathname === '/api/names' && req.method === 'POST') {
+        const b = await readBody(req);
+        const renameable = roster().staff.filter((m) => !m.director).map((m) => m.agent);
+        const names = setName(b.kind, b.key, b.name, renameable);
+        if (!names) return send(res, 400, { error: 'name' }, origin);
+        onNamesChange();
+        return send(res, 200, { names }, origin);
       }
       // A picture attached to a task (pasted, dragged or picked in the mailbox): saved in the uploads folder.
       if (url.pathname === '/api/upload' && req.method === 'POST') {
