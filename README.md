@@ -170,6 +170,12 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
 - **Villager card:** click a villager. Next to the usual camera follow, a card shows its name, what it's doing
   (working with which tool, needs permission, waiting for you, chatting with whom, or relaxing), its project,
   last tool, context-window fill, sub-agents, and when it appeared. Click the villager again, or ×, to close it.
+  **Renaming:** the ✏️ next to the name changes it (up to 20 characters; empty puts the original back; Enter saves, Esc cancels).
+  An ordinary villager is renamed by its face (so the name stays when sessions come and go), a staff member by its agent;
+  Shades and helper sub-agents can't be renamed. Names are kept on the Mac in `~/.pixel-agents/asaoffice-names.json` (the data
+  feed carries them, so the laptop and the phone show the same ones) and show up on the HUD cards, bubbles, journal and
+  mailbox (`@mention`, letters); tasks are told the staff's new names so plans and reports use them too. The staff roster file
+  and the Claude Code agent names are not touched.
 - **Calendar:** click the wall calendar for a month view (Monday first, with the Stardew season) of your macOS
   Calendar events, from last month to two months ahead. Click a day for its agenda. A red badge on the calendar
   shows how many events are on today.

@@ -90,19 +90,19 @@
   .asa-shelf-modes .asa-btn.on { background: #744122; color: #fff6dc; }
   .asa-shelf-gal { overflow: auto; max-height: 54vh; padding: 2px; }
   .asa-shelf-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; padding: 2px; }
-  .asa-card { display: flex; flex-direction: column; gap: 4px; min-height: 132px; padding: 10px 12px 8px; text-align: left; font: inherit; cursor: pointer; color: inherit;
+  .asa-ncard { display: flex; flex-direction: column; gap: 4px; min-height: 132px; padding: 10px 12px 8px; text-align: left; font: inherit; cursor: pointer; color: inherit;
     background: #fffbe9; border: 2px solid #d9c49a; box-shadow: 0 2px 0 rgba(116,65,34,0.22); min-width: 0; }
-  .asa-card:hover { border-color: #b8935c; }
-  .asa-card.cur { border-color: #c8503c; box-shadow: 0 0 0 2px #c8503c, 0 2px 0 rgba(116,65,34,0.22); }
-  .asa-card b { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .asa-card p { margin: 0; flex: 1; font-size: 13px; line-height: 1.4; opacity: 0.78; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; white-space: pre-line; }
-  .asa-card small { font-size: 11.5px; opacity: 0.6; }
-  .asa-card.new { align-items: center; justify-content: center; border-style: dashed; color: #3f8a36; background: transparent; box-shadow: none; }
-  .asa-card.new b { font-size: 26px; font-weight: normal; line-height: 1; }
-  .asa-card.ideas { background: #f1f6e0; border-color: #9ab87a; }
-  .asa-card ul { list-style: none; margin: 0; padding: 0; flex: 1; font-size: 13px; line-height: 1.45; overflow: hidden; }
-  .asa-card li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .asa-card li::before { content: '☐ '; opacity: 0.6; }
+  .asa-ncard:hover { border-color: #b8935c; }
+  .asa-ncard.cur { border-color: #c8503c; box-shadow: 0 0 0 2px #c8503c, 0 2px 0 rgba(116,65,34,0.22); }
+  .asa-ncard b { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .asa-ncard p { margin: 0; flex: 1; font-size: 13px; line-height: 1.4; opacity: 0.78; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; white-space: pre-line; }
+  .asa-ncard small { font-size: 11.5px; opacity: 0.6; }
+  .asa-ncard.new { align-items: center; justify-content: center; border-style: dashed; color: #3f8a36; background: transparent; box-shadow: none; }
+  .asa-ncard.new b { font-size: 26px; font-weight: normal; line-height: 1; }
+  .asa-ncard.ideas { background: #f1f6e0; border-color: #9ab87a; }
+  .asa-ncard ul { list-style: none; margin: 0; padding: 0; flex: 1; font-size: 13px; line-height: 1.45; overflow: hidden; }
+  .asa-ncard li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .asa-ncard li::before { content: '☐ '; opacity: 0.6; }
   .asa-shelf-sub { font-size: 12.5px; color: #973a2f; margin: 10px 2px 4px; }
   `;
 
@@ -383,16 +383,16 @@
       const i = index.get(row);
       const cur = i === state.cursor ? ' cur' : '';
       const click = () => { state.cursor = i; activate(row); };
-      if (row.kind === 'new') return h('button', { type: 'button', class: `asa-card new${cur}`, onclick: click, title: S.newCard }, h('b', {}, '＋'), h('span', {}, S.newCard));
+      if (row.kind === 'new') return h('button', { type: 'button', class: `asa-ncard new${cur}`, onclick: click, title: S.newCard }, h('b', {}, '＋'), h('span', {}, S.newCard));
       const n = row.n;
       const mins = Math.max(0, Math.round((Date.now() - n.mtime) / 60000));
       const title = `${n.context ? '🔖 ' : ''}${row.g === 'ideas' ? S.ideas : n.title}`;
       if (row.g === 'ideas') {
-        return h('button', { type: 'button', class: `asa-card ideas${cur}`, onclick: click },
+        return h('button', { type: 'button', class: `asa-ncard ideas${cur}`, onclick: click },
           h('b', {}, title), h('small', {}, S.openTodos(n.open ?? 0)),
           h('ul', {}, (n.todos ?? []).slice(0, 3).map((t) => h('li', {}, t))), h('small', {}, S.ago(mins)));
       }
-      return h('button', { type: 'button', class: `asa-card${cur}`, onclick: click },
+      return h('button', { type: 'button', class: `asa-ncard${cur}`, onclick: click },
         h('b', {}, title), h('p', {}, n.preview || S.emptyCard), h('small', {}, S.ago(mins)));
     };
     const out = [h('div', { class: 'asa-shelf-cards' }, gallery.cards.map(cardEl))];

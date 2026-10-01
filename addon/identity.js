@@ -18,6 +18,9 @@
   ns.VILLAGERS = ['Asa', 'Rowan', 'Clem', 'Theo', 'Mabel', 'Juno', 'Wren', 'Pip', 'Sari', 'Gus', 'Iris', 'Bayu', 'Shades'];
   ns.DIRECTOR_PALETTE = 12;
   const COUNT = ns.VILLAGERS.length;
+  /** An ordinary face's name: the one the Commissioner chose (data feed), else the built-in one. */
+  const faceName = (p) => ns.data?.names?.palette?.[String(((p ?? 0) % COUNT + COUNT) % COUNT)] ?? ns.VILLAGERS[((p ?? 0) % COUNT + COUNT) % COUNT];
+  ns.faceName = faceName;
   const pick = (v) => (v && typeof v === 'object' ? v[ns.lang] ?? v.en ?? '' : v ?? '');
 
   const assigned = new Map(); // main villager id -> { palette, hueShift }
@@ -55,15 +58,18 @@
     if (!ch) return '';
     const staff = ns.staffOf(ch);
     if (staff) return staff.name;
-    if (cast(ch)) return ch.asaName ?? ns.VILLAGERS[(ch.palette ?? 0) % COUNT];
+    if (cast(ch)) {
+      const fresh = ch.asaStaff && !ch.asaStaff.director ? ns.rosterEntry(ch.asaStaff.agent) : null; // follows a rename
+      return fresh?.name ?? ch.asaName ?? faceName(ch.palette);
+    }
     const office = ns.view?.office;
     if (ch.isSubagent) {
       const parent = office?.characters.get(ch.parentAgentId);
-      const parentName = parent ? ns.villagerName(parent) : ns.VILLAGERS[(ch.palette ?? 0) % COUNT];
+      const parentName = parent ? ns.villagerName(parent) : faceName(ch.palette);
       const type = subs.get(ch.id)?.type;
       return `${parentName} · ${type && type !== 'general-purpose' ? type : S.helper}`;
     }
-    const base = ns.VILLAGERS[(ch.palette ?? 0) % COUNT];
+    const base = faceName(ch.palette);
     if (!office || !ch.hueShift) return base;
     // A repeated face: number it by arrival among the villagers sharing that palette.
     const twins = [...office.characters.values()]

@@ -10,6 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { ClaudeStats } from './claude-stats.mjs';
+import { loadNames } from './names.mjs';
 import { startTaskServer } from './task-server.mjs';
 
 const STATS_EVERY_MS = 60_000;
@@ -82,7 +83,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
 
   const stats = new ClaudeStats();
   const data = {
-    version: 1, generatedAt: null, stats: null, tasks: [], sessions: [], runs: [], subagents: {}, staff: [], mail: [], taskAgents: {}, taskServer: null,
+    version: 1, generatedAt: null, names: loadNames(), stats: null, tasks: [], sessions: [], runs: [], subagents: {}, staff: [], mail: [], taskAgents: {}, taskServer: null,
     calendar: { status: calendar ? 'loading' : 'off', events: [] },
   };
   // Staff roster, with which members are installed as Claude Code subagents (npm run staff).
@@ -90,8 +91,9 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
   const readStaff = () => {
     try {
       const agentsDir = path.join(os.homedir(), '.claude', 'agents');
+      const chosen = loadNames().staff;
       return JSON.parse(fs.readFileSync(rosterFile, 'utf8')).staff.map((m) => ({
-        ...m, installed: fs.existsSync(path.join(agentsDir, `${m.agent}.md`)),
+        ...m, name: (!m.director && chosen[m.agent]) || m.name, baseName: m.name, installed: fs.existsSync(path.join(agentsDir, `${m.agent}.md`)),
       }));
     } catch {
       return [];
@@ -113,6 +115,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
       data.subagents = stats.spawns();
       data.runs = stats.runs();
       data.staff = readStaff();
+      data.names = loadNames();
       lastSpawns = stats.spawnsVersion;
       write();
     } catch (err) {
@@ -169,14 +172,16 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
       taskApi = await startTaskServer({
         root, token, officePort: Number(port), port: taskPort ?? Number(port) + 1,
         projects: () => stats.projects(), sessions: () => stats.listSessions(300, 365), extraDirs: [workspace], log,
+        onNamesChange: () => refreshStats(),
         onChange: () => {
-          data.mail = taskApi?.letters() ?? [];
+          const chosen = loadNames().staff;
+          data.mail = (taskApi?.letters() ?? []).map((l) => (l.agent && chosen[l.agent] ? { ...l, name: chosen[l.agent] } : l));
           data.taskAgents = taskApi?.agentMap() ?? {};
           write();
         },
       });
       data.taskServer = { port: taskApi.port };
-      data.mail = taskApi.letters();
+      data.mail = (taskApi.letters() ?? []).map((l) => (l.agent && loadNames().staff[l.agent] ? { ...l, name: loadNames().staff[l.agent] } : l));
       write();
     } catch (err) {
       log(`[asaoffice] tasks: couldn't start (${err.message}); the mailbox is read-only.`);
