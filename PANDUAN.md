@@ -32,7 +32,10 @@ Terus buka **Asa Office** lewat Spotlight (⌘ Spasi, ketik `Asa Office`). Biar 
 **Options → Keep in Dock**.
 
 - **Klik ikonnya** → kantor nyala sendiri di background, terus kebuka di jendela sendiri. Gak perlu Terminal,
-  gak perlu copy link.
+  gak perlu copy link. App-nya **app Mac beneran** (bukan Chrome): ikon, nama, dan menu sendiri (⌘Q, ⌘W, ⌘R muat ulang,
+  salin/tempel, layar penuh). Syaratnya **Xcode Command Line Tools** (sekali aja: `xcode-select --install`; kalau kamu
+  sudah pakai `git`, biasanya sudah ada). Kalau gak ada, `npm run app` otomatis bikin versi klasik (jendela Chrome tanpa tab).
+  Mau versi klasik sengaja (misalnya buat **Layout → Export**, yang belum jalan di app native)? `npm run app -- --chrome`.
 - Jendelanya ketutup? Klik lagi ikon Asa Office di Dock.
 - **Mau matiin kantor?** Klik kanan ikon Asa Office di Dock → **Quit** (atau ⌘Q).
 - Pertama kali, Mac bakal nanya **"Asa Office ingin mengakses kalender"**. Klik **Izinkan**.

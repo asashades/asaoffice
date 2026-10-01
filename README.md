@@ -78,8 +78,14 @@ npm run app        # builds ~/Applications/Asa Office.app (re-run after moving t
 
 Open **Asa Office** from Spotlight or Finder, then right-click its Dock icon → **Options → Keep in Dock**. Clicking
 it starts the office in the background if it isn't running (log: `~/Library/Logs/asaoffice/office.log`) and opens
-it with the current token in its own window: an app-mode window of Chrome, Edge, or Brave if one is installed,
-otherwise your default browser. Click the Dock icon again to reopen the window. Quit the app (⌘Q) to stop the
+it with the current token in its own window. The app is **native**: a small Swift program
+(`tools/native/AsaOffice.swift`, compiled by `npm run app` with `swiftc` from the Xcode Command Line Tools, so run
+`xcode-select --install` once if you don't have them) with its own window, Dock icon and menus (⌘Q, ⌘W, ⌘R reload,
+copy/paste, full screen). Links such as `obsidian://` and web pages open in the right app, the 📎 file picker and
+sounds work, and closing the window keeps the office running (click the Dock icon to bring it back). It uses the
+system's WebKit engine, so **Layout → Export** downloads don't work in it; for those, open the office in a browser or
+build the classic version with `npm run app -- --chrome` (the office in an app-mode window of Chrome, Edge, or Brave,
+else your default browser; this is also what you get when `swiftc` isn't available). Quit the app (⌘Q) to stop the
 office it started; an office you started from Terminal is left alone. The first time, macOS asks whether
 **Asa Office** may access your calendars. `npm run app -- --remove` deletes the app.
 
