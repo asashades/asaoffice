@@ -18,3 +18,15 @@ if (fs.existsSync(dest)) {
 }
 fs.copyFileSync(src, dest);
 console.log(`Installed ${path.relative(root, src)} → ${dest}`);
+
+// The office remembers which seat each villager sat in by furniture id, and ids are reused by a new layout for other
+// furniture: forget those seats (people just sit down again) so nobody is sent to a desk that is now a sofa or a wall.
+const stateFile = path.join(os.homedir(), '.pixel-agents', 'standalone-state.json');
+try {
+  const state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  if (state.seats && Object.keys(state.seats).length) {
+    state.seats = {};
+    fs.writeFileSync(stateFile, JSON.stringify(state, null, 2));
+    console.log('Cleared remembered seats (they pointed into the old layout).');
+  }
+} catch { /* no saved state yet */ }

@@ -47,6 +47,8 @@
       rename: 'Judul surat', copySmall: '📋 Salin', copiedSmall: '✅',
       queued: '📮 Diantar', queuedShort: '📮 Nunggu diambil Shades…', queuedNote: (n) => (n ? `📮 Suratmu lagi diantar Shades ke ${n}…` : '📮 Suratmu lagi diambil Shades…'),
       newChat: '＋ Chat baru', newChatSub: 'Tulis tugasnya, pilih cara kerjanya di bawah', tabChats: '💬 Chat', tabSessions: '🗂 Sesi',
+      sesFolder: 'Folder', sesWhen: 'Terakhir aktif', sesFirst: 'Pesan pertama', sesOpenChat: '📮 Buka chat-nya', sesContinue: 'Lanjutkan sesi ini dari kantor',
+      sesContinueHint: 'Tulis lanjutannya. Claude meneruskan sesi yang sama di folder ini.', sesSend: 'Kirim lanjutan', sesLive: 'Sesi ini baru aja aktif (lagi dipakai di Terminal atau Desktop?). Tunggu sebentar biar nggak tabrakan.', sesCopy: '📋 Salin perintah Terminal',
       pickChat: 'Pilih chat di kiri, atau mulai yang baru.',
       greeting: (n) => `Halo Komisaris! Mau dikerjain apa hari ini${n ? `, biar ${n} yang pegang` : ''}?`,
       suggestions: ['Cek status proyek ini', 'Jalanin semua test terus laporin yang gagal', 'Review perubahan terakhir'],
@@ -93,6 +95,8 @@
       rename: 'Letter title', copySmall: '📋 Copy', copiedSmall: '✅',
       queued: '📮 Delivering', queuedShort: '📮 Waiting for Shades…', queuedNote: (n) => (n ? `📮 Shades is delivering your letter to ${n}…` : '📮 Shades is picking up your letter…'),
       newChat: '＋ New chat', newChatSub: 'Write the task, pick how to work below', tabChats: '💬 Chats', tabSessions: '🗂 Sessions',
+      sesFolder: 'Folder', sesWhen: 'Last active', sesFirst: 'First message', sesOpenChat: '📮 Open its chat', sesContinue: 'Continue this session from the office',
+      sesContinueHint: 'Write the follow-up. Claude continues the same session in this folder.', sesSend: 'Send follow-up', sesLive: 'This session was just active (in use in Terminal or Desktop?). Wait a moment to avoid clashing.', sesCopy: '📋 Copy Terminal command',
       pickChat: 'Pick a chat on the left, or start a new one.',
       greeting: (n) => `Hello Commissioner! What should we get done today${n ? `, with ${n} on it` : ''}?`,
       suggestions: ['Check this project’s status', 'Run all the tests and report what fails', 'Review the latest changes'],
@@ -210,6 +214,15 @@
     border: 2px solid #744122; box-sizing: border-box; min-width: 0; }
   .asa-filters input { flex: 1 1 100%; }
   .asa-filters select { flex: 1 1 120px; }
+  .asa-field { margin-bottom: 10px; } .asa-field small { display: block; opacity: 0.65; font-size: 12px; margin-bottom: 2px; }
+  .asa-field div { overflow-wrap: anywhere; white-space: pre-wrap; max-height: 30vh; overflow: auto; }
+  .asa-plain .asa-letter-body b { font-size: 15px; font-weight: 600; }
+  .asa-plain .asa-letter-body div, .asa-plain .asa-letter-status, .asa-plain .asa-note, .asa-plain .asa-muted { font-size: 13px; }
+  .asa-plain .asa-chat-title b { font-size: 17px; font-weight: 600; }
+  .asa-plain .asa-b, .asa-plain .asa-msg { font-size: 15px; line-height: 1.5; }
+  .asa-plain .asa-btn, .asa-plain .asa-chip, .asa-plain .asa-chipsel, .asa-plain .asa-filters select, .asa-plain .asa-filters input,
+  .asa-plain .asa-side input[type="search"], .asa-plain .asa-comp textarea, .asa-plain .asa-mention button { font-size: 14px; }
+  .asa-plain .asa-comp textarea { font-size: 15px; }
   .asa-chip { font: inherit; font-size: 12px; padding: 3px 8px; background: #fffbe9; color: #3a2117; border: 2px solid #d9c49a; cursor: pointer; }
   .asa-chip.on { border-color: #744122; background: #f4e6c4; }
   .asa-live { color: #3f8a36; }
@@ -431,7 +444,7 @@
           setTimeout(() => { btn.textContent = S.copySmall; }, 2000);
         }
       };
-      const row = h('div', { class: 'asa-letter', style: { cursor: letter ? 'pointer' : 'default' } },
+      const row = h('div', { class: `asa-letter${sel === `session:${x.id}` || sel === letter?.id ? ' on' : ''}`, role: 'button', tabindex: '0' },
         h('div', { class: 'asa-face envelope' }, letter ? '📮' : '💬'),
         h('div', { class: 'asa-letter-body' },
           h('b', {}, (letter ? letterTitle(letter) : x.title) || x.project || x.id.slice(0, 8)),
@@ -439,7 +452,8 @@
           h('div', {}, x.prompt && x.prompt !== x.title ? x.prompt : (letter ? S.fromMailbox : ''))),
         h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' } },
           h('span', { class: `asa-letter-status${live ? ' asa-live' : ''}` }, live ? S.live : S.ago(mins)), x.cwd ? btn : null));
-      if (letter) row.onclick = () => pickLetter(letter.id);
+      row.onclick = () => select(letter ? letter.id : `session:${x.id}`);
+      row.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); row.onclick(); } };
       return row;
     }) : [h('p', { class: 'asa-muted' }, ns.data?.sessions?.length ? S.noMatch : S.noSessions)]));
   }
@@ -495,7 +509,57 @@
   }
   function syncLayout() { if (ui.root) ui.root.dataset.show = narrow() ? (sel ? 'chat' : 'list') : 'both'; }
 
+  const sessionOf = (id) => (ns.data?.sessions ?? []).find((x) => `session:${x.id}` === id) ?? null;
+
+  /** A Claude Code session picked in the "Sesi" tab: what it is, and what you can do with it. */
+  function showSession(x) {
+    const letter = (ns.data?.mail ?? []).find((l) => l.sessionId === x.id);
+    const live = Date.now() - Date.parse(x.at) < 90_000;
+    const back = h('button', { type: 'button', class: 'asa-btn asa-back', onclick: () => { sel = null; syncLayout(); ui.refill?.(); }, 'aria-label': S.back }, '←');
+    const head = h('div', { class: 'asa-chat-head' }, back, h('div', { class: 'asa-face envelope' }, '🗂'),
+      h('div', { class: 'asa-chat-title' }, h('b', {}, x.title || x.project || x.id.slice(0, 8)), h('span', { class: 'asa-muted' }, [x.project, timeOf(x.at)].filter(Boolean).join(' · '))));
+    const field = (label, value, title) => (value ? h('div', { class: 'asa-field' }, h('small', {}, label), h('div', { title: title ?? '' }, value)) : null);
+    const body = h('div', { class: 'asa-thread-box' },
+      field(S.sesFolder, x.cwd ? home(x.cwd) : null, x.cwd),
+      field(S.sesWhen, live ? S.live : timeOf(x.at)),
+      field(S.sesFirst, x.prompt || x.title),
+      field('ID', x.id));
+    const actions = h('div', { class: 'asa-actions' });
+    if (letter) actions.append(h('button', { type: 'button', class: 'asa-btn primary', onclick: () => { tab = 'chats'; fillSide(); select(letter.id); } }, S.sesOpenChat));
+    const copy = h('button', { type: 'button', class: 'asa-btn' }, S.sesCopy);
+    copy.onclick = async () => { if (await copyText(terminalCommand({ cwd: x.cwd, sessionId: x.id }))) { copy.textContent = S.copied; setTimeout(() => { copy.textContent = S.sesCopy; }, 2000); } };
+    if (x.cwd) actions.append(copy);
+    body.append(actions);
+    const comp = h('div', { class: 'asa-comp' });
+    if (x.cwd && !letter) {
+      const ta = h('textarea', { rows: '3', placeholder: S.sesContinueHint, 'aria-label': S.sesContinue });
+      const mode = h('select', { class: 'asa-chipsel', 'aria-label': S.mode }, ['auto', 'plan', 'report'].map((m) => h('option', { value: m }, S.chipModes[m])));
+      const send = h('button', { type: 'button', class: 'asa-btn primary' }, S.sesSend);
+      send.disabled = live;
+      const msg = h('div', { class: 'asa-note' }, live ? S.sesLive : '');
+      send.onclick = async () => {
+        const text = ta.value.trim();
+        if (!text) return;
+        send.disabled = true;
+        try {
+          const { letter: made } = await api('POST', '/api/tasks', { agent: null, cwd: x.cwd, prompt: text, mode: mode.value, resumeSession: x.id });
+          dropLetter();
+          await ns.refreshData();
+          tab = 'chats';
+          fillSide();
+          select(made.id);
+        } catch (err) { msg.textContent = errorText(err); send.disabled = live; }
+      };
+      comp.append(h('b', {}, S.sesContinue), ta, h('div', { class: 'asa-chips' }, mode, send), msg);
+    }
+    ui.main.replaceChildren(head, body, comp);
+  }
+
   function buildMain() {
+    if (String(sel).startsWith('session:')) {
+      const x = sessionOf(sel);
+      return x ? showSession(x) : (sel = null, syncLayout(), buildMain());
+    }
     ui.head = h('div', { class: 'asa-chat-head' });
     ui.thread = h('div', { class: 'asa-thread-box' });
     ui.comp = h('div', { class: 'asa-comp' });
@@ -508,6 +572,7 @@
   }
 
   function refreshMain(force = false) {
+    if (String(sel).startsWith('session:')) return; // a session's page is static
     if (!ui.head || !sel) return;
     const l = current();
     if (sel !== 'new' && !l) { sel = null; syncLayout(); return buildMain(); }
@@ -868,7 +933,7 @@
     if (next.text) setDraft(next.text, 'new');
     let timer = null;
     panel = ns.panel.open({ theme: 'cozy', title: `📮 ${S.title}`, render, onClose: () => { pendingUndo?.('go'); flushDrafts(); clearInterval(timer); panel = null; } });
-    panel.el.classList.add('asa-wide');
+    panel.el.classList.add('asa-wide', 'asa-plain');
     ns.refreshData().then(refreshAll);
     // While open, keep running tasks' chats fresh (the composer is never rebuilt while you type).
     timer = setInterval(() => ns.refreshData().then(refreshAll), 4000);

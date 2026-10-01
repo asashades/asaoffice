@@ -170,6 +170,11 @@
     border: 2px solid #744122; box-shadow: 0 2px 0 #744122; }
   .asa-btn.primary { background: #c8503c; color: #fff6dc; border-color: #973a2f; box-shadow: 0 2px 0 #973a2f; }
   .asa-btn:disabled { opacity: 0.5; cursor: default; }
+  /* Plain, easy-to-read type for the mailbox and the bookshelf (the office itself keeps the pixel font) */
+  .asa-panel.asa-plain, .asa-panel.asa-plain * {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  .asa-panel.asa-plain { font-size: 15px; line-height: 1.45; }
+  .asa-plain .asa-head h2 { font-size: 19px; font-weight: 600; }
   `;
   let styled = false;
   let current = null;
