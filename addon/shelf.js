@@ -38,7 +38,7 @@
   .asa-shelf-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .asa-shelf input, .asa-shelf textarea { font: inherit; font-size: 14px; padding: 5px 7px; background: #fffbe9; color: #3a2117;
     border: 2px solid #d9c49a; width: 100%; }
-  .asa-shelf textarea { flex: 1; min-height: 320px; resize: vertical; font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+  .asa-panel.asa-plain .asa-shelf textarea { flex: 1; min-height: 320px; resize: vertical; font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
   .asa-shelf-list { overflow: auto; max-height: 360px; border: 2px solid #d9c49a; background: #fffbe9; }
   .asa-shelf-group { font-size: 12px; padding: 6px 8px 2px; color: #973a2f; }
   .asa-shelf-item { display: block; width: 100%; text-align: left; font: inherit; font-size: 14px; padding: 5px 8px; cursor: pointer;
@@ -257,6 +257,7 @@
         body.append(h('div', { class: 'asa-shelf' }, side(), main()));
       },
     });
+    state.panel.el.classList.add('asa-plain');
     state.panel.el.style.maxWidth = 'min(900px, 100%)';
     ns.refreshData().then(() => load(null)).catch(() => { if (state) { state.offline = true; state.panel.rerender(); } });
   }

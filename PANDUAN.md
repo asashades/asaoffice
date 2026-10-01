@@ -240,8 +240,10 @@ Sekarang kamu bisa **nyuruh Claude langsung dari kantor**, gak perlu buka Termin
 
 **Biar gak bingung sesi yang mana:**
 - Tiap surat dapet **judul otomatis** dari kalimat pertama tugasmu. Mau ganti? Ketik langsung di kotak judul dalam surat.
-- Di kiri kotak surat ada dua tab. **💬 Chat** buat chat-chatmu, lengkap dengan kotak cari dan filter (status, proyek, orang). **🗂 Sesi** nunjukin semua sesi Claude Code di Mac ini 30 hari terakhir, baik dari Terminal, Desktop, maupun kotak surat. Ada judul, folder, pesan terakhir, dan kapan terakhir aktif ("● lagi jalan" kalau aktif dalam 90 detik terakhir). Klik **📋 Salin** buat dapet perintah lanjut di Terminal.
+- Di kiri kotak surat ada **satu daftar chat**, kayak sidebar Claude: tombol **＋ Chat baru** di atas, kotak cari, filter status, lalu semua chat dikelompokin per hari (Hari ini, Kemarin, 7 hari terakhir, Lebih lama). Isinya chat dari kotak surat **dan** semua sesi Claude Code di Mac ini 30 hari terakhir (Terminal dan Desktop juga, ditandai 💬). Klik salah satu buat buka chat-nya. Kalau itu sesi dari luar kantor, tulis lanjutannya di bawah dan Claude meneruskan sesi yang sama (nggak bisa kalau sesinya lagi aktif di tempat lain, "● lagi jalan"). Ada tombol **📋 Salin perintah Terminal** juga. Tulisan di kotak surat pakai font biasa biar gampang dibaca.
 - **Daftar proyek** di form tugas diambil dari folder yang dipakai Claude Code di Mac kamu dalam 45 hari terakhir (maksimal 15, plus folder workspace kantor), sekarang lengkap sama path-nya.
+
+**Boleh commit (opsional):** di form tugas ada centang **🔀 Boleh commit** (default mati). Kalau dicentang, tugas itu boleh `git add` dan `git commit` waktu mengerjakan (bukan di tahap rencana atau mode cuma laporan). **`git push` tetap nggak pernah boleh**, jadi kamu yang push dari Terminal. Tanpa centang itu, commit ditolak otomatis karena tugas dari kotak surat jalan tanpa layar izin.
 
 **Batasan biar aman:**
 - Tugas cuma boleh ngelakuin hal sesuai jabatannya. Pip dan Gus cuma baca. Wren dan Bayu boleh ngedit dan jalanin

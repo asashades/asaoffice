@@ -37,7 +37,9 @@
   /** A main session started from the office mailbox as a staff member (`claude -p --agent …`), from the data feed. */
   const taskStaff = (ch) => {
     const agent = ns.data?.taskAgents?.[ch.id]?.agent;
-    return agent ? staffByAgent(agent) : null;
+    const staff = agent ? staffByAgent(agent) : null;
+    // Shades is one person: only the session he plays right now wears his face (a ghost of an old task doesn't).
+    return staff?.director && ns.director?.id?.() !== ch.id ? null : staff;
   };
   const mainStaff = (ch) => taskStaff(ch) ?? staffByName(ch.agentName);
   // Villagers the office plays itself (director.js: Shades, and staff acting out his work) carry their staff entry.

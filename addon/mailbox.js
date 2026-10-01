@@ -47,6 +47,10 @@
       rename: 'Judul surat', copySmall: '📋 Salin', copiedSmall: '✅',
       queued: '📮 Diantar', queuedShort: '📮 Nunggu diambil Shades…', queuedNote: (n) => (n ? `📮 Suratmu lagi diantar Shades ke ${n}…` : '📮 Suratmu lagi diambil Shades…'),
       newChat: '＋ Chat baru', newChatSub: 'Tulis tugasnya, pilih cara kerjanya di bawah', tabChats: '💬 Chat', tabSessions: '🗂 Sesi',
+      commitChip: '🔀 Boleh commit', commitTip: 'Boleh git add dan git commit (tanpa push) selama tugas ini', commitShort: 'boleh commit',
+      sesFirst: 'Pesan pertama', sesContinue: 'Lanjutkan sesi ini dari kantor', sesNote: 'Sesi ini dimulai di luar kantor (Terminal atau Desktop). Tulis di bawah buat lanjutin dari sini.',
+      sesContinueHint: 'Tulis lanjutannya…', sesSend: 'Kirim', sesLive: 'Sesi ini lagi dipakai di tempat lain. Tunggu sebentar biar nggak tabrakan.', sesCopy: '📋 Salin perintah Terminal',
+      gToday: 'Hari ini', gYesterday: 'Kemarin', gWeek: '7 hari terakhir', gOlder: 'Lebih lama',
       pickChat: 'Pilih chat di kiri, atau mulai yang baru.',
       greeting: (n) => `Halo Komisaris! Mau dikerjain apa hari ini${n ? `, biar ${n} yang pegang` : ''}?`,
       suggestions: ['Cek status proyek ini', 'Jalanin semua test terus laporin yang gagal', 'Review perubahan terakhir'],
@@ -93,6 +97,10 @@
       rename: 'Letter title', copySmall: '📋 Copy', copiedSmall: '✅',
       queued: '📮 Delivering', queuedShort: '📮 Waiting for Shades…', queuedNote: (n) => (n ? `📮 Shades is delivering your letter to ${n}…` : '📮 Shades is picking up your letter…'),
       newChat: '＋ New chat', newChatSub: 'Write the task, pick how to work below', tabChats: '💬 Chats', tabSessions: '🗂 Sessions',
+      commitChip: '🔀 May commit', commitTip: 'Allow git add and git commit (never push) for this task', commitShort: 'may commit',
+      sesFirst: 'First message', sesContinue: 'Continue this session from the office', sesNote: 'This session was started outside the office (Terminal or Desktop). Write below to continue it from here.',
+      sesContinueHint: 'Write the follow-up…', sesSend: 'Send', sesLive: 'This session is in use elsewhere. Wait a moment to avoid clashing.', sesCopy: '📋 Copy Terminal command',
+      gToday: 'Today', gYesterday: 'Yesterday', gWeek: 'Last 7 days', gOlder: 'Older',
       pickChat: 'Pick a chat on the left, or start a new one.',
       greeting: (n) => `Hello Commissioner! What should we get done today${n ? `, with ${n} on it` : ''}?`,
       suggestions: ['Check this project’s status', 'Run all the tests and report what fails', 'Review the latest changes'],
@@ -210,6 +218,15 @@
     border: 2px solid #744122; box-sizing: border-box; min-width: 0; }
   .asa-filters input { flex: 1 1 100%; }
   .asa-filters select { flex: 1 1 120px; }
+  .asa-side .asa-filters .asa-chip { padding: 2px 7px; font-size: 12.5px; }
+  .asa-group { font-size: 12px; opacity: 0.65; margin: 8px 2px 0; text-transform: none; }
+  .asa-plain .asa-letter-body b { font-size: 15px; font-weight: 600; }
+  .asa-plain .asa-letter-body div, .asa-plain .asa-letter-status, .asa-plain .asa-note, .asa-plain .asa-muted { font-size: 13px; }
+  .asa-plain .asa-chat-title b { font-size: 17px; font-weight: 600; }
+  .asa-plain .asa-b, .asa-plain .asa-msg { font-size: 15px; line-height: 1.5; }
+  .asa-plain .asa-btn, .asa-plain .asa-chip, .asa-plain .asa-chipsel, .asa-plain .asa-filters select, .asa-plain .asa-filters input,
+  .asa-plain .asa-side input[type="search"], .asa-plain .asa-comp textarea, .asa-plain .asa-mention button { font-size: 14px; }
+  .asa-plain .asa-comp textarea { font-size: 15px; }
   .asa-chip { font: inherit; font-size: 12px; padding: 3px 8px; background: #fffbe9; color: #3a2117; border: 2px solid #d9c49a; cursor: pointer; }
   .asa-chip.on { border-color: #744122; background: #f4e6c4; }
   .asa-live { color: #3f8a36; }
@@ -281,7 +298,6 @@
   // ── Panel state ──
   let panel = null;
   let sel = null; // 'new' (the composer), a letter id, or null (narrow screens: showing the list)
-  let tab = 'chats';
   let options = null; // the task API's options (who / projects), fetched when the mailbox opens
   let notice = '';
   let sending = false;
@@ -392,92 +408,83 @@
   // ── Sidebar: chats and sessions ──
   function pickLetter(id) { select(id); }
 
-  function letterRows(container) {
+  /** One list like Claude's own: your mailbox chats and every other Claude Code session, newest first, grouped by day. */
+  const dayGroup = (ms) => {
+    const midnight = new Date();
+    midnight.setHours(0, 0, 0, 0);
+    const t = midnight.getTime();
+    return ms >= t ? S.gToday : ms >= t - 86_400_000 ? S.gYesterday : ms >= t - 6 * 86_400_000 ? S.gWeek : S.gOlder;
+  };
+  function chatItems() {
     const q = filter.q.trim().toLowerCase();
-    const all = letters().filter((l) => {
-      if (l.report) return filter.status === 'all' && !filter.project && !filter.who && !q;
-      if (filter.status !== 'all' && statusGroup(l) !== filter.status) return false;
-      if (filter.project && l.cwd !== filter.project) return false;
-      if (filter.who && (l.agent ?? '') !== filter.who) return false;
-      return !q || [letterTitle(l), l.project, who(l), ...(l.thread ?? []).map((m) => m.text)].some((t) => has(t, q));
-    });
-    container.replaceChildren(...(all.length ? all.map((l) => {
+    const mailSessions = new Set((ns.data?.mail ?? []).map((l) => l.sessionId));
+    const items = [];
+    for (const l of letters()) {
+      if (l.report) {
+        if (filter.status === 'all' && !q) items.push({ kind: 'report', l, at: Infinity });
+        continue;
+      }
+      if (filter.status !== 'all' && statusGroup(l) !== filter.status) continue;
+      if (q && ![letterTitle(l), l.project, who(l), ...(l.thread ?? []).map((m) => m.text)].some((t) => has(t, q))) continue;
+      items.push({ kind: 'letter', l, at: Date.parse(l.finishedAt ?? l.createdAt) || 0 });
+    }
+    for (const x of ns.data?.sessions ?? []) {
+      if (mailSessions.has(x.id)) continue; // already a mailbox chat
+      const live = Date.now() - Date.parse(x.at) < 90_000;
+      if (filter.status !== 'all' && filter.status !== (live ? 'running' : 'done')) continue;
+      if (q && ![x.title, x.prompt, x.project, x.cwd].some((t) => has(t, q))) continue;
+      items.push({ kind: 'session', x, live, at: Date.parse(x.at) || 0 });
+    }
+    return items.sort((a, b) => b.at - a.at);
+  }
+
+  function chatRows(container) {
+    const items = chatItems();
+    const out = [];
+    let group = null;
+    for (const it of items) {
+      if (it.kind !== 'report' && dayGroup(it.at) !== group) {
+        group = dayGroup(it.at);
+        out.push(h('div', { class: 'asa-group' }, group));
+      }
+      if (it.kind === 'session') {
+        const { x, live } = it;
+        const mins = Math.max(0, Math.round((Date.now() - Date.parse(x.at)) / 60_000));
+        const row = h('button', { type: 'button', class: `asa-letter${sel === `session:${x.id}` ? ' on' : ''}`, onclick: () => select(`session:${x.id}`) },
+          h('div', { class: 'asa-face envelope' }, '💬'),
+          h('div', { class: 'asa-letter-body' },
+            h('b', {}, x.title || x.project || x.id.slice(0, 8)),
+            h('div', { title: x.cwd ?? '' }, [x.project, live ? S.live : S.ago(mins)].filter(Boolean).join(' · '))));
+        out.push(row);
+        continue;
+      }
+      const l = it.l;
       const status = l.report ? '' : S[l.status] ?? '';
-      return h('button', { type: 'button', class: `asa-letter${l.read || busy(l) ? '' : ' unread'}${sel === l.id ? ' on' : ''}`, onclick: () => pickLetter(l.id) },
+      out.push(h('button', { type: 'button', class: `asa-letter${l.read || busy(l) ? '' : ' unread'}${sel === l.id ? ' on' : ''}`, onclick: () => pickLetter(l.id) },
         face(l),
         h('div', { class: 'asa-letter-body' },
           h('b', {}, l.report ? S.report : letterTitle(l)),
           h('div', {}, l.report ? l.day : [who(l), l.project, l.createdAt ? timeOf(l.createdAt) : null].filter(Boolean).join(' · ')),
           busy(l) ? h('div', {}, l.status === 'queued' ? S.queuedShort : progressText(l)) : null),
-        h('div', { class: 'asa-letter-status' }, status));
-    }) : [h('p', { class: 'asa-muted' }, letters().length ? S.noMatch : S.empty)]));
-  }
-
-  function sessionRows(container) {
-    const q = filter.q.trim().toLowerCase();
-    const byId = new Map((ns.data?.mail ?? []).map((l) => [l.sessionId, l]));
-    const rows = (ns.data?.sessions ?? []).filter((x) => (!filter.project || x.cwd === filter.project) &&
-      (!q || [x.title, x.prompt, x.project, x.cwd].some((t) => has(t, q))));
-    const now = Date.now();
-    container.replaceChildren(...(rows.length ? rows.map((x) => {
-      const letter = byId.get(x.id);
-      const mins = Math.max(0, Math.round((now - Date.parse(x.at)) / 60_000));
-      const live = now - Date.parse(x.at) < 90_000;
-      const btn = h('button', { type: 'button', class: 'asa-chip', title: terminalCommand({ cwd: x.cwd, sessionId: x.id }) }, S.copySmall);
-      btn.onclick = async (e) => {
-        e.stopPropagation();
-        if (await copyText(terminalCommand({ cwd: x.cwd, sessionId: x.id }))) {
-          btn.textContent = S.copiedSmall;
-          setTimeout(() => { btn.textContent = S.copySmall; }, 2000);
-        }
-      };
-      const row = h('div', { class: 'asa-letter', style: { cursor: letter ? 'pointer' : 'default' } },
-        h('div', { class: 'asa-face envelope' }, letter ? '📮' : '💬'),
-        h('div', { class: 'asa-letter-body' },
-          h('b', {}, (letter ? letterTitle(letter) : x.title) || x.project || x.id.slice(0, 8)),
-          h('div', { title: x.cwd ?? '' }, [x.project, x.cwd ? home(x.cwd) : null].filter(Boolean).join(' · ')),
-          h('div', {}, x.prompt && x.prompt !== x.title ? x.prompt : (letter ? S.fromMailbox : ''))),
-        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' } },
-          h('span', { class: `asa-letter-status${live ? ' asa-live' : ''}` }, live ? S.live : S.ago(mins)), x.cwd ? btn : null));
-      if (letter) row.onclick = () => pickLetter(letter.id);
-      return row;
-    }) : [h('p', { class: 'asa-muted' }, ns.data?.sessions?.length ? S.noMatch : S.noSessions)]));
+        h('div', { class: 'asa-letter-status' }, status)));
+    }
+    container.replaceChildren(...(out.length ? out : [h('p', { class: 'asa-muted' }, letters().length || ns.data?.sessions?.length ? S.noMatch : S.empty)]));
   }
 
   function fillSide() {
-    const side = ui.side;
     const rows = h('div', { class: 'asa-letters' });
-    ui.refill = () => (tab === 'chats' ? letterRows(rows) : sessionRows(rows));
+    ui.refill = () => chatRows(rows);
     const search = h('input', { type: 'search', placeholder: S.search, value: filter.q, 'aria-label': S.search });
     search.oninput = () => { filter.q = search.value; ui.refill(); };
-    const select2 = (label, key, opts) => {
-      const el = h('select', {}, h('option', { value: '' }, label), opts.map(([v, t]) => h('option', { value: v }, t)));
-      el.value = filter[key];
-      el.onchange = () => { filter[key] = el.value; ui.refill(); };
-      return el;
-    };
-    const projects = tab === 'chats'
-      ? [...new Map(letters().filter((l) => l.cwd).map((l) => [l.cwd, l.project])).entries()]
-      : [...new Map((ns.data?.sessions ?? []).filter((x) => x.cwd).map((x) => [x.cwd, `${x.project} — ${home(x.cwd)}`])).entries()];
-    const filters = h('div', { class: 'asa-filters' });
-    if (tab === 'chats') {
-      const chips = h('div', { style: { display: 'flex', gap: '6px', flexWrap: 'wrap', flex: '1 1 100%' } },
-        [['all', S.fAll], ['running', S.fRunning], ['awaiting', S.fAwaiting], ['done', S.fDone]].map(([v, t]) => {
-          const c = h('button', { type: 'button', class: `asa-chip${filter.status === v ? ' on' : ''}` }, t);
-          c.onclick = () => { filter.status = v; chips.querySelectorAll('.asa-chip').forEach((el) => el.classList.toggle('on', el === c)); ui.refill(); };
-          return c;
-        }));
-      const people = [...new Map(letters().filter((l) => !l.report).map((l) => [l.agent ?? '', who(l)])).entries()];
-      filters.append(chips, select2(S.allProjects, 'project', projects), select2(S.allWho, 'who', people));
-    } else {
-      filters.append(select2(S.allProjects, 'project', projects));
-    }
-    side.replaceChildren(...[
+    const chips = h('div', { class: 'asa-filters' },
+      [['all', S.fAll], ['running', S.fRunning], ['awaiting', S.fAwaiting], ['done', S.fDone]].map(([v, t]) => {
+        const c = h('button', { type: 'button', class: `asa-chip${filter.status === v ? ' on' : ''}` }, t);
+        c.onclick = () => { filter.status = v; chips.querySelectorAll('.asa-chip').forEach((el) => el.classList.toggle('on', el === c)); ui.refill(); };
+        return c;
+      }));
+    ui.side.replaceChildren(
       h('button', { type: 'button', class: `asa-btn primary asa-newchat${sel === 'new' ? ' on' : ''}`, onclick: () => select('new') }, S.newChat),
-      h('div', { class: 'asa-tabs' }, ['chats', 'sessions'].map((t) => h('button', { type: 'button', class: `asa-btn${tab === t ? ' on' : ''}`,
-        onclick: () => { tab = t; filter.project = ''; filter.who = ''; fillSide(); } }, t === 'chats' ? S.tabChats : S.tabSessions))),
-      search, filters, tab === 'sessions' ? h('div', { class: 'asa-note' }, S.sessionsNote) : null, rows,
-    ].filter(Boolean));
+      search, chips, rows);
     ui.refill();
   }
 
@@ -495,7 +502,59 @@
   }
   function syncLayout() { if (ui.root) ui.root.dataset.show = narrow() ? (sel ? 'chat' : 'list') : 'both'; }
 
+  const sessionOf = (id) => (ns.data?.sessions ?? []).find((x) => `session:${x.id}` === id) ?? null;
+
+  /** A Claude Code session started outside the office (Terminal, Desktop): shown as a chat you can continue. */
+  function showSession(x) {
+    const live = Date.now() - Date.parse(x.at) < 90_000;
+    const back = h('button', { type: 'button', class: 'asa-btn asa-back', onclick: () => { sel = null; syncLayout(); ui.refill?.(); }, 'aria-label': S.back }, '←');
+    const head = h('div', { class: 'asa-chat-head' }, back, h('div', { class: 'asa-face envelope' }, '💬'),
+      h('div', { class: 'asa-chat-title' }, h('b', {}, x.title || x.project || x.id.slice(0, 8)),
+        h('span', { class: 'asa-muted', title: x.cwd ?? '' }, [x.project, x.cwd ? home(x.cwd) : null, live ? S.live : timeOf(x.at)].filter(Boolean).join(' · '))));
+    const thread = h('div', { class: 'asa-thread-box' },
+      h('div', { class: 'asa-sys' }, S.sesNote),
+      h('div', { class: 'asa-b you' }, h('div', { class: 'asa-b-text' }, x.prompt || x.title || x.id), h('small', {}, `${S.sesFirst} · ${timeOf(x.at)}`)));
+    const comp = h('div', { class: 'asa-comp' });
+    if (x.cwd) {
+      const key = sel;
+      const ta = h('textarea', { rows: '1', placeholder: live ? S.sesLive : S.sesContinueHint, 'aria-label': S.sesContinue });
+      ta.value = getDraft(key);
+      const sendBtn = h('button', { type: 'button', class: 'asa-send', title: S.sesSend, 'aria-label': S.sesSend }, '➤');
+      const mode = h('select', { class: 'asa-chipsel', 'aria-label': S.mode }, ['auto', 'plan', 'report'].map((m) => h('option', { value: m }, S.chipModes[m])));
+      const commitBox = h('input', { type: 'checkbox', id: 'asa-commit-s' });
+      const commitLab = h('label', { class: 'asa-chipsel', for: 'asa-commit-s', title: S.commitTip, style: { display: 'inline-flex', gap: '4px', alignItems: 'center' } }, commitBox, S.commitChip);
+      const copy = h('button', { type: 'button', class: 'asa-chip', title: S.copyCmd }, S.sesCopy);
+      copy.onclick = async () => { if (await copyText(terminalCommand({ cwd: x.cwd, sessionId: x.id }))) { copy.textContent = S.copiedSmall; setTimeout(() => { copy.textContent = S.sesCopy; }, 2000); } };
+      const msg = h('div', { class: 'asa-note' }, live ? S.sesLive : '');
+      const grow = () => { ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight, 150)}px`; };
+      const send = async () => {
+        const text = ta.value.trim();
+        if (!text || sendBtn.disabled) return;
+        sendBtn.disabled = true;
+        try {
+          const { letter } = await api('POST', '/api/tasks', { agent: null, cwd: x.cwd, prompt: text, mode: mode.value, commit: commitBox.checked, resumeSession: x.id });
+          setDraft('', key);
+          dropLetter();
+          await ns.refreshData();
+          fillSide();
+          select(letter.id);
+        } catch (err) { msg.textContent = errorText(err); sendBtn.disabled = live; }
+      };
+      sendBtn.disabled = live;
+      sendBtn.onclick = send;
+      ta.oninput = () => { setDraft(ta.value, key); grow(); };
+      ta.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } };
+      comp.append(h('div', { class: 'asa-comp-box' }, ta, sendBtn), h('div', { class: 'asa-chips' }, mode, commitLab, copy), msg);
+      setTimeout(grow, 0);
+    }
+    ui.main.replaceChildren(head, thread, comp);
+  }
+
   function buildMain() {
+    if (String(sel).startsWith('session:')) {
+      const x = sessionOf(sel);
+      return x ? showSession(x) : (sel = null, syncLayout(), buildMain());
+    }
     ui.head = h('div', { class: 'asa-chat-head' });
     ui.thread = h('div', { class: 'asa-thread-box' });
     ui.comp = h('div', { class: 'asa-comp' });
@@ -508,6 +567,7 @@
   }
 
   function refreshMain(force = false) {
+    if (String(sel).startsWith('session:')) return; // a session's page is static
     if (!ui.head || !sel) return;
     const l = current();
     if (sel !== 'new' && !l) { sel = null; syncLayout(); return buildMain(); }
@@ -549,7 +609,7 @@
     actions.append(copy);
     if (!busy(l)) actions.append(h('button', { type: 'button', class: 'asa-btn', title: S.archive, 'aria-label': S.archive, onclick: () => act(() => api('DELETE', `/api/tasks/${l.id}`), () => { sel = null; syncLayout(); buildMain(); }) }, '🗄'));
     head.replaceChildren(back, face(l), h('div', { class: 'asa-chat-title' }, titleBox,
-      h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, S[l.status]].filter(Boolean).join(' · '))), actions);
+      h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.commit ? S.commitShort : null, S[l.status]].filter(Boolean).join(' · '))), actions);
   }
 
   function fillThread(l) {
@@ -674,6 +734,8 @@
       const modeSel = h('select', { class: 'asa-chipsel', title: S.mode, 'aria-label': S.mode }, Object.entries(S.chipModes).map(([v, t]) => h('option', { value: v }, t)));
       const styleSel = h('select', { class: 'asa-chipsel', title: S.style, 'aria-label': S.style }, Object.entries(S.chipStyles).map(([v, t]) => h('option', { value: v }, t)));
       styleSel.value = prefs.style ?? 'solo';
+      const commitBox = h('input', { type: 'checkbox', id: 'asa-commit' });
+      const commitLab = h('label', { class: 'asa-chipsel', for: 'asa-commit', title: S.commitTip, style: { display: 'inline-flex', gap: '4px', alignItems: 'center' } }, commitBox, S.commitChip);
       const member = () => staff.find((m) => m.agent === whoSel.value) ?? null;
       const defaultMode = () => prefs.modes?.[whoSel.value] ?? (member()?.director ? 'plan' : 'auto');
       const update = () => {
@@ -696,8 +758,8 @@
       modeSel.onchange = () => { prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value }; savePrefs(); };
       styleSel.onchange = () => { prefs.style = styleSel.value; savePrefs(); };
       update();
-      Object.assign(controls, { whoSel, projSel, modeSel, styleSel, member, setWho });
-      chips.append(whoSel, projSel, modeSel, styleSel);
+      Object.assign(controls, { whoSel, projSel, modeSel, styleSel, commitBox, member, setWho });
+      chips.append(whoSel, projSel, modeSel, styleSel, commitLab);
     } else {
       chips.append(h('span', { class: 'asa-pill' }, `👤 ${who(l)}`), h('span', { class: 'asa-pill', title: l.cwd }, `📁 ${l.project}`), l.mode ? h('span', { class: 'asa-pill' }, S.chipModes[l.mode]) : null);
     }
@@ -746,7 +808,7 @@
     ta.disabled = true;
     try {
       const { letter } = await api('POST', '/api/tasks', {
-        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, style: director ? c.styleSel.value : undefined, hold: true,
+        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, style: director ? c.styleSel.value : undefined, commit: c.commitBox.checked, hold: true,
       });
       await landed;
       dropLetter();
@@ -868,7 +930,7 @@
     if (next.text) setDraft(next.text, 'new');
     let timer = null;
     panel = ns.panel.open({ theme: 'cozy', title: `📮 ${S.title}`, render, onClose: () => { pendingUndo?.('go'); flushDrafts(); clearInterval(timer); panel = null; } });
-    panel.el.classList.add('asa-wide');
+    panel.el.classList.add('asa-wide', 'asa-plain');
     ns.refreshData().then(refreshAll);
     // While open, keep running tasks' chats fresh (the composer is never rebuilt while you type).
     timer = setInterval(() => ns.refreshData().then(refreshAll), 4000);

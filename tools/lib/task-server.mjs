@@ -48,6 +48,7 @@ const TOOLS = {
 const MODES = ['plan', 'auto', 'report'];
 const READ_ONLY = new Set(['read', 'git', 'web']);
 const DELEGATE_TOOLS = ['Task', 'Agent'];
+const COMMIT_TOOLS = ['Bash(git add:*)', 'Bash(git commit:*)'];
 
 // What the session is told on top of its own prompt, per phase (passed with --append-system-prompt).
 const PHASE_PROMPT = {
@@ -128,10 +129,11 @@ const safeEqual = (a, b) => {
 
 /**
  * Starts the task API. Options: root (repo), token (office token), officePort, port, projects() → [{name,cwd}],
+ * sessions() → [{id,title,cwd}] (Claude Code sessions a task may continue),
  * extraDirs (always-allowed folders, e.g. the office workspace), onChange() when letters change, log.
  * Returns { port, letters(), agentMap(), stop() }.
  */
-export async function startTaskServer({ root, token, officePort, port, projects, extraDirs = [], onChange = () => {}, log = console.log }) {
+export async function startTaskServer({ root, token, officePort, port, projects, sessions = () => [], extraDirs = [], onChange = () => {}, log = console.log }) {
   const mailFile = path.join(os.homedir(), '.pixel-agents', 'asaoffice-mail.json');
   const roster = () => {
     try { return JSON.parse(fs.readFileSync(path.join(root, 'staff', 'roster.json'), 'utf8')); } catch { return { staff: [], general: { access: ['read'] } }; }
@@ -207,6 +209,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     const tools = allowedTools(access);
     if (phase === 'work' && member?.director && letter.style === 'delegate') tools.push(...DELEGATE_TOOLS);
     let system = PHASE_PROMPT[phase];
+    // Commit permission is chosen per task (never push): only while the work is actually being done.
+    if (letter.commit && phase === 'work') {
+      tools.push(...COMMIT_TOOLS);
+      system += '\nKomisaris mengizinkan git add dan git commit untuk tugas ini. JANGAN git push, jangan ubah branch, dan jangan git reset/rebase.';
+    }
     if (member?.director) system += `\n${STYLE_PROMPT[letter.style === 'delegate' ? 'delegate' : 'solo']}`;
     const notes = vault.contextNotes();
     if (notes) system += `\n\n${notes}`;
@@ -354,20 +361,26 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (agent && (!member || !installed(agent))) return send(res, 400, { error: 'agent' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
         if (directorBusy(agent)) return send(res, 429, { error: 'director busy' }, origin);
+        // Continuing a session that already exists (from the "Sesi" tab): same folder, no staff member, runs right away.
+        const resumeId = body.resumeSession ? String(body.resumeSession) : null;
+        const known = resumeId ? sessions().find((x) => x.id === resumeId) : null;
+        if (resumeId && (agent || !known || known.cwd !== dir.cwd)) return send(res, 400, { error: 'session' }, origin);
+        if (resumeId && letters.some((l) => l.sessionId === resumeId && (running.has(l.id) || l.status === 'queued'))) return send(res, 409, { error: 'running' }, origin);
         const mode = MODES.includes(body.mode) ? body.mode : member?.director ? 'plan' : 'auto';
         const style = member?.director && body.style === 'delegate' ? 'delegate' : 'solo';
         const letter = {
           id: crypto.randomUUID().slice(0, 8), agent, name: member?.name ?? null, cwd: dir.cwd, project: dir.name,
-          sessionId: crypto.randomUUID(), status: 'running', read: true, createdAt: new Date().toISOString(),
-          title: titleOf(prompt), mode, style, phase: mode === 'plan' ? 'plan' : 'work',
+          sessionId: resumeId ?? crypto.randomUUID(), status: 'running', read: true, createdAt: new Date().toISOString(),
+          title: resumeId ? (known.title || titleOf(prompt)) : titleOf(prompt), mode, style, phase: mode === 'plan' ? 'plan' : 'work',
+          commit: body.commit === true && mode !== 'report',
           thread: [{ from: 'you', text: prompt, at: new Date().toISOString() }],
         };
         letters.unshift(letter);
-        if (body.hold === true) {
+        if (body.hold === true && !resumeId) {
           letter.status = 'queued';
           holds.set(letter.id, setTimeout(() => deliver(letter), HOLD_MS));
           save();
-        } else run(letter, prompt, { resume: false });
+        } else run(letter, prompt, { resume: !!resumeId });
         return send(res, 200, { letter }, origin);
       }
       const letter = m ? letters.find((l) => l.id === m[1]) : null;

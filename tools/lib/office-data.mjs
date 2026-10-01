@@ -168,7 +168,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
     try {
       taskApi = await startTaskServer({
         root, token, officePort: Number(port), port: taskPort ?? Number(port) + 1,
-        projects: () => stats.projects(), extraDirs: [workspace], log,
+        projects: () => stats.projects(), sessions: () => stats.listSessions(300, 365), extraDirs: [workspace], log,
         onChange: () => {
           data.mail = taskApi?.letters() ?? [];
           data.taskAgents = taskApi?.agentMap() ?? {};
