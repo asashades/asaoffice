@@ -110,6 +110,7 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
   **→ Shades**), **tulis laporan hari ini** sekali klik, ubah catatan, dan **Buka di Obsidian** (di Obsidian pilih
   *Open folder as vault* sekali aja). Dua arah: catatan yang ada tulisan `#konteks` ikut dibaca Shades dan tim di
   setiap tugas, jadi aturan tetapmu selalu dipegang. Cuma bisa dibuka dari Mac yang jalanin kantor.
+  Mau pakai vault Obsidian yang sudah ada (misalnya yang di iCloud)? Klik **Ubah folder** di bawah panel dan tempel path-nya (boleh langsung hasil salin dari Finder/Terminal, termasuk yang ada spasi), atau jalanin kantor dengan `OFFICE_VAULT="/path/vault" npm run office`. Di Mac, kalau muncul izin akses folder iCloud, izinkan Terminal. **+ Catatan** langsung buka editor (nama file diambil dari baris pertama).
 - **Klik papan pengumuman kayu di ruang meeting** → **Jurnal Petani** ala Stardew. Isinya: panen hari ini (jumlah
   tool call) lawan rekor 14 harimu, musim dan tanggal, streak 🔥, "emas" (token hari ini), dan **level keahlian
   berbintang** yang naik sesuai kerja Claude: 🌾 Bertani (nulis dan ngedit file), 🍄 Mencari makan (baca dan cari

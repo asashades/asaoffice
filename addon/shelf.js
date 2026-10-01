@@ -10,7 +10,8 @@
   const S = ns.t({
     id: {
       title: 'Rak Buku', vault: 'Vault', openObsidian: 'Buka di Obsidian', hintVault: 'Di Obsidian: Open folder as vault, lalu pilih folder ini.',
-      search: 'Cari catatan…', newIdea: 'Tulis ide baru, Enter buat simpan', newNote: '+ Catatan', notePrompt: 'Judul catatan baru', report: '📜 Tulis laporan hari ini',
+      search: 'Cari catatan…', newIdea: 'Tulis ide baru, Enter buat simpan', newNote: '+ Catatan', newNoteTitle: 'Catatan baru', changeVault: 'Ubah folder', vaultPlaceholder: 'Tempel path folder vault Obsidian…', vaultFromEnv: 'Diatur lewat OFFICE_VAULT di Terminal.',
+      vaultErr: { relative: 'Pakai path lengkap, mulai dari / atau ~.', notfound: 'Folder itu gak ketemu.', outside: 'Folder harus ada di dalam folder home kamu.', perm: 'Gak bisa akses folder itu. Di Mac: System Settings → Privacy & Security → Files and Folders (atau Full Disk Access), izinkan Terminal.', env: 'Diatur lewat OFFICE_VAULT di Terminal.' }, report: '📜 Tulis laporan hari ini',
       ideas: '💡 Ide & TODO', reports: '📜 Laporan', notes: '📝 Catatan', other: '📁 Lainnya', empty: 'Belum ada catatan di sini.', pick: 'Pilih catatan di kiri.',
       edit: 'Ubah', save: 'Simpan', cancel: 'Batal', saved: 'Tersimpan.', toShades: '→ Shades', toShadesTip: 'Kirim jadi tugas ke Shades', context: 'Dibaca tim sebagai konteks',
       offline: 'Rak buku cuma bisa dibuka dari Mac yang menjalankan kantor (npm run office).', failed: 'Gagal: ',
@@ -21,7 +22,8 @@
     },
     en: {
       title: 'Bookshelf', vault: 'Vault', openObsidian: 'Open in Obsidian', hintVault: 'In Obsidian: Open folder as vault, then pick this folder.',
-      search: 'Search notes…', newIdea: 'Write a new idea, Enter to save', newNote: '+ Note', notePrompt: 'Title of the new note', report: "📜 Write today's report",
+      search: 'Search notes…', newIdea: 'Write a new idea, Enter to save', newNote: '+ Note', newNoteTitle: 'New note', changeVault: 'Change folder', vaultPlaceholder: 'Paste the path of your Obsidian vault folder…', vaultFromEnv: 'Set by OFFICE_VAULT in Terminal.',
+      vaultErr: { relative: 'Use the full path, starting with / or ~.', notfound: 'That folder was not found.', outside: 'The folder must be inside your home folder.', perm: 'Cannot access that folder. On a Mac: System Settings → Privacy & Security → Files and Folders (or Full Disk Access), allow Terminal.', env: 'Set by OFFICE_VAULT in Terminal.' }, report: "📜 Write today's report",
       ideas: '💡 Ideas & TODO', reports: '📜 Reports', notes: '📝 Notes', other: '📁 Other', empty: 'No notes here yet.', pick: 'Pick a note on the left.',
       edit: 'Edit', save: 'Save', cancel: 'Cancel', saved: 'Saved.', toShades: '→ Shades', toShadesTip: 'Send to Shades as a task', context: 'Read by the team as context',
       offline: 'The bookshelf only opens from the Mac that runs the office (npm run office).', failed: 'Failed: ',
@@ -143,6 +145,7 @@
   async function load(select = state?.sel, q = state?.q ?? '') {
     const res = await api('GET', `/api/vault${q ? `?q=${encodeURIComponent(q)}` : ''}`);
     state.vault = res.path;
+    state.fromEnv = !!res.fromEnv;
     state.notes = res.notes;
     state.sel = select && res.notes.some((n) => n.path === select) ? select : (res.notes.find((n) => n.path === IDEAS) ?? res.notes[0])?.path ?? null;
     state.editing = false;
@@ -151,6 +154,7 @@
   }
 
   async function openNote(rel) {
+    state.fresh = false;
     state.sel = rel;
     state.editing = false;
     try { state.text = (await api('GET', `/api/vault/note?path=${encodeURIComponent(rel)}`)).text; } catch (err) { state.text = ''; say(S.failed + err.message); }
@@ -176,17 +180,23 @@
     } catch (err) { say(S.failed + err.message); }
   }
 
-  async function newNote() {
-    const raw = window.prompt(S.notePrompt);
-    const name = String(raw ?? '').replace(/[\\/:*?"<>|#]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
-    if (!name) return;
-    const rel = `Catatan/${name}.md`;
+  /** A new note opens straight in the editor; its file is named from the first line when you save it. */
+  function newNote() {
+    state.fresh = true;
+    state.editing = true;
+    state.draft = '# ';
+    state.panel.rerender();
+  }
+  async function saveFresh(text) {
+    const first = text.split('\n').map((l) => l.replace(/^#+\s*/, '').trim()).find(Boolean);
+    const stamp = new Date().toLocaleString('sv-SE', { hour12: false }).replace(/:/g, '.').slice(0, 16);
+    const name = String(first || `${S.newNoteTitle} ${stamp}`).replace(/[\\/:*?"<>|#]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+    let rel = `Catatan/${name}.md`;
+    for (let i = 2; state.notes.some((n) => n.path === rel); i++) rel = `Catatan/${name} ${i}.md`;
     try {
-      if (!state.notes.some((n) => n.path === rel)) await api('POST', '/api/vault/note', { path: rel, text: `# ${name}\n\n` });
+      await api('POST', '/api/vault/note', { path: rel, text });
+      state.fresh = false;
       await load(rel);
-      state.editing = true;
-      state.draft = state.text;
-      state.panel.rerender();
     } catch (err) { say(S.failed + err.message); }
   }
 
@@ -217,9 +227,20 @@
   }
 
   function main() {
-    const sel = state.notes.find((n) => n.path === state.sel);
-    const bar = h('div', { class: 'asa-shelf-bar' }, h('b', { class: 'grow' }, sel ? sel.path : S.title));
+    const sel = state.fresh ? null : state.notes.find((n) => n.path === state.sel);
+    const bar = h('div', { class: 'asa-shelf-bar' }, h('b', { class: 'grow' }, state.fresh ? S.newNoteTitle : sel ? sel.path : S.title));
     const doc = h('div', { class: 'asa-shelf-doc' });
+    if (state.fresh) {
+      const ta = h('textarea', {});
+      ta.value = state.draft ?? '# ';
+      ta.oninput = () => { state.draft = ta.value; };
+      bar.append(
+        h('button', { type: 'button', class: 'asa-btn primary', onclick: () => saveFresh(ta.value) }, S.save),
+        h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.fresh = false; state.editing = false; state.draft = null; state.panel.rerender(); } }, S.cancel),
+      );
+      setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 0);
+      return h('section', { class: 'asa-shelf-main' }, bar, ta, h('div', { class: 'asa-shelf-msg' }), vaultFooter());
+    }
     if (!sel) doc.append(h('p', { class: 'asa-muted' }, S.pick));
     else if (state.editing) {
       const ta = h('textarea', {});
@@ -231,7 +252,7 @@
         } }, S.save),
         h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.editing = false; state.draft = null; state.panel.rerender(); } }, S.cancel),
       );
-      return h('section', { class: 'asa-shelf-main' }, bar, ta, h('div', { class: 'asa-shelf-msg' }));
+      return h('section', { class: 'asa-shelf-main' }, bar, ta, h('div', { class: 'asa-shelf-msg' }), vaultFooter());
     } else {
       renderNote(doc, state.text, sel.path);
       bar.append(h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.editing = true; state.draft = state.text; state.panel.rerender(); } }, S.edit));
@@ -241,8 +262,31 @@
       }
     }
     state.msg = h('div', { class: 'asa-shelf-msg' }, sel?.context ? `🔖 ${S.context}` : '');
-    return h('section', { class: 'asa-shelf-main' }, bar, doc, state.msg,
-      h('div', { class: 'asa-muted', style: { marginTop: '6px' } }, `${S.vault}: ${state.vault ?? ''} · ${S.contextNote}`));
+    return h('section', { class: 'asa-shelf-main' }, bar, doc, state.msg, vaultFooter());
+  }
+
+  /** Where the vault is, with a way to point it at an existing Obsidian vault (no popup: an inline field). */
+  function vaultFooter() {
+    const box = h('div', { class: 'asa-muted', style: { marginTop: '6px' } });
+    const line = h('div', {}, `${S.vault}: ${state.vault ?? ''} · ${S.contextNote} `);
+    if (!state.fromEnv) {
+      line.append(h('button', { type: 'button', class: 'asa-chip', onclick: () => { state.pathEdit = !state.pathEdit; state.panel.rerender(); } }, S.changeVault));
+    } else line.append(S.vaultFromEnv);
+    box.append(line);
+    if (state.pathEdit && !state.fromEnv) {
+      const input = h('input', { type: 'text', placeholder: S.vaultPlaceholder, value: state.vault ?? '', 'aria-label': S.vaultPlaceholder, style: { marginTop: '6px' } });
+      const err = h('div', { style: { color: '#973a2f', marginTop: '4px' } });
+      const go = async () => {
+        try {
+          await api('POST', '/api/vault/path', { path: input.value });
+          state.pathEdit = false;
+          await load(null);
+        } catch (e) { err.textContent = S.vaultErr[e.message] ?? S.failed + e.message; }
+      };
+      input.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+      box.append(input, h('button', { type: 'button', class: 'asa-btn primary', style: { marginTop: '6px' }, onclick: go }, S.save), err);
+    }
+    return box;
   }
 
   function open() {

@@ -178,7 +178,7 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
   `Catatan/`. Read and search notes, add an idea in one line, tick off to-dos, send an idea to Shades as a task
   (**→ Shades** opens the mailbox with it filled in), write today's report to `Laporan/` with one button, edit a note,
   or **open it in Obsidian** (in Obsidian: *Open folder as vault* once). Two-way: any note containing `#konteks` is
-  given to Shades and the team as context with every task, so your standing rules are always read. Only the Mac
+  given to Shades and the team as context with every task, so your standing rules are always read. To use an existing vault, click **Ubah folder** under the panel (the path may be pasted as copied from Terminal, with `\ ` escapes) or start the office with `OFFICE_VAULT="/path/to/vault"`. **+ Catatan** opens the editor straight away (the file is named from its first line). Only the Mac
   running the office can open it (a phone gets a hint), and nothing leaves the vault folder.
 - **Quest board and the Farmer's Journal:** the wooden bulletin board on the meeting room's wall shows today's
   tool-call count in red ink on its biggest note. Click it to open the **Jurnal Petani**, in the Stardew spirit:

@@ -20,19 +20,50 @@ const SEED = {
   'Catatan/Arahan-Komisaris.md': '# Arahan Komisaris\n\nKalau catatan ini diberi tag konteks (tanda pagar diikuti kata konteks), isinya dibaca Shades dan tim di setiap tugas.\nTulis aturan tetapmu di sini, misalnya gaya kode, hal yang jangan disentuh, atau prioritas minggu ini.\n',
 };
 
+const configFile = () => path.join(os.homedir(), '.pixel-agents', 'asaoffice-vault.json');
+
+/** The vault folder: $OFFICE_VAULT, else the folder chosen in the bookshelf, else ~/AsaOffice-Vault. */
 export function vaultDir() {
-  return path.resolve(process.env.OFFICE_VAULT || path.join(os.homedir(), 'AsaOffice-Vault'));
+  if (process.env.OFFICE_VAULT) return path.resolve(process.env.OFFICE_VAULT);
+  try {
+    const chosen = JSON.parse(fs.readFileSync(configFile(), 'utf8')).path;
+    if (typeof chosen === 'string' && path.isAbsolute(chosen)) return chosen;
+  } catch { /* not chosen yet */ }
+  return path.join(os.homedir(), 'AsaOffice-Vault');
 }
 
-/** Creates the vault (and the starter notes that are missing). */
+/** True when $OFFICE_VAULT decides the folder (so the bookshelf can't change it). */
+export const vaultFromEnv = () => !!process.env.OFFICE_VAULT;
+
+/**
+ * Chooses another vault folder (an existing Obsidian vault, say). Accepts what Terminal gives you when you paste a path
+ * (quotes, "\ " escapes, ~). Returns { path } or { error: 'env' | 'relative' | 'notfound' | 'outside' | 'perm' }.
+ */
+export function setVaultDir(input) {
+  if (process.env.OFFICE_VAULT) return { error: 'env' };
+  let p = String(input ?? '').trim().replace(/^(['"])(.*)\1$/, '$2').replace(/\\(.)/g, '$1');
+  if (p === '~' || p.startsWith('~/')) p = path.join(os.homedir(), p.slice(1));
+  if (!path.isAbsolute(p)) return { error: 'relative' };
+  p = path.resolve(p);
+  const home = os.homedir();
+  if (p !== home && !p.startsWith(home + path.sep)) return { error: 'outside' };
+  try { if (!fs.statSync(p).isDirectory()) return { error: 'notfound' }; } catch (err) { return { error: err.code === 'EPERM' || err.code === 'EACCES' ? 'perm' : 'notfound' }; }
+  try { fs.accessSync(p, fs.constants.R_OK | fs.constants.W_OK); } catch { return { error: 'perm' }; }
+  fs.mkdirSync(path.dirname(configFile()), { recursive: true });
+  fs.writeFileSync(configFile(), JSON.stringify({ path: p }));
+  return { path: p };
+}
+
+/** Creates the vault (and the starter notes that are missing). An existing vault only gets what the bookshelf needs. */
 export function ensureVault() {
   const root = vaultDir();
+  const fresh = !fs.existsSync(root) || fs.readdirSync(root).filter((n) => !n.startsWith('.')).length === 0;
   fs.mkdirSync(path.join(root, 'Laporan'), { recursive: true });
   fs.mkdirSync(path.join(root, 'Catatan'), { recursive: true });
-  for (const [rel, text] of Object.entries(SEED)) {
-    const file = path.join(root, rel);
-    if (!fs.existsSync(file)) fs.writeFileSync(file, text);
-  }
+  const ideas = path.join(root, IDEAS);
+  if (!fs.existsSync(ideas)) fs.writeFileSync(ideas, fresh ? SEED[IDEAS] : '# Ide & TODO\n\n');
+  const guide = path.join(root, 'Catatan/Arahan-Komisaris.md');
+  if (fresh && !fs.existsSync(guide)) fs.writeFileSync(guide, SEED['Catatan/Arahan-Komisaris.md']);
   return root;
 }
 

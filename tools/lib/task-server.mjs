@@ -337,7 +337,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       }
       // The bookshelf: notes in the Obsidian vault (see vault.mjs).
       if (url.pathname === '/api/vault' && req.method === 'GET') {
-        return send(res, 200, { path: vault.ensureVault(), notes: vault.list(url.searchParams.get('q') ?? '') }, origin);
+        return send(res, 200, { path: vault.ensureVault(), fromEnv: vault.vaultFromEnv(), notes: vault.list(url.searchParams.get('q') ?? '') }, origin);
+      }
+      if (url.pathname === '/api/vault/path' && req.method === 'POST') {
+        const r = vault.setVaultDir((await readBody(req)).path);
+        return r.error ? send(res, 400, { error: r.error }, origin) : send(res, 200, { path: r.path }, origin);
       }
       if (url.pathname === '/api/vault/note' && req.method === 'GET') {
         const text = vault.read(url.searchParams.get('path'));
