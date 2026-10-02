@@ -13,6 +13,9 @@
   const S = ns.t({
     id: {
       title: 'Rak Buku', vault: 'Vault', openObsidian: 'Buka di Obsidian', hintVault: 'Di Obsidian: Open folder as vault, lalu pilih folder ini.',
+      obNotKnown: 'Obsidian belum mengenal vault ini, jadi catatan tidak bisa dibuka dari sini.', obRegister: 'Daftarkan ke Obsidian', obCopy: 'Salin path vault', obCopied: 'Path vault disalin.',
+      obRunning: 'Tutup Obsidian dulu (⌘Q), lalu klik Daftarkan lagi. Atau di Obsidian: Open folder as vault, lalu pilih folder vault ini (path-nya bisa disalin).',
+      obNotInstalled: 'Obsidian belum pernah dijalankan di Mac ini. Buka Obsidian sekali (atau pasang dulu), lalu coba lagi. Atau di Obsidian: Open folder as vault, lalu pilih folder vault ini.', obFailed: 'Gagal mendaftarkan vault. Pakai cara manual: di Obsidian pilih Open folder as vault.',
       search: 'Cari catatan, atau ketik untuk bikin yang baru…', report: '📜 Tulis laporan hari ini', back: 'Kembali',
       ideas: '💡 Ide & TODO', reports: '📜 Laporan', notes: '📝 Catatan', other: '📁 Lainnya', empty: 'Belum ada catatan. Ketik sesuatu di atas lalu Enter.', noMatch: 'Gak ada yang cocok.',
       createNote: (t) => `📝 Buat catatan “${t}”`, createIdea: (t) => `💡 Simpan jadi ide/TODO: “${t}”`,
@@ -30,6 +33,9 @@
     },
     en: {
       title: 'Bookshelf', vault: 'Vault', openObsidian: 'Open in Obsidian', hintVault: 'In Obsidian: Open folder as vault, then pick this folder.',
+      obNotKnown: 'Obsidian does not know this vault yet, so the note cannot be opened from here.', obRegister: 'Add it to Obsidian', obCopy: 'Copy vault path', obCopied: 'Vault path copied.',
+      obRunning: 'Quit Obsidian first (⌘Q), then click Add again. Or in Obsidian: Open folder as vault and pick this vault folder (you can copy its path).',
+      obNotInstalled: 'Obsidian has not been run on this Mac yet. Open Obsidian once (or install it), then try again. Or in Obsidian: Open folder as vault and pick this vault folder.', obFailed: 'Could not add the vault. Do it by hand: in Obsidian choose Open folder as vault.',
       search: 'Search notes, or type to create a new one…', report: "📜 Write today's report", back: 'Back',
       ideas: '💡 Ideas & TODO', reports: '📜 Reports', notes: '📝 Notes', other: '📁 Other', empty: 'No notes yet. Type something above and press Enter.', noMatch: 'Nothing matches.',
       createNote: (t) => `📝 Create note “${t}”`, createIdea: (t) => `💡 Save as idea/TODO: “${t}”`,
@@ -190,6 +196,7 @@
   async function loadList(q = state?.q ?? '') {
     const res = await api('GET', `/api/vault${q ? `?q=${encodeURIComponent(q)}` : ''}`);
     state.vault = res.path;
+    state.obsidian = res.obsidian ?? null;
     state.fromEnv = !!res.fromEnv;
     state.notes = res.notes;
     state.cursor = 0;
@@ -415,6 +422,40 @@
 
   const startEdit = () => { state.view = 'edit'; state.draft = state.text; rerender(); };
 
+  /** Opens the current note in Obsidian: by vault id when Obsidian knows the vault, else a small guide to getting it known. */
+  function openInObsidian() {
+    const ob = state.obsidian;
+    if (ob?.registered && ob.id) {
+      const a = h('a', { href: `obsidian://open?vault=${ob.id}&file=${encodeURIComponent(state.sel.replace(/\.md$/i, ''))}` });
+      document.body.append(a);
+      a.click();
+      a.remove();
+      return;
+    }
+    const box = state.msg;
+    if (!box) return;
+    const copy = h('button', { type: 'button', class: 'asa-btn', onclick: async () => { try { await navigator.clipboard.writeText(state.vault); box.textContent = S.obCopied; } catch { /* no clipboard */ } } }, S.obCopy);
+    const text = h('span', {}, ob?.installed === false ? S.obNotInstalled : S.obNotKnown);
+    const actions = h('div', { style: { display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' } });
+    if (ob?.installed !== false) {
+      const add = h('button', { type: 'button', class: 'asa-btn primary' }, S.obRegister);
+      add.onclick = async () => {
+        add.disabled = true;
+        try {
+          const res = await api('POST', '/api/vault/obsidian', {});
+          state.obsidian = res.obsidian;
+          box.textContent = '';
+          openInObsidian();
+        } catch (err) {
+          box.replaceChildren(h('span', {}, err.message === 'running' ? S.obRunning : err.message === 'notinstalled' ? S.obNotInstalled : S.obFailed), h('div', { style: { marginTop: '6px' } }, copy));
+        }
+      };
+      actions.append(add);
+    }
+    actions.append(copy);
+    box.replaceChildren(text, actions);
+  }
+
   function noteView() {
     const sel = state.notes.find((n) => n.path === state.sel);
     const bar = h('div', { class: 'asa-shelf-bar' },
@@ -425,7 +466,7 @@
     doc.ondblclick = (e) => { if (!e.target.closest('button, input, a')) startEdit(); };
     bar.append(h('button', { type: 'button', class: 'asa-btn', onclick: startEdit }, S.edit));
     if (state.vault) {
-      bar.append(h('a', { class: 'asa-btn', href: `obsidian://open?path=${encodeURIComponent(`${state.vault}/${state.sel}`)}`, style: { textDecoration: 'none' }, title: S.hintVault }, S.openObsidian));
+      bar.append(h('button', { type: 'button', class: 'asa-btn', title: S.hintVault, onclick: openInObsidian }, S.openObsidian));
     }
     state.msg = h('div', { class: 'asa-shelf-msg' }, sel?.context ? `🔖 ${S.context}` : '');
     return h('div', { class: 'asa-shelf' }, bar, doc, state.msg);
@@ -490,7 +531,7 @@
 
   function open(startText) {
     if (!document.getElementById('asa-shelf-css')) document.head.appendChild(h('style', { id: 'asa-shelf-css' }, css));
-    state = { view: 'list', mode: modeStore(), notes: [], sel: null, text: '', q: '', cursor: 0, vault: null, fromEnv: false, draft: null, panel: null, msg: null, listEl: null, pathEdit: false, warned: false };
+    state = { view: 'list', mode: modeStore(), notes: [], sel: null, text: '', q: '', cursor: 0, vault: null, obsidian: null, fromEnv: false, draft: null, panel: null, msg: null, listEl: null, pathEdit: false, warned: false };
     state.panel = ns.panel.open({
       theme: 'cozy',
       dock: 'hud',
