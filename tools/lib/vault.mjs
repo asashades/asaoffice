@@ -3,6 +3,8 @@
 //   Ide-TODO.md   ideas and to-dos as "- [ ] …" lines
 //   Laporan/      reports written when the Commissioner asks for one
 //   Catatan/      the Commissioner's own notes; any note that contains #konteks is also given to the team as context
+import { execFileSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -171,4 +173,56 @@ export function contextNotes() {
     out += block;
   }
   return out.trim() ? `CATATAN KOMISARIS (dari vault Obsidian, konteks tetap untuk tugas ini):\n${out}` : '';
+}
+
+// ── Obsidian ──
+// `obsidian://open?path=…` only works for a folder Obsidian already knows as a vault ("Unable to find a vault for the URL"
+// otherwise). Obsidian keeps its vaults in obsidian.json; the bookshelf can read that to open notes the right way, and (with the
+// Commissioner's click, while Obsidian is closed) add the office's vault to it.
+const obsidianConfig = () => (process.platform === 'darwin'
+  ? path.join(os.homedir(), 'Library', 'Application Support', 'obsidian', 'obsidian.json')
+  : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'obsidian', 'obsidian.json'));
+
+const real = (p) => { try { return fs.realpathSync(p); } catch { return path.resolve(p); } };
+
+function readObsidian() {
+  try {
+    const j = JSON.parse(fs.readFileSync(obsidianConfig(), 'utf8'));
+    return j && typeof j === 'object' && j.vaults && typeof j.vaults === 'object' ? j : { ...j, vaults: {} };
+  } catch { return null; }
+}
+
+/** { installed: Obsidian has been run on this Mac, registered: the vault is one of its vaults, id } */
+export function obsidianStatus() {
+  const cfg = readObsidian();
+  if (!cfg) return { installed: false, registered: false, id: null };
+  const root = real(vaultDir());
+  const hit = Object.entries(cfg.vaults).find(([, v]) => typeof v?.path === 'string' && real(v.path) === root);
+  return { installed: true, registered: !!hit, id: hit?.[0] ?? null };
+}
+
+const obsidianRunning = () => {
+  try {
+    // Obsidian rewrites obsidian.json while it runs, so a registration made then would be lost.
+    execFileSync('pgrep', ['-x', 'Obsidian'], { stdio: 'ignore' });
+    return true;
+  } catch { return false; }
+};
+
+/** Adds the vault to Obsidian's list. Returns { id } or { error: 'notinstalled' | 'running' | 'write' }. */
+export function registerInObsidian() {
+  const cfg = readObsidian();
+  if (!cfg) return { error: 'notinstalled' };
+  const status = obsidianStatus();
+  if (status.registered) return { id: status.id };
+  if (obsidianRunning()) return { error: 'running' };
+  const file = obsidianConfig();
+  const id = crypto.randomBytes(8).toString('hex');
+  cfg.vaults[id] = { path: vaultDir(), ts: Date.now() };
+  try {
+    fs.copyFileSync(file, `${file}.asaoffice-backup`);
+    fs.writeFileSync(`${file}.tmp`, JSON.stringify(cfg));
+    fs.renameSync(`${file}.tmp`, file);
+  } catch { return { error: 'write' }; }
+  return { id };
 }

@@ -110,6 +110,7 @@ nama proyeknya, atau context yang udah hampir penuh. Begitu salah satunya dapet 
   (misalnya yang di iCloud)? Klik **⚙ Folder vault** di bawah daftar dan tempel path-nya (boleh hasil salin dari Terminal, termasuk
   yang ada spasi), atau jalanin kantor dengan `OFFICE_VAULT="/path/vault" npm run office`. Di Mac, kalau muncul izin akses folder
   iCloud, izinkan Terminal.
+  **Tombol "Buka di Obsidian":** kalau muncul error *Unable to find a vault for the URL*, artinya Obsidian belum mengenal folder vault ini. Klik tombolnya lagi di Rak Buku: kantor menawarkan **Daftarkan ke Obsidian** (menambahkan vault ke daftar Obsidian dengan cadangan `obsidian.json.asaoffice-backup`; **tutup Obsidian dulu**, ⌘Q, karena Obsidian menulis ulang daftarnya saat jalan). Atau manual: di Obsidian pilih **Open folder as vault** dan pilih folder vaultnya (ada tombol **Salin path vault**). Sesudah dikenal, notenya langsung terbuka.
   - **Cari dulu:** panel langsung terbuka di kotak cari. ↑↓ buat pilih, Enter buat buka. Ketik nama yang belum ada, lalu pilih
     **📝 Buat catatan** (langsung ke editor, nama file dari baris pertama) atau **💡 Simpan jadi ide/TODO**.
   - **Galeri atau daftar:** tombol ▦ / ☰ di sebelah kotak cari (pilihanmu diingat). Galeri menampilkan kartu: **＋ Catatan baru**, kartu khusus **Ide & TODO** (isinya TODO yang belum selesai), lalu satu kartu per catatan dengan cuplikan isi dan umurnya. ←↑↓→ pindah antar kartu. Laporan tetap daftar yang bisa dilipat di bawah kartu, dan hasil pencarian selalu berupa daftar.

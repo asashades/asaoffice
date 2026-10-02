@@ -180,6 +180,7 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
   Calendar events, from last month to two months ahead. Click a day for its agenda. A red badge on the calendar
   shows how many events are on today.
 - **Bookshelf (Rak Buku), your notes in Obsidian:** open it with the 📚 button on the hero card (or click any bookshelf).
+  **Open in Obsidian** works once Obsidian knows the vault (otherwise it says *Unable to find a vault for the URL*): the button then offers **Add it to Obsidian**, which adds the vault to Obsidian's `obsidian.json` (backup `obsidian.json.asaoffice-backup`; refused while Obsidian is running, since it rewrites that file) or **Copy vault path** for Open folder as vault.
   The notes are plain Markdown files in an Obsidian vault at `~/AsaOffice-Vault` (created on first use with
   `Ide-TODO.md`, `Laporan/` and `Catatan/`), or in an existing vault: **⚙ Folder vault** under the list takes a pasted
   path (also as copied from Terminal), or start the office with `OFFICE_VAULT="/path/to/vault"`. **Search first:** the
