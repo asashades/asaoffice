@@ -51,3 +51,16 @@ export function collect(through, income, salary = 0, now = new Date()) {
   fs.renameSync(`${file()}.tmp`, file());
   return { ledger, paid: true, before };
 }
+
+/** Takes `amount` gold out of the Kas for a purchase. Returns { kas } or null when there isn't enough (or the amount is invalid). */
+export function spend(amount) {
+  const n = Number(amount);
+  if (!Number.isInteger(n) || n <= 0 || n > MAX_PAYOUT) return null;
+  const ledger = loadLedger();
+  if (ledger.kas < n) return null;
+  ledger.kas -= n;
+  fs.mkdirSync(path.dirname(file()), { recursive: true });
+  fs.writeFileSync(`${file()}.tmp`, JSON.stringify(ledger, null, 2));
+  fs.renameSync(`${file()}.tmp`, file());
+  return { kas: ledger.kas };
+}
