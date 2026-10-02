@@ -27,6 +27,7 @@ import path from 'node:path';
 
 import * as vault from './vault.mjs';
 import { collect as collectIncome, loadLedger } from './ledger.mjs';
+import { buy as shopBuy, shopInfo } from './shop.mjs';
 import { loadNames, setName } from './names.mjs';
 
 const MAX_RUNNING = 3;
@@ -425,6 +426,13 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const b = await readBody(req);
         const r = collectIncome(b.through, b.income ?? b.amount, b.salary ?? 0);
         return r ? send(res, 200, { ...r.ledger, paid: r.paid, before: r.before ?? r.ledger.kas }, origin) : send(res, 400, { error: 'collect' }, origin);
+      }
+      // The shop: décor for the building and looks for the villagers, paid from the Kas (see shop.mjs).
+      if (url.pathname === '/api/shop' && req.method === 'GET') return send(res, 200, { ...shopInfo(), kas: loadLedger().kas }, origin);
+      if (url.pathname === '/api/shop/buy' && req.method === 'POST') {
+        const r = shopBuy(await readBody(req));
+        if (r.ok) onNamesChange(); // new looks go out through the feed
+        return send(res, r.ok ? 200 : 409, r, origin);
       }
       // Renaming a villager (staff by agent id, ordinary villagers by face). Shades can't be renamed.
       if (url.pathname === '/api/names' && req.method === 'POST') {

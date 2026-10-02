@@ -6,6 +6,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { restoreDecor } from './lib/shop.mjs';
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = path.join(root, 'layouts', 'stardew-office.json');
 const dest = path.join(os.homedir(), '.pixel-agents', 'layout.json');
@@ -18,6 +20,8 @@ if (fs.existsSync(dest)) {
 }
 fs.copyFileSync(src, dest);
 console.log(`Installed ${path.relative(root, src)} → ${dest}`);
+const restored = restoreDecor(); // décor bought in the office shop stays
+if (restored) console.log(`Put ${restored} piece(s) of shop décor back.`);
 
 // The office remembers which seat each villager sat in by furniture id, and ids are reused by a new layout for other
 // furniture: forget those seats (people just sit down again) so nobody is sent to a desk that is now a sofa or a wall.

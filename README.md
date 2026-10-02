@@ -296,6 +296,14 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
 - **H** or the 🧭 button under the zoom buttons hides the HUD for a clear view. On phones the panel sits above the
   cards and starts minimised. `?hud=off` turns the HUD off (remembered; `?hud=on` brings it back).
 
+- **Shop (🛒 Toko).** Click the 💰 Kas chip. **Décor** (garden: bench 200g, lantern 150g, apple tree 400g, berry bush 80g, flowers 60g, scarecrow 250g, barrel 120g,
+  crate 70g, basket 90g, well 600g, pond 900g; walls: painting 350g, clock 200g, bookshelf 450g) is placed **automatically** on a spot the
+  server has checked is free and out of the way (`tools/lib/shop.mjs`: grass outside the building, never the entrance path; bare wall; and a
+  walk-through check so nobody gets cut off), written to `~/.pixel-agents/layout.json`, and the new piece sparkles. No free spot means no charge.
+  **Looks** are per face (0–11, not Shades): an outfit colour (200g, a hue shift) and a title (150g: Dr., Sir, Chef…); whatever is owned can be worn
+  or taken off for free. Looks travel through the data feed, so every view shows them. State: `~/.pixel-agents/asaoffice-shop.json`.
+  `npm run layout` resets the layout, then puts the bought décor back. The layout editor must be closed to buy.
+
 History and todos come from the data feed (`runs` and `tasks`, read from `~/.claude/projects` by
 `tools/lib/claude-stats.mjs`), so they need `npm run office`.
 

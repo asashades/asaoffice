@@ -362,5 +362,7 @@
   setInterval(refreshLedger, 60_000);
   setTimeout(refreshLedger, 4000);
 
-  ns.dayEnd = { kas: () => ledgerCache?.kas ?? null, open: () => open({ auto: false }), morning: () => open({ auto: true }), pending, summary };
+  /** The shop spent some: show the new balance at once. */
+  const setKas = (n) => { if (Number.isFinite(n)) ledgerCache = { ...(ledgerCache ?? {}), kas: n }; };
+  ns.dayEnd = { kas: () => ledgerCache?.kas ?? null, setKas, open: () => open({ auto: false }), morning: () => open({ auto: true }), pending, summary };
 })();
