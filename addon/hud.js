@@ -458,14 +458,14 @@
     $('hud-n-runs').textContent = String(runs.length);
 
     // Plans waiting for you: approve or reject without opening the mailbox
-    const waiting = (ns.data?.mail ?? []).filter((l) => l.status === 'awaiting' && !l.report).slice(0, 3);
-    const moreWaiting = (ns.data?.mail ?? []).filter((l) => l.status === 'awaiting' && !l.report).length - waiting.length;
+    const waiting = (ns.data?.mail ?? []).filter((l) => l.status === 'awaiting' && !l.report && !l.archived).slice(0, 3);
+    const moreWaiting = (ns.data?.mail ?? []).filter((l) => l.status === 'awaiting' && !l.report && !l.archived).length - waiting.length;
     const pendingHtml = waiting.map((l) => `<div class="hud-plan hud-box"><small>📝 ${esc(S.planReady)} · ${esc([l.name ?? '', l.project ?? ''].filter(Boolean).join(' · '))}</small><div class="t" title="${esc(l.title)}">${esc(l.title)}</div><div class="b"><button type="button" class="go" data-plan="approve" data-id="${esc(l.id)}">${esc(S.approveBtn)}</button><button type="button" data-plan="reject" data-id="${esc(l.id)}">${esc(S.rejectBtn)}</button><button type="button" data-plan="open" data-id="${esc(l.id)}">${esc(S.openBtn)}</button></div></div>`).join('')
       + (moreWaiting > 0 ? `<div class="hud-more">${esc(S.morePlans(moreWaiting))}</div>` : '');
     setHtml($('hud-pending'), pendingHtml, 'pending');
 
     // Permissions: what the tasks tried that was refused automatically
-    const denials = (ns.data?.mail ?? []).flatMap((l) => (l.denials ?? []).map((d) => ({ ...d, letter: l }))).sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 15);
+    const denials = (ns.data?.mail ?? []).filter((l) => !l.archived).flatMap((l) => (l.denials ?? []).map((d) => ({ ...d, letter: l }))).sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 15);
     const openDenials = denials.filter((d) => d.state === 'open').length;
     const permHtml = `<div class="hud-src">${esc(S.permSource)}</div>` + (denials.length ? denials.map((d) => {
       const css2 = d.state === 'open' ? STATE.izin.css : STATE.selesai.css;
