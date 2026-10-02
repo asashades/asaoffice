@@ -32,7 +32,7 @@
       folders: 'Folder', foldHome: 'Vault', newFolder: '＋ Folder', newNoteHere: '＋ Catatan', folderName: 'Nama folder baru, Enter untuk buat', emptyFolder: 'Folder ini kosong.',
       items: (n) => `${n} isi`, renameTip: 'Ganti nama', moveTip: 'Pindahkan ke folder lain', trashTip: 'Hapus (dipindah ke .trash)', sure: 'Yakin? Klik lagi', protectedTip: 'Bawaan Rak Buku, tidak bisa diubah',
       moveHere: 'Pindahkan ke…', moveRoot: '🏠 (akar vault)', cancelShort: 'Batal', dropHint: 'Seret catatan ke folder buat memindahkan',
-      moved: (n) => `Dipindahkan: ${n}`, renamed: (n) => `Diganti jadi: ${n}`, madeFolder: (n) => `Folder dibuat: ${n}`, trashed: (n) => `“${n}” dipindah ke .trash di vault (bisa dikembalikan lewat Finder atau Obsidian).`,
+      linksFixed: (l, f) => (l ? ` · ${l} tautan diperbarui di ${f} catatan` : ''), moved: (n) => `Dipindahkan: ${n}`, renamed: (n) => `Diganti jadi: ${n}`, madeFolder: (n) => `Folder dibuat: ${n}`, trashed: (n) => `“${n}” dipindah ke .trash di vault (bisa dikembalikan lewat Finder atau Obsidian).`,
       fileErr: { exists: 'Sudah ada yang bernama itu di sana.', protected: 'Ini bawaan Rak Buku (Ide-TODO, Catatan, Laporan), tidak bisa diubah.', inside: 'Folder tidak bisa dipindah ke dalam dirinya sendiri.', path: 'Nama atau lokasi itu tidak valid.', missing: 'Item itu sudah tidak ada.', write: 'Gagal menulis ke vault.' },
       wikiMissing: (t) => `Catatan “${t}” belum ada: dibuatkan baru.`, imgMissing: 'gambar tidak ketemu',
       gallery: 'Galeri', listMode: 'Daftar', newCard: 'Catatan baru', openTodos: (n) => (n ? `${n} belum selesai` : 'Semua beres'), emptyCard: 'Kosong',
@@ -58,7 +58,7 @@
       folders: 'Folders', foldHome: 'Vault', newFolder: '＋ Folder', newNoteHere: '＋ Note', folderName: 'New folder name, Enter to create', emptyFolder: 'This folder is empty.',
       items: (n) => `${n} items`, renameTip: 'Rename', moveTip: 'Move to another folder', trashTip: 'Delete (moved to .trash)', sure: 'Sure? Click again', protectedTip: 'Part of the Bookshelf, cannot be changed',
       moveHere: 'Move to…', moveRoot: '🏠 (vault root)', cancelShort: 'Cancel', dropHint: 'Drag a note onto a folder to move it',
-      moved: (n) => `Moved: ${n}`, renamed: (n) => `Renamed to: ${n}`, madeFolder: (n) => `Folder created: ${n}`, trashed: (n) => `“${n}” moved to .trash in the vault (restore it from Finder or Obsidian).`,
+      linksFixed: (l, f) => (l ? ` · ${l} link(s) updated in ${f} note(s)` : ''), moved: (n) => `Moved: ${n}`, renamed: (n) => `Renamed to: ${n}`, madeFolder: (n) => `Folder created: ${n}`, trashed: (n) => `“${n}” moved to .trash in the vault (restore it from Finder or Obsidian).`,
       fileErr: { exists: 'Something with that name is already there.', protected: 'This is part of the Bookshelf (Ide-TODO, Catatan, Laporan) and cannot be changed.', inside: 'A folder cannot be moved into itself.', path: 'That name or place is not valid.', missing: 'That item is gone.', write: 'Could not write to the vault.' },
       wikiMissing: (t) => `Note “${t}” does not exist yet: made a new one.`, imgMissing: 'image not found',
       gallery: 'Gallery', listMode: 'List', newCard: 'New note', openTodos: (n) => (n ? `${n} open` : 'All done'), emptyCard: 'Empty',
@@ -486,7 +486,7 @@
       return false;
     }
   }
-  const moveTo = (from, destDir, name) => fileOp('/api/vault/move', { from, to: join(destDir, name) }, () => S.moved(join(destDir, name)));
+  const moveTo = (from, destDir, name) => fileOp('/api/vault/move', { from, to: join(destDir, name) }, (res) => S.moved(join(destDir, name)) + S.linksFixed(res.links?.links, res.links?.files));
 
   function dropTarget(el, destDir) {
     el.addEventListener('dragover', (e) => { if (state.drag) { e.preventDefault(); el.classList.add('drop'); } });
@@ -548,7 +548,7 @@
         const go = () => {
           const v = input.value.trim().replace(/\.md$/i, '');
           if (!v || v === shown) { state.edit = null; paintList(); return; }
-          fileOp('/api/vault/move', { from: rel, to: join(t.dir, kind === 'file' ? `${v}.md` : v) }, () => S.renamed(v));
+          fileOp('/api/vault/move', { from: rel, to: join(t.dir, kind === 'file' ? `${v}.md` : v) }, (res) => S.renamed(v) + S.linksFixed(res.links?.links, res.links?.files));
         };
         input.onkeydown = (e) => {
           if (e.key === 'Enter') { e.preventDefault(); go(); }
