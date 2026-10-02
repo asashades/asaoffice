@@ -605,6 +605,32 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const body = await readBody(req);
         return vault.write(body.path, body.text) ? send(res, 200, { ok: true }, origin) : send(res, 400, { error: 'note' }, origin);
       }
+      // Folder view: browse and organise the vault (see the "Folders and files" part of vault.mjs).
+      if (url.pathname === '/api/vault/tree' && req.method === 'GET') {
+        const t = vault.tree(url.searchParams.get('dir') ?? '');
+        return t ? send(res, 200, { ...t, folders: vault.folders() }, origin) : send(res, 404, { error: 'folder' }, origin);
+      }
+      if (url.pathname === '/api/vault/folder' && req.method === 'POST') {
+        const r = vault.makeFolder((await readBody(req)).path);
+        return r.error ? send(res, r.error === 'exists' ? 409 : 400, { error: r.error }, origin) : send(res, 200, { ok: true }, origin);
+      }
+      if (url.pathname === '/api/vault/move' && req.method === 'POST') {
+        const b = await readBody(req);
+        const r = vault.move(b.from, b.to);
+        return r.error ? send(res, r.error === 'exists' ? 409 : 400, { error: r.error }, origin) : send(res, 200, r, origin);
+      }
+      if (url.pathname === '/api/vault/trash' && req.method === 'POST') {
+        const r = vault.trash((await readBody(req)).path);
+        return r.error ? send(res, 400, { error: r.error }, origin) : send(res, 200, r, origin);
+      }
+      if (url.pathname === '/api/vault/asset' && req.method === 'GET') {
+        const a = vault.asset(url.searchParams.get('name'), url.searchParams.get('from') ?? '');
+        if (!a) return send(res, 404, { error: 'asset' }, origin);
+        const headers = { 'Content-Type': a.type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
+        if (originOk(origin)) Object.assign(headers, { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' });
+        res.writeHead(200, headers);
+        return res.end(a.data);
+      }
       if (url.pathname === '/api/vault/idea' && req.method === 'POST') {
         return vault.addIdea((await readBody(req)).text) ? send(res, 200, { ok: true }, origin) : send(res, 400, { error: 'text' }, origin);
       }
