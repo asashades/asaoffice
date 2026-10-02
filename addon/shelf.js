@@ -29,6 +29,12 @@
       quiet: 'Hari ini belum ada sesi Claude.', streak: (n) => `Streak kerja: ${n} hari 🔥`, done: 'Tugas selesai', decide: 'Menunggu keputusanmu', none: 'Belum ada.',
       ago: (m) => (m < 1 ? 'baru saja' : m < 60 ? `${m} mnt lalu` : m < 1440 ? `${Math.round(m / 60)} jam lalu` : `${Math.round(m / 1440)} hari lalu`),
       ideaSaved: '💡 Tersimpan di Ide & TODO',
+      folders: 'Folder', foldHome: 'Vault', newFolder: '＋ Folder', newNoteHere: '＋ Catatan', folderName: 'Nama folder baru, Enter untuk buat', emptyFolder: 'Folder ini kosong.',
+      items: (n) => `${n} isi`, renameTip: 'Ganti nama', moveTip: 'Pindahkan ke folder lain', trashTip: 'Hapus (dipindah ke .trash)', sure: 'Yakin? Klik lagi', protectedTip: 'Bawaan Rak Buku, tidak bisa diubah',
+      moveHere: 'Pindahkan ke…', moveRoot: '🏠 (akar vault)', cancelShort: 'Batal', dropHint: 'Seret catatan ke folder buat memindahkan',
+      moved: (n) => `Dipindahkan: ${n}`, renamed: (n) => `Diganti jadi: ${n}`, madeFolder: (n) => `Folder dibuat: ${n}`, trashed: (n) => `“${n}” dipindah ke .trash di vault (bisa dikembalikan lewat Finder atau Obsidian).`,
+      fileErr: { exists: 'Sudah ada yang bernama itu di sana.', protected: 'Ini bawaan Rak Buku (Ide-TODO, Catatan, Laporan), tidak bisa diubah.', inside: 'Folder tidak bisa dipindah ke dalam dirinya sendiri.', path: 'Nama atau lokasi itu tidak valid.', missing: 'Item itu sudah tidak ada.', write: 'Gagal menulis ke vault.' },
+      wikiMissing: (t) => `Catatan “${t}” belum ada: dibuatkan baru.`, imgMissing: 'gambar tidak ketemu',
       gallery: 'Galeri', listMode: 'Daftar', newCard: 'Catatan baru', openTodos: (n) => (n ? `${n} belum selesai` : 'Semua beres'), emptyCard: 'Kosong',
     },
     en: {
@@ -49,6 +55,12 @@
       quiet: 'No Claude sessions yet today.', streak: (n) => `Work streak: ${n} days 🔥`, done: 'Tasks done', decide: 'Waiting for your decision', none: 'None yet.',
       ago: (m) => (m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`),
       ideaSaved: '💡 Saved to Ideas & TODO',
+      folders: 'Folders', foldHome: 'Vault', newFolder: '＋ Folder', newNoteHere: '＋ Note', folderName: 'New folder name, Enter to create', emptyFolder: 'This folder is empty.',
+      items: (n) => `${n} items`, renameTip: 'Rename', moveTip: 'Move to another folder', trashTip: 'Delete (moved to .trash)', sure: 'Sure? Click again', protectedTip: 'Part of the Bookshelf, cannot be changed',
+      moveHere: 'Move to…', moveRoot: '🏠 (vault root)', cancelShort: 'Cancel', dropHint: 'Drag a note onto a folder to move it',
+      moved: (n) => `Moved: ${n}`, renamed: (n) => `Renamed to: ${n}`, madeFolder: (n) => `Folder created: ${n}`, trashed: (n) => `“${n}” moved to .trash in the vault (restore it from Finder or Obsidian).`,
+      fileErr: { exists: 'Something with that name is already there.', protected: 'This is part of the Bookshelf (Ide-TODO, Catatan, Laporan) and cannot be changed.', inside: 'A folder cannot be moved into itself.', path: 'That name or place is not valid.', missing: 'That item is gone.', write: 'Could not write to the vault.' },
+      wikiMissing: (t) => `Note “${t}” does not exist yet: made a new one.`, imgMissing: 'image not found',
       gallery: 'Gallery', listMode: 'List', newCard: 'New note', openTodos: (n) => (n ? `${n} open` : 'All done'), emptyCard: 'Empty',
     },
   });
@@ -109,6 +121,25 @@
   .asa-ncard ul { list-style: none; margin: 0; padding: 0; flex: 1; font-size: 13px; line-height: 1.45; overflow: hidden; }
   .asa-ncard li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .asa-ncard li::before { content: '☐ '; opacity: 0.6; }
+  .asa-fold-crumbs { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; padding: 6px 8px; background: #f4e6c4; border-bottom: 1px solid #e6d3a6; position: sticky; top: 0; z-index: 1; font-size: 13px; }
+  .asa-fold-crumbs button { font: inherit; font-size: 13px; background: none; border: 1px solid transparent; padding: 1px 6px; cursor: pointer; color: #973a2f; }
+  .asa-fold-crumbs button:hover, .asa-fold-crumbs button.drop { background: #fffbe9; border-color: #c9a877; }
+  .asa-fold-crumbs .sep { opacity: 0.5; }
+  .asa-fold-crumbs .grow { flex: 1; }
+  .asa-fold-row { display: flex; align-items: center; gap: 4px; padding: 0 6px 0 0; border-bottom: 1px solid #f0e4c4; }
+  .asa-fold-row:hover { background: #f9f0d6; }
+  .asa-fold-row.drop { background: #e8f2d4; outline: 2px dashed #3f8a36; outline-offset: -2px; }
+  .asa-fold-row .main { flex: 1; min-width: 0; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 0 8px; align-items: baseline; text-align: left; font: inherit; padding: 7px 8px; background: none; border: 0; color: inherit; cursor: pointer; }
+  .asa-fold-row .main b { font-weight: 600; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .asa-fold-row .main small { font-size: 12px; opacity: 0.6; white-space: nowrap; }
+  .asa-fold-row .acts { display: flex; gap: 2px; flex: none; }
+  .asa-fold-row .acts button { font: inherit; font-size: 14px; background: none; border: 1px solid transparent; cursor: pointer; padding: 1px 5px; opacity: 0.55; }
+  .asa-fold-row .acts button:hover { opacity: 1; border-color: #c9a877; background: #fffbe9; }
+  .asa-fold-row .acts .lock { opacity: 0.35; font-size: 13px; padding: 1px 6px; }
+  .asa-fold-row.editing { padding: 5px 8px; gap: 6px; }
+  .asa-fold-row.editing input[type=text], .asa-fold-row.editing select { flex: 1; min-width: 0; padding: 4px 8px; font-size: 14px; }
+  .asa-fold-row.editing select { font: inherit; background: #fffbe9; color: #3a2117; border: 2px solid #744122; }
+  .asa-fold-empty { padding: 14px; opacity: 0.6; font-size: 14px; }
   .asa-shelf-sub { font-size: 12.5px; color: #973a2f; margin: 10px 2px 4px; }
   `;
 
@@ -133,48 +164,42 @@
   const group = (n) => (n.path === IDEAS ? 'ideas' : n.path.startsWith('Laporan/') ? 'reports' : n.path.startsWith('Catatan/') ? 'notes' : 'other');
   const folded = new Set((() => { try { return JSON.parse(ns.store.get('shelfFolded') || '["reports"]'); } catch { return ['reports']; } })());
   const saveFolded = () => ns.store.set('shelfFolded', JSON.stringify([...folded]));
-  const modeStore = () => (ns.store.get('shelfMode') === 'list' ? 'list' : 'gallery');
+  const modeStore = () => (['list', 'folders'].includes(ns.store.get('shelfMode')) ? ns.store.get('shelfMode') : 'gallery');
 
-  // ── A small Markdown reader: headings, lists, checkboxes, bold/italic/code, #tags, [[links]] ──
-  function inline(text) {
-    const out = [];
-    const re = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*|\[\[[^\]]+\]\]|#[\p{L}\p{N}_/-]+)/gu;
-    let last = 0;
-    for (let m = re.exec(text); m; m = re.exec(text)) {
-      if (m.index > last) out.push(text.slice(last, m.index));
-      const t = m[0];
-      if (t.startsWith('**')) out.push(h('b', {}, t.slice(2, -2)));
-      else if (t.startsWith('`')) out.push(h('code', {}, t.slice(1, -1)));
-      else if (t.startsWith('[[')) out.push(h('span', { class: 'wiki' }, t.slice(2, -2).split('|').pop()));
-      else if (t.startsWith('#')) out.push(h('span', { class: 'tag' }, t));
-      else out.push(h('i', {}, t.slice(1, -1)));
-      last = m.index + t.length;
-    }
-    if (last < text.length) out.push(text.slice(last));
-    return out;
+  // ── Reading a note: the Markdown reader lives in markdown.js ──
+  const dirOf = (rel) => (rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/')) : '');
+  const baseOf = (rel) => rel.slice(rel.lastIndexOf('/') + 1);
+  async function loadImage(src, dir, img) {
+    const port = ns.data?.taskServer?.port;
+    const tok = new URLSearchParams(location.search).get('token');
+    try {
+      if (!port || !tok) throw new Error('noApi');
+      const res = await fetch(`http://127.0.0.1:${port}/api/vault/asset?name=${encodeURIComponent(src)}&from=${encodeURIComponent(dir)}`, { headers: { Authorization: `Bearer ${tok}` } });
+      if (!res.ok) throw new Error(String(res.status));
+      img.onload = () => URL.revokeObjectURL(img.src);
+      img.src = URL.createObjectURL(await res.blob());
+    } catch { img.replaceWith(h('span', { class: 'tag' }, `🖼 ${S.imgMissing}: ${src}`)); }
   }
-
+  /** Follows a [[wikilink]]: the note with that name (same folder first), or a new one with that title. */
+  async function openWiki(target, dir) {
+    try {
+      const all = (await api('GET', '/api/vault')).notes;
+      const want = target.replace(/\.md$/i, '').toLowerCase();
+      const hits = all.filter((n) => n.path.replace(/\.md$/i, '').toLowerCase() === want || baseOf(n.path).replace(/\.md$/i, '').toLowerCase() === want);
+      const hit = hits.find((n) => dirOf(n.path) === dir) ?? hits[0];
+      if (hit) return openNote(hit.path);
+      newNote(target, dir);
+      say(S.wikiMissing(target));
+    } catch (err) { say(S.failed + err.message); }
+  }
   function renderNote(el, text, rel) {
-    let list = null;
-    text.split('\n').forEach((line, i) => {
-      const task = /^(\s*)[-*]\s+\[( |x|X)\]\s+(.*)$/.exec(line);
-      const bullet = /^\s*[-*]\s+(.*)$/.exec(line);
-      const head = /^(#{1,3})\s+(.*)$/.exec(line);
-      if (task || bullet) {
-        if (!list) { list = h('ul', { style: task ? { listStyle: 'none', paddingLeft: '2px' } : {} }); el.append(list); }
-      } else list = null;
-      if (task) {
-        const done = task[2] !== ' ';
-        const box = h('input', { type: 'checkbox', onchange: () => toggle(rel, i, box.checked) });
-        box.checked = done;
-        const row = h('li', { class: `asa-shelf-task${done ? ' done' : ''}` }, box, h('span', {}, inline(task[3])));
-        if (!done && rel === IDEAS) {
-          row.append(h('button', { type: 'button', class: 'asa-btn', title: S.toShadesTip, onclick: () => { ns.panel.close(); ns.mailbox?.compose(task[3].replace(/#konteks\b/g, '').trim()); } }, S.toShades));
-        }
-        list.append(row);
-      } else if (bullet) list.append(h('li', {}, inline(bullet[1])));
-      else if (head) el.append(h(`h${head[1].length}`, {}, inline(head[2].replace(/\s*#konteks\b/g, ''))));
-      else if (line.trim()) el.append(h('p', {}, inline(line)));
+    const dir = dirOf(rel);
+    ns.markdown.render(el, text, {
+      dir,
+      toggle: (lineNo, checked) => toggle(rel, lineNo, checked),
+      taskExtra: rel === IDEAS ? (li, taskText) => li.append(h('button', { type: 'button', class: 'asa-btn', title: S.toShadesTip, onclick: () => { ns.panel.close(); ns.mailbox?.compose(taskText.replace(/#konteks\b/g, '').trim()); } }, S.toShades)) : null,
+      wiki: (target) => openWiki(target, dir),
+      image: (src, img) => loadImage(src, dir, img),
     });
   }
 
@@ -216,6 +241,7 @@
     state.sel = null;
     state.draft = null;
     state.pathEdit = false;
+    state.tree = null;
     try { await loadList(); } catch { /* keep the old list */ }
     rerender();
   }
@@ -245,7 +271,8 @@
   }
 
   /** A new note opens straight in the editor, named from its first line when saved. */
-  function newNote(title = '') {
+  function newNote(title = '', dir = null) {
+    state.newDir = dir ?? (state.mode === 'folders' ? state.dir : null); // null: the Catatan folder
     state.view = 'new';
     state.sel = null;
     state.draft = title ? `# ${title}\n\n` : '# ';
@@ -256,9 +283,11 @@
     const stamp = new Date().toLocaleString('sv-SE', { hour12: false }).replace(/:/g, '.').slice(0, 16);
     const name = String(first || `${S.newNoteTitle} ${stamp}`).replace(/[\\/:*?"<>|#]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
     try {
-      let rel = `Catatan/${name}.md`;
+      const base = state.newDir == null ? 'Catatan' : state.newDir;
+      const at = (stem) => (base ? `${base}/${stem}.md` : `${stem}.md`);
+      let rel = at(name);
       const all = (await api('GET', '/api/vault')).notes;
-      for (let i = 2; all.some((n) => n.path === rel); i++) rel = `Catatan/${name} ${i}.md`;
+      for (let i = 2; all.some((n) => n.path === rel); i++) rel = at(`${name} ${i}`);
       await api('POST', '/api/vault/note', { path: rel, text });
       state.q = '';
       await loadList('');
@@ -336,8 +365,8 @@
       h('button', { type: 'button', class: 'asa-btn', onclick: writeReport }, S.report));
     setTimeout(() => { search.focus(); search.setSelectionRange(search.value.length, search.value.length); paintList(); }, 0);
     const modes = h('div', { class: 'asa-shelf-modes', role: 'group' },
-      ['gallery', 'list'].map((m) => h('button', { type: 'button', class: `asa-btn${state.mode === m ? ' on' : ''}`, title: m === 'gallery' ? S.gallery : S.listMode, 'aria-label': m === 'gallery' ? S.gallery : S.listMode,
-        onclick: () => { state.mode = m; ns.store.set('shelfMode', m); state.cursor = 0; rerender(); } }, m === 'gallery' ? '▦' : '☰')));
+      ['gallery', 'list', 'folders'].map((m) => h('button', { type: 'button', class: `asa-btn${state.mode === m ? ' on' : ''}`, title: m === 'gallery' ? S.gallery : m === 'list' ? S.listMode : S.folders, 'aria-label': m === 'gallery' ? S.gallery : m === 'list' ? S.listMode : S.folders,
+        onclick: () => { state.mode = m; ns.store.set('shelfMode', m); state.cursor = 0; state.tree = null; state.edit = null; rerender(); } }, m === 'gallery' ? '▦' : m === 'list' ? '☰' : '🗂')));
     return h('div', { class: 'asa-shelf' }, h('div', { class: 'asa-shelf-top' }, search, modes), list, bar, state.msg, footer());
   }
 
@@ -354,6 +383,7 @@
   function paintList() {
     const el = state?.listEl;
     if (!el) return;
+    if (state.mode === 'folders' && !state.q.trim()) return paintFolders(el);
     const { rows, groups, gallery } = visibleRows();
     if (state.cursor >= rows.length) state.cursor = Math.max(0, rows.length - 1);
     if (gallery) return paintGallery(el, rows, gallery);
@@ -418,6 +448,152 @@
     el.className = 'asa-shelf-gal';
     el.replaceChildren(...out);
     el.querySelector('.cur')?.scrollIntoView({ block: 'nearest' });
+  }
+
+
+  // ── Folder view: browse and organise the vault ──
+  const PROTECTED = new Set(['Ide-TODO.md', 'Catatan', 'Laporan']);
+  const join = (dir, name) => (dir ? `${dir}/${name}` : name);
+  const crumbsOf = (dir) => (dir ? dir.split('/') : []);
+
+  async function loadTree(dir = state.dir) {
+    const t = await api('GET', `/api/vault/tree?dir=${encodeURIComponent(dir)}`);
+    state.tree = t;
+    state.dir = t.dir;
+  }
+  async function refreshTree() {
+    state.tree = null;
+    paintList();
+    await loadList('').catch(() => {});
+  }
+  async function goDir(dir) {
+    state.dir = dir;
+    state.tree = null;
+    state.edit = null;
+    paintList();
+  }
+  async function fileOp(route, body, okText) {
+    try {
+      const res = await api('POST', route, body);
+      state.edit = null;
+      await refreshTree();
+      say(okText?.(res) ?? '');
+      return true;
+    } catch (err) {
+      say(S.fileErr[err.message] ?? S.failed + err.message);
+      state.edit = null;
+      paintList();
+      return false;
+    }
+  }
+  const moveTo = (from, destDir, name) => fileOp('/api/vault/move', { from, to: join(destDir, name) }, () => S.moved(join(destDir, name)));
+
+  function dropTarget(el, destDir) {
+    el.addEventListener('dragover', (e) => { if (state.drag) { e.preventDefault(); el.classList.add('drop'); } });
+    el.addEventListener('dragleave', () => el.classList.remove('drop'));
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.classList.remove('drop');
+      const src = state.drag;
+      state.drag = null;
+      if (!src || dirOf(src) === destDir) return;
+      moveTo(src, destDir, baseOf(src));
+    });
+  }
+
+  function paintFolders(el) {
+    el.className = 'asa-shelf-list';
+    if (!state.tree) {
+      el.replaceChildren(h('div', { class: 'asa-fold-empty' }, '…'));
+      loadTree().then(() => { if (state?.mode === 'folders' && state.view === 'list' && !state.q.trim()) paintFolders(el); }).catch(async () => {
+        if (!state) return;
+        if (state.dir) { state.dir = ''; paintList(); } else el.replaceChildren(h('div', { class: 'asa-fold-empty' }, S.offline));
+      });
+      return;
+    }
+    const t = state.tree;
+    const out = [];
+    // Breadcrumbs (each one also takes dropped notes)
+    const crumbs = h('div', { class: 'asa-fold-crumbs' });
+    const crumb = (label, dir) => {
+      const b = h('button', { type: 'button', onclick: () => goDir(dir) }, label);
+      dropTarget(b, dir);
+      return b;
+    };
+    crumbs.append(crumb(`🏠 ${S.foldHome}`, ''));
+    crumbsOf(t.dir).forEach((seg, k, arr) => crumbs.append(h('span', { class: 'sep' }, '/'), crumb(seg, arr.slice(0, k + 1).join('/'))));
+    crumbs.append(h('span', { class: 'grow' }),
+      h('button', { type: 'button', onclick: () => newNote('', t.dir) }, S.newNoteHere),
+      h('button', { type: 'button', onclick: () => { state.edit = { kind: 'newfolder' }; paintList(); } }, S.newFolder));
+    out.push(crumbs);
+
+    if (state.edit?.kind === 'newfolder') {
+      const input = h('input', { type: 'text', placeholder: S.folderName, 'aria-label': S.folderName });
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); const name = input.value.trim(); if (name) fileOp('/api/vault/folder', { path: join(t.dir, name) }, () => S.madeFolder(join(t.dir, name))); }
+        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); state.edit = null; paintList(); }
+      };
+      out.push(h('div', { class: 'asa-fold-row editing' }, h('span', {}, '📁'), input, h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.edit = null; paintList(); } }, S.cancelShort)));
+      setTimeout(() => input.focus(), 0);
+    }
+
+    const item = (kind, name, sub, onOpen) => {
+      const rel = join(t.dir, name);
+      const locked = !t.dir && PROTECTED.has(name);
+      const editing = state.edit?.rel === rel ? state.edit : null;
+      const row = h('div', { class: `asa-fold-row${editing ? ' editing' : ''}` });
+      if (editing?.kind === 'rename') {
+        const shown = kind === 'file' ? name.replace(/\.md$/i, '') : name;
+        const input = h('input', { type: 'text', value: shown, 'aria-label': S.renameTip });
+        const go = () => {
+          const v = input.value.trim().replace(/\.md$/i, '');
+          if (!v || v === shown) { state.edit = null; paintList(); return; }
+          fileOp('/api/vault/move', { from: rel, to: join(t.dir, kind === 'file' ? `${v}.md` : v) }, () => S.renamed(v));
+        };
+        input.onkeydown = (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); go(); }
+          else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); state.edit = null; paintList(); }
+        };
+        row.append(h('span', {}, kind === 'dir' ? '📁' : '📝'), input, h('button', { type: 'button', class: 'asa-btn primary', onclick: go }, S.save), h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.edit = null; paintList(); } }, S.cancelShort));
+        setTimeout(() => { input.focus(); input.select(); }, 0);
+        return row;
+      }
+      if (editing?.kind === 'move') {
+        const dirs = (t.folders ?? []).filter((f) => f !== rel && !f.startsWith(`${rel}/`));
+        const pick = h('select', { 'aria-label': S.moveHere }, h('option', { value: '__' }, S.moveHere), h('option', { value: '' }, S.moveRoot), dirs.map((f) => h('option', { value: f }, `📁 ${f}`)));
+        pick.onchange = () => { if (pick.value !== '__') moveTo(rel, pick.value, name); };
+        row.append(h('span', {}, kind === 'dir' ? '📁' : '📝'), h('b', { style: { fontWeight: 600 } }, name), pick, h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.edit = null; paintList(); } }, S.cancelShort));
+        return row;
+      }
+      const mins = kind === 'file' ? Math.max(0, Math.round((Date.now() - sub.mtime) / 60000)) : 0;
+      const main = h('button', { type: 'button', class: 'main', onclick: onOpen },
+        h('span', {}, kind === 'dir' ? '📁' : '📝'), h('b', {}, kind === 'file' ? name.replace(/\.md$/i, '') : name), h('small', {}, kind === 'dir' ? S.items(sub.count) : S.ago(mins)));
+      row.append(main);
+      if (locked) row.append(h('div', { class: 'acts' }, h('span', { class: 'lock', title: S.protectedTip }, '🔒')));
+      else {
+        const trash = h('button', { type: 'button', title: S.trashTip, 'aria-label': S.trashTip }, '🗑');
+        trash.onclick = () => {
+          if (trash.dataset.sure) return fileOp('/api/vault/trash', { path: rel }, () => S.trashed(name));
+          trash.dataset.sure = '1';
+          trash.textContent = S.sure;
+          setTimeout(() => { if (trash.isConnected) { delete trash.dataset.sure; trash.textContent = '🗑'; } }, 3500);
+        };
+        row.append(h('div', { class: 'acts' },
+          h('button', { type: 'button', title: S.renameTip, 'aria-label': S.renameTip, onclick: () => { state.edit = { kind: 'rename', rel }; paintList(); } }, '✏️'),
+          h('button', { type: 'button', title: S.moveTip, 'aria-label': S.moveTip, onclick: () => { state.edit = { kind: 'move', rel }; paintList(); } }, '📂'),
+          trash));
+        row.draggable = true;
+        row.addEventListener('dragstart', (e) => { state.drag = rel; e.dataTransfer?.setData('text/plain', rel); });
+        row.addEventListener('dragend', () => { state.drag = null; });
+      }
+      if (kind === 'dir') dropTarget(row, rel);
+      return row;
+    };
+    for (const d of t.dirs) out.push(item('dir', d.name, d, () => goDir(join(t.dir, d.name))));
+    for (const f of t.files) out.push(item('file', f.name, f, () => openNote(join(t.dir, f.name))));
+    if (!t.dirs.length && !t.files.length) out.push(h('div', { class: 'asa-fold-empty' }, S.emptyFolder));
+    else out.push(h('div', { class: 'asa-fold-empty', style: { fontSize: '12px', padding: '8px 12px' } }, S.dropHint));
+    el.replaceChildren(...out);
   }
 
   const startEdit = () => { state.view = 'edit'; state.draft = state.text; rerender(); };
@@ -531,7 +707,7 @@
 
   function open(startText) {
     if (!document.getElementById('asa-shelf-css')) document.head.appendChild(h('style', { id: 'asa-shelf-css' }, css));
-    state = { view: 'list', mode: modeStore(), notes: [], sel: null, text: '', q: '', cursor: 0, vault: null, obsidian: null, fromEnv: false, draft: null, panel: null, msg: null, listEl: null, pathEdit: false, warned: false };
+    state = { view: 'list', mode: modeStore(), notes: [], sel: null, text: '', q: '', cursor: 0, vault: null, obsidian: null, dir: '', tree: null, newDir: null, edit: null, fromEnv: false, draft: null, panel: null, msg: null, listEl: null, pathEdit: false, warned: false };
     state.panel = ns.panel.open({
       theme: 'cozy',
       dock: 'hud',
@@ -547,6 +723,8 @@
         }
         if (state.view === 'note') { backToList(); return true; }
         if (state.view === 'list' && state.pathEdit) { state.pathEdit = false; rerender(); return true; }
+        if (state.view === 'list' && state.mode === 'folders' && !state.q && state.edit) { state.edit = null; paintList(); return true; }
+        if (state.view === 'list' && state.mode === 'folders' && !state.q && state.dir) { goDir(dirOf(state.dir)); return true; }
         if (state.view === 'list' && state.q) { state.q = ''; loadList('').then(rerender); return true; }
         return false;
       },
