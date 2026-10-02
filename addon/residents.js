@@ -3,6 +3,8 @@
 // read, chat and sometimes sit at a desk (idle-activities.js and idle-chat.js already do all that for any villager who isn't working).
 //   - Working hours: each one comes in through the front door between 07:00 and 08:30 and heads home between 18:00 and 20:00
 //     (staggered), following the office clock (the day-night preview too). Outside those hours the office is empty again.
+//   - Overtime: when a real session is working outside those hours, two of them keep you company (they stay on, or come back in through the
+//     door) and go home once the session has been quiet for a while. Without a session the office stays empty at night.
 //   - When a real session plays that staff member (a mailbox task, a sub-agent), the resident steps aside and comes back after.
 //   - They are scenery: no Claude session, no tokens, and the HUD, the notifications and the counters ignore them (asaNpc).
 //   - They only take a work desk while at least three are free, and give it up when a real session needs one.
@@ -12,8 +14,8 @@
   const ns = window.__asaoffice;
   if (ns.setting('residents', ['on', 'off'], 'on') === 'off') return;
   const S = ns.t({
-    id: { note: 'Penghuni kantor: lagi santai, belum ada tugas yang dikerjakan.', status: 'Santai di kantor' },
-    en: { note: 'Office resident: relaxing, nothing to work on right now.', status: 'Relaxing in the office' },
+    id: { note: 'Penghuni kantor: lagi santai, belum ada tugas yang dikerjakan.', overtime: 'Penghuni kantor: nemenin kamu lembur.', status: 'Santai di kantor', statusOvertime: 'Nemenin lembur' },
+    en: { note: 'Office resident: relaxing, nothing to work on right now.', overtime: 'Office resident: keeping you company while you work late.', status: 'Relaxing in the office', statusOvertime: 'Keeping you company' },
   });
 
   const BASE = 91000; // + roster index (director.js uses 90000+ for Shades and the stand-ins)
@@ -22,6 +24,8 @@
   const SIT_MS = [25_000, 70_000];
   const MIN_FREE_DESKS = 3;
   const LEAVE_TIMEOUT_MS = 40_000;
+  const OVERTIME_CREW = 2; // how many keep you company at night
+  const OVERTIME_GRACE_MS = 10 * 60_000; // a session counts as "working" this long after it last was
 
   const staff = () => (ns.data?.staff ?? []).map((m, i) => ({ ...m, idx: i })).filter((m) => m.installed && !m.director && Number.isInteger(m.palette));
   const shift = (i) => ({ in: 7 + 0.25 * i, out: 18 + 0.4 * i }); // i = 0..5 → in 07:00–08:15, out 18:00–20:00
@@ -108,26 +112,47 @@
     }
   }
 
+  // ── Overtime: a real session is working outside working hours ──
+  let lastRealWork = -Infinity;
+  const sessionWorking = (office) => [...office.characters.values()].some((c) => c.isActive && !c.asaNpc && !c.isSubagent && !c.isGreeter && c.matrixEffect !== 'despawn');
+  /** The night's crew: the same two for the whole night, a different pair on other nights. */
+  function crewFor(count) {
+    const d = new Date();
+    const night = Math.floor((d.getTime() - 12 * 3_600_000) / 86_400_000); // changes at noon
+    const start = night % Math.max(1, count);
+    return new Set(Array.from({ length: Math.min(OVERTIME_CREW, count) }, (_, k) => (start + k) % count));
+  }
+
   let lastTick = 0;
   ns.onFrame((canvas, office, offX, offY, zoom, editMode) => {
     const now = performance.now();
     if (now - lastTick < TICK_MS || !office?.seats?.size || !ns.data?.staff?.length) return;
     lastTick = now;
     const h = hour();
+    if (sessionWorking(office)) lastRealWork = now;
+    const overtime = now - lastRealWork < (ns.residents?.graceMs ?? OVERTIME_GRACE_MS);
+    const list = staff();
+    const crew = crewFor(list.length);
     const wanted = new Set();
-    for (const [i, m] of staff().entries()) {
+    for (const [i, m] of list.entries()) {
       const id = BASE + m.idx;
       wanted.add(id);
       const ch = office.characters.get(id);
       const sh = shift(i);
-      const onShift = h >= sh.in && h < sh.out;
+      const normal = h >= sh.in && h < sh.out;
+      const onShift = normal || (overtime && crew.has(i));
       const real = occupiedByReal(office, m.agent, id);
       if (ch && !ch.asaResident) continue; // not ours
       if (!ch) {
-        if (onShift && !real && !editMode) arrive(office, m, id);
+        if (onShift && !real && !editMode) { arrive(office, m, id); const c = office.characters.get(id); if (c && !normal) c.asaOvertime = true; }
       } else if (real) leave(office, id, ch, now, true);
       else if (!onShift) leave(office, id, ch, now, false);
-      else if (ch.asaStaff !== m) ch.asaStaff = m; // keeps the renamed look up to date
+      else {
+        if (ch.asaStaff !== m) ch.asaStaff = m; // keeps the renamed look up to date
+        ch.asaOvertime = !normal; // a night-shift resident
+        const st = state.get(id);
+        if (st?.leaving) { st.leaving = null; ch.asaBusy = false; } // wanted again (a session started while they were leaving)
+      }
     }
     // A staff member who isn't installed any more: nobody to play.
     for (const c of [...office.characters.values()]) if (c.asaResident && !wanted.has(c.id)) { office.removeAgent(c.id); state.delete(c.id); }
@@ -140,7 +165,7 @@
   const prevStatus = ns.castStatus;
   const prevNote = ns.castNote;
   ns.castBubble = (ch) => (ch.asaResident ? false : prevBubble?.(ch) ?? null);
-  ns.castStatus = (ch) => (ch.asaResident ? [S.status, '#8a7a68'] : prevStatus?.(ch) ?? null);
-  ns.castNote = (ch) => (ch.asaResident ? S.note : prevNote?.(ch) ?? '');
-  ns.residents = { ids: (office) => [...(office?.characters.values() ?? [])].filter((c) => c.asaResident).map((c) => c.id) };
+  ns.castStatus = (ch) => (ch.asaResident ? [ch.asaOvertime ? S.statusOvertime : S.status, '#8a7a68'] : prevStatus?.(ch) ?? null);
+  ns.castNote = (ch) => (ch.asaResident ? (ch.asaOvertime ? S.overtime : S.note) : prevNote?.(ch) ?? '');
+  ns.residents = { graceMs: OVERTIME_GRACE_MS, ids: (office) => [...(office?.characters.values() ?? [])].filter((c) => c.asaResident).map((c) => c.id) };
 })();

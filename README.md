@@ -309,7 +309,7 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
 - **Residents.** The team lives in the office: each installed staff member (Wren, Pip, Sari, Gus, Iris, Bayu) is a villager who is around during the
   working day with or without a Claude session. They come in through the front door between 07:00 and 08:15 and head home between 18:00 and 20:00 (staggered,
   following the office clock and the day-night preview), and in between they do what idle villagers do (coffee, plants, books, canteen at noon, chats), and
-  now and then sit at a work desk (only while at least three desks are free; they give one up when a session needs it). When a real session plays that
+  now and then sit at a work desk (only while at least three desks are free; they give one up when a session needs it). **Overtime:** when a real session is working outside those hours, two of them (a different pair each night) keep you company and go home about ten minutes after it goes quiet; with no session the office stays empty at night. When a real session plays that
   staff member (a mailbox task, a sub-agent) the resident steps aside and returns afterwards. They are scenery (`asaNpc`): no session, no tokens, not in
   the HUD cards, counters or notifications. `addon/residents.js`; `?residents=off` turns it off (remembered).
 - **Shop (🛒 Toko).** Click the 💰 Kas chip. **Décor** (garden: bench 200g, lantern 150g, apple tree 400g, berry bush 80g, flowers 60g, scarecrow 250g, barrel 120g,
