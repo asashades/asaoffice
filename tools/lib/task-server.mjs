@@ -29,6 +29,7 @@ import * as vault from './vault.mjs';
 import { collect as collectIncome, loadLedger } from './ledger.mjs';
 import { buy as shopBuy, shopInfo } from './shop.mjs';
 import { loadNames, setName } from './names.mjs';
+import * as tidy from './tidy.mjs';
 import { cleanSchedule, dueAction, loadSchedules, MAX_SCHEDULES, newSchedule, nextDue, saveSchedules } from './schedules.mjs';
 
 const MAX_RUNNING = 3;
@@ -280,10 +281,16 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     let access = member?.access ?? r.general?.access ?? ['read'];
     const phase = letter.mode === 'report' ? 'report' : letter.phase === 'plan' ? 'plan' : 'work';
     if (phase !== 'work') access = access.filter((a) => READ_ONLY.has(a)).concat('git');
-    const tools = allowedTools(access);
+    // "Rapikan Downloads": Claude only reads; the office moves the files itself after approval (tidy.mjs).
+    const tidyScan = letter.kind === 'tidy' ? tidy.scan() : null;
+    if (letter.kind === 'tidy' && !tidyScan) {
+      Object.assign(letter, { status: 'error', error: 'Folder Downloads gak ketemu di Mac ini.' });
+      return save();
+    }
+    const tools = tidyScan ? ['Read', 'Grep', 'Glob', 'LS'] : allowedTools(access);
     tools.push(...extraTools);
     if (phase === 'work' && member?.director && letter.style === 'delegate') tools.push(...DELEGATE_TOOLS);
-    let system = PHASE_PROMPT[phase];
+    let system = tidyScan ? tidy.systemPrompt(tidyScan) : PHASE_PROMPT[phase];
     // Commit permission is chosen per task (never push): only while the work is actually being done.
     if (letter.commit && phase === 'work') {
       tools.push(...COMMIT_TOOLS);
@@ -292,7 +299,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (member?.director) system += `\n${STYLE_PROMPT[letter.style === 'delegate' ? 'delegate' : 'solo']}`;
     const nick = roster().staff.filter((m) => !m.director && loadNames().staff[m.agent]);
     if (nick.length) system += `\n\nNama panggilan tim di kantor Komisaris: ${nick.map((m) => `${m.agent} sekarang dipanggil ${loadNames().staff[m.agent]}`).join('; ')}. Pakai nama panggilan itu kalau menyebut mereka.`;
-    const notes = vault.contextNotes();
+    const notes = tidyScan ? '' : vault.contextNotes();
     if (notes) system += `\n\n${notes}`;
     // The prompt goes in on stdin, so text that starts with "-" can never be read as a CLI option.
     const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'dontAsk',
@@ -353,12 +360,24 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     child.on('close', (code, signal) => {
       clearTimeout(timer);
       running.delete(letter.id);
-      const answer = String(result?.result ?? lastText ?? '').trim();
+      let answer = String(result?.result ?? lastText ?? '').trim();
+      let tidyPlan = null;
+      if (tidyScan && answer) {
+        tidyPlan = tidy.parsePlan(answer, tidyScan);
+        answer = tidyPlan.text;
+      }
       if (answer) letter.thread.push({ from: 'agent', text: answer.slice(0, MAX_RESULT), at: new Date().toISOString(), kind: phase });
       // claude usually answers SIGTERM by exiting with 143 (128 + 15) instead of dying from the signal itself.
       const killed = !!signal || code === 143 || code === 137;
       const failed = killed || (result ? result.is_error : code !== 0);
       letter.status = letter.stopped ? 'stopped' : failed ? 'error' : phase === 'plan' ? 'awaiting' : 'done';
+      if (tidyPlan && !failed && !letter.stopped) {
+        letter.tidy = { moves: tidyPlan.moves, rejected: tidyPlan.rejected };
+        if (!tidyPlan.moves.length) {
+          letter.status = 'done';
+          letter.thread.push({ from: 'agent', text: 'Tidak ada file yang perlu dipindah.', at: new Date().toISOString(), kind: 'work' });
+        }
+      }
       letter.error = failed && !letter.stopped
         ? (letter.timedOut ? 'Tugasnya kelamaan (lebih dari 30 menit), jadi dihentikan.'
           : letter.shutdown ? 'Kantor dimatikan waktu tugas ini masih jalan.'
@@ -445,7 +464,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (!safeEqual(req.headers.authorization ?? '', `Bearer ${token}`)) return send(res, 401, { error: 'token' }, origin);
 
     const url = new URL(req.url, 'http://x');
-    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject|rename|deliver|allow))?$/.exec(url.pathname);
+    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject|rename|deliver|allow|undo))?$/.exec(url.pathname);
     try {
       if (req.method === 'GET' && url.pathname === '/api/options') {
         const r = roster();
@@ -566,6 +585,25 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       if (url.pathname === '/api/vault/idea' && req.method === 'POST') {
         return vault.addIdea((await readBody(req)).text) ? send(res, 200, { ok: true }, origin) : send(res, 400, { error: 'text' }, origin);
       }
+      // Rapikan Downloads: Claude reads the folder and proposes moves; nothing moves until the plan is approved (see tidy.mjs).
+      if (req.method === 'POST' && url.pathname === '/api/tidy') {
+        const body = await readBody(req);
+        const inv = tidy.scan();
+        if (!inv) return send(res, 404, { error: 'downloads' }, origin);
+        if (!inv.files.length) return send(res, 200, { empty: true, skipped: inv.skipped }, origin);
+        if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
+        const note = String(body.note ?? '').trim().slice(0, 500);
+        const prompt = note ? `Rapikan folder Downloads-ku. Catatan: ${note}` : 'Rapikan folder Downloads-ku.';
+        const letter = {
+          id: crypto.randomUUID().slice(0, 8), kind: 'tidy', agent: null, name: null, cwd: inv.dir, project: 'Downloads',
+          sessionId: crypto.randomUUID(), status: 'running', read: true, createdAt: new Date().toISOString(),
+          title: '🧹 Rapikan Downloads', mode: 'plan', style: 'solo', phase: 'plan', commit: false,
+          thread: [{ from: 'you', text: prompt, at: new Date().toISOString() }],
+        };
+        letters.unshift(letter);
+        run(letter, prompt, { resume: false });
+        return send(res, 200, { letter }, origin);
+      }
       if (req.method === 'POST' && url.pathname === '/api/tasks') {
         const body = await readBody(req);
         const images = cleanImages(body.images);
@@ -610,7 +648,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (running.has(letter.id) || letter.status === 'queued') return send(res, 409, { error: 'running' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
         if (directorBusy(letter.agent)) return send(res, 429, { error: 'director busy' }, origin);
-        if (!allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
+        if (letter.kind !== 'tidy' && !allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
         // A reply to a plan that's waiting for you is a revision: it stays a plan until you approve it.
         const revise = letter.status === 'awaiting';
         letter.thread.push({ from: 'you', text, at: new Date().toISOString(), kind: revise ? 'revise' : undefined, ...(images.length ? { images } : {}) });
@@ -628,12 +666,33 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           save();
           return send(res, 200, { letter }, origin);
         }
+        if (letter.kind === 'tidy') {
+          // The office moves the files itself: only the ones listed in the plan, minus the ones the Commissioner unticked.
+          const asked = (await readBody(req)).exclude;
+          const exclude = Array.isArray(asked) ? asked : [];
+          const done = tidy.apply(letter.tidy?.moves ?? [], exclude);
+          letter.tidy = { ...letter.tidy, applied: done.applied, skipped: done.skipped, appliedAt: at };
+          letter.thread.push({ from: 'you', text: '✅ Disetujui, silakan jalan.', at, kind: 'approve' });
+          letter.thread.push({ from: 'agent', kind: 'work', at, text: `📦 ${done.applied.length} file dipindahkan${done.skipped.length ? `, ${done.skipped.length} dilewati` : ''}. Tidak ada yang dihapus: kalau ada yang salah, tekan ↩️ Kembalikan.` });
+          Object.assign(letter, { status: 'done', finishedAt: at });
+          save();
+          return send(res, 200, { letter }, origin);
+        }
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
         if (directorBusy(letter.agent)) return send(res, 429, { error: 'director busy' }, origin);
         if (!allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
         letter.thread.push({ from: 'you', text: '✅ Disetujui, silakan jalan.', at, kind: 'approve' });
         letter.phase = 'work';
         run(letter, 'Komisaris menyetujui rencananya. Kerjakan sekarang sesuai rencana, cek hasilnya, lalu tulis Laporan untuk Komisaris.', { resume: true });
+        return send(res, 200, { letter }, origin);
+      }
+      if (req.method === 'POST' && m?.[2] === 'undo') {
+        if (letter.kind !== 'tidy' || !letter.tidy?.applied?.length || letter.tidy.undone) return send(res, 409, { error: 'nothing to undo' }, origin);
+        const back = tidy.undo(letter.tidy.applied);
+        const at = new Date().toISOString();
+        letter.tidy.undone = at;
+        letter.thread.push({ from: 'agent', kind: 'work', at, text: `↩️ ${back.restored} file dikembalikan ke tempat semula${back.skipped.length ? `, ${back.skipped.length} dilewati (${back.skipped.slice(0, 3).map((x) => `${x.file}: ${x.why}`).join('; ')})` : ''}.` });
+        save();
         return send(res, 200, { letter }, origin);
       }
       if (req.method === 'POST' && m?.[2] === 'allow') {

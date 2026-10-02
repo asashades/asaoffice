@@ -51,6 +51,8 @@
       attach: 'Lampirkan gambar', attachTip: 'Lampirkan gambar (atau tempel / seret ke sini)', attachFail: 'Gambar gak bisa dilampirkan (png, jpg, gif, webp; maks 8 MB, 4 gambar).', lookAtImages: 'Tolong lihat gambar terlampir.', remove: 'Hapus',
       denied: (n) => `⛔ ${n} langkah ditolak otomatis (di luar izin tugas ini)`, allowOnce: 'Izinkan sekali', cantAllow: 'terlalu berisiko dari sini, jalankan sendiri di Terminal',
       schedBtn: '⏰ Jadwal', schedTip: 'Tugas yang jalan sendiri pada jam tertentu',
+      tidyBtn: '🧹', tidyTip: 'Rapikan folder Downloads: Claude membuat rencana, kamu setujui dulu', tidyEmpty: 'Downloads sudah rapi: tidak ada file lepas yang perlu dipindah.',
+      tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.', tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
       sesFirst: 'Pesan pertama', sesContinue: 'Lanjutkan sesi ini dari kantor', sesNote: 'Sesi ini dimulai di luar kantor (Terminal atau Desktop). Tulis di bawah buat lanjutin dari sini.',
       sesContinueHint: 'Tulis lanjutannya…', sesSend: 'Kirim', sesLive: 'Sesi ini lagi dipakai di tempat lain. Tunggu sebentar biar nggak tabrakan.', sesCopy: '📋 Salin perintah Terminal',
       gToday: 'Hari ini', gYesterday: 'Kemarin', gWeek: '7 hari terakhir', gOlder: 'Lebih lama',
@@ -104,6 +106,8 @@
       attach: 'Attach an image', attachTip: 'Attach an image (or paste / drag it here)', attachFail: 'Could not attach the image (png, jpg, gif, webp; max 8 MB, 4 images).', lookAtImages: 'Please look at the attached images.', remove: 'Remove',
       denied: (n) => `⛔ ${n} step(s) refused automatically (outside this task's permissions)`, allowOnce: 'Allow once', cantAllow: 'too risky from here, run it yourself in Terminal',
       schedBtn: '⏰ Schedules', schedTip: 'Tasks that run by themselves at a set time',
+      tidyBtn: '🧹', tidyTip: 'Tidy the Downloads folder: Claude makes a plan, you approve it first', tidyEmpty: 'Downloads is already tidy: no loose files to move.',
+      tidyNoFolder: 'The Downloads folder was not found on this Mac.', tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
       sesFirst: 'First message', sesContinue: 'Continue this session from the office', sesNote: 'This session was started outside the office (Terminal or Desktop). Write below to continue it from here.',
       sesContinueHint: 'Write the follow-up…', sesSend: 'Send', sesLive: 'This session is in use elsewhere. Wait a moment to avoid clashing.', sesCopy: '📋 Copy Terminal command',
       gToday: 'Today', gYesterday: 'Yesterday', gWeek: 'Last 7 days', gOlder: 'Older',
@@ -180,6 +184,9 @@
   @keyframes asa-dot { 0%, 60%, 100% { opacity: 0.25; transform: none; } 30% { opacity: 1; transform: translateY(-3px); } }
   .asa-sys { align-self: center; font-size: 12px; padding: 2px 10px; background: #e6d3a6; border: 1px solid #c9a877; }
   .asa-plan-actions { align-items: center; margin: -2px 0 0 32px; }
+  .asa-tidy { flex: none; margin: 4px 0 4px 32px; padding: 8px 10px; background: #fffbe9; border: 2px solid #c9a877; display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow: auto; }
+  .asa-tidy label { display: flex; gap: 6px; align-items: baseline; font-size: 13px; cursor: pointer; }
+  .asa-tidy .f { overflow-wrap: anywhere; } .asa-tidy .to { opacity: 0.75; white-space: nowrap; } .asa-tidy small { opacity: 0.6; }
   .asa-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 32px; }
   .asa-comp { border-top: 2px dashed #c9a877; padding-top: 8px; display: flex; flex-direction: column; gap: 6px; position: relative; }
   .asa-mention { position: absolute; left: 0; bottom: 100%; margin-bottom: 4px; z-index: 5; min-width: 240px; max-width: 100%; background: #fffbe9;
@@ -613,7 +620,8 @@
     ui.side.replaceChildren(
       h('div', { style: { display: 'flex', gap: '6px' } },
         h('button', { type: 'button', class: `asa-btn primary asa-newchat${sel === 'new' ? ' on' : ''}`, style: { flex: '1' }, onclick: () => select('new') }, S.newChat),
-        h('button', { type: 'button', class: 'asa-btn', title: S.schedTip, onclick: () => ns.schedule?.open() }, S.schedBtn)),
+        h('button', { type: 'button', class: 'asa-btn', title: S.schedTip, onclick: () => ns.schedule?.open() }, S.schedBtn),
+        h('button', { type: 'button', class: 'asa-btn', title: S.tidyTip, 'aria-label': S.tidyTip, onclick: () => startTidy() }, S.tidyBtn)),
       search, chips, rows);
     ui.refill();
   }
@@ -781,6 +789,7 @@
         out.push(h('div', { class: 'asa-brow' }, smallFace(l),
           h('div', { class: `asa-b agent${plan ? ' plan' : ''}` }, label ? h('em', {}, label) : null, h('div', { class: 'asa-b-text' }, m.text), imageStrip(m.text, l.cwd), h('small', {}, `${who(l)} · ${timeOf(m.at)}`))));
         if (plan && l.status === 'awaiting' && i === lastAgent) {
+          if (l.kind === 'tidy') out.push(tidyBlock(l));
           const yes = h('button', { type: 'button', class: 'asa-btn primary' }, S.approve);
           yes.onclick = () => approve(l, yes);
           out.push(h('div', { class: 'asa-actions asa-plan-actions' }, yes,
@@ -788,6 +797,12 @@
             h('span', { class: 'asa-muted' }, S.reviseHint)));
         }
       });
+      if (l.kind === 'tidy' && l.tidy?.applied?.length && l.status === 'done') {
+        out.push(h('div', { class: 'asa-tidy' }, ...l.tidy.applied.slice(0, 200).map((a) => h('div', { class: 'asa-muted' }, `${a.file} → ${a.to}${a.name !== a.file ? ` (${a.name})` : ''}`))));
+        out.push(l.tidy.undone
+          ? h('div', { class: 'asa-sys' }, S.tidyUndone)
+          : h('div', { class: 'asa-actions asa-plan-actions' }, h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('POST', `/api/tasks/${l.id}/undo`)) }, S.tidyUndo)));
+      }
       const deny = denialBlock(l);
       if (deny) out.push(deny);
       if (l.status === 'queued') out.push(h('div', { class: 'asa-sys' }, S.queuedNote(isDirector(l.agent) ? '' : l.name ?? '')));
@@ -1017,12 +1032,43 @@
     sending = false;
     if (panel) { ui.keys.comp = null; refreshMain(); }
   }
+  /** The files a "Rapikan Downloads" plan would move, each with a tick the Commissioner can remove. */
+  const tidyOff = new Map(); // letter id -> indexes left unticked
+  function tidyBlock(l) {
+    const off = tidyOff.get(l.id) ?? new Set();
+    tidyOff.set(l.id, off);
+    const moves = l.tidy?.moves ?? [];
+    return h('div', { class: 'asa-tidy' }, h('b', {}, S.tidyMoves(moves.length)),
+      ...moves.map((m, i) => {
+        const box = h('input', { type: 'checkbox' });
+        box.checked = !off.has(i);
+        box.onchange = () => { if (box.checked) off.delete(i); else off.add(i); };
+        return h('label', {}, box, h('span', { class: 'f' }, m.file), h('span', { class: 'to' }, `${S.tidyTo} ${m.to}`), m.why ? h('small', {}, m.why) : null);
+      }));
+  }
+  async function startTidy() {
+    notice = '';
+    ns.notify?.sfx?.('send');
+    try {
+      const res = await api('POST', '/api/tidy', {});
+      if (res.empty) notice = S.tidyEmpty;
+      else {
+        await ns.refreshData();
+        sel = res.letter.id;
+        select(res.letter.id);
+      }
+    } catch (err) {
+      notice = err.message === 'downloads' ? S.tidyNoFolder : errorText(err);
+    }
+    await ns.refreshData();
+    if (panel) refreshMain();
+  }
   async function approve(l, btn) {
     btn.disabled = true;
     ns.notify?.sfx?.('send');
     const landed = flyPlane(btn);
     try {
-      await api('POST', `/api/tasks/${l.id}/approve`);
+      await api('POST', `/api/tasks/${l.id}/approve`, l.kind === 'tidy' ? { exclude: [...(tidyOff.get(l.id) ?? [])] } : undefined);
       if (isDirector(l.agent)) ns.director?.expect({ cwd: l.cwd });
       await landed;
       dropLetter();
@@ -1094,7 +1140,7 @@
   ns.mailbox = {
     open, compose: (text) => open({ name: 'compose', text }), unread,
     /** From the HUD: approve or reject a waiting plan, or open the letter. */
-    approve: (l, btn) => approve(l, btn),
+    approve: (l, btn) => (l.kind === 'tidy' ? open({ name: 'letter', id: l.id }) : approve(l, btn)), // moving files is approved with the list in view
     reject: (l) => act(() => api('POST', `/api/tasks/${l.id}/reject`)),
     openLetter: (id) => open({ name: 'letter', id }),
   };

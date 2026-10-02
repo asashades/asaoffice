@@ -296,6 +296,12 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
 - **H** or the 🧭 button under the zoom buttons hides the HUD for a clear view. On phones the panel sits above the
   cards and starts minimised. `?hud=off` turns the HUD off (remembered; `?hud=on` brings it back).
 
+- **Tidy Downloads (🧹 in the mailbox sidebar).** Claude reads `~/Downloads` (read-only tools, no shell) and proposes where each loose file belongs: a folder that
+  already exists inside Downloads (two levels deep) when it clearly fits, otherwise `Arsip`. Nothing moves until you approve: the plan lists every move with a tick
+  to untick; **the office does the moving itself** (`tools/lib/tidy.mjs`), never deleting or overwriting (a clashing name becomes "name (2)"), skipping symlinks,
+  hidden files, partial downloads and files from the last 3 minutes, and refusing anything outside Downloads. Every move is listed in the letter with
+  **↩️ Kembalikan semua** to put everything back. Reply to the plan to revise it ("jangan pindahin file skripsi"). The first run makes macOS ask whether
+  Terminal (or Asa Office) may access the Downloads folder: allow it.
 - **Shop (🛒 Toko).** Click the 💰 Kas chip. **Décor** (garden: bench 200g, lantern 150g, apple tree 400g, berry bush 80g, flowers 60g, scarecrow 250g, barrel 120g,
   crate 70g, basket 90g, well 600g, pond 900g; walls: painting 350g, clock 200g, bookshelf 450g) is placed **automatically** on a spot the
   server has checked is free and out of the way (`tools/lib/shop.mjs`: grass outside the building, never the entrance path; bare wall; and a
