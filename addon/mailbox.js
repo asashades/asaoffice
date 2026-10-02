@@ -53,6 +53,7 @@
       schedBtn: '⏰ Jadwal', schedTip: 'Tugas yang jalan sendiri pada jam tertentu',
       tidyBtn: '🧹', tidyTip: 'Tanya atau rapikan folder Downloads (file baru dipindah setelah kamu setujui)', dlName: 'Downloads', tidyDraft: 'Rapikan file lepas di Downloads', dlPh: 'Tanya soal Downloads atau minta dirapikan, mis. "cari invoice bulan lalu" atau "rapikan file PDF"', tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.',
       tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
+      modelDefault: '🧠 Model default', modelTip: 'Model Claude yang dipakai (default = pengaturan Claude Code di Mac)', sesModelOrig: (n) => `🧠 Sesi asli (${n})`, sesModelDefault: '🧠 Default',
       archiveAllSessions: (n) => `🗄 Arsipkan ${n} sesi dari luar kantor`, archiveSure: 'Yakin? Klik lagi', archiveRow: 'Arsipkan', unarchiveRow: 'Keluarkan dari arsip', archiveFailed: 'Gagal mengarsipkan.',
       fArchived: '🗄 Arsip', unarchive: 'Keluarkan dari arsip', deletePerm: '🗑 Hapus permanen', deleteSure: 'Yakin? Klik lagi', emptyArchive: 'Belum ada chat yang diarsipkan. Pakai tombol 🗄 di chat buat menyimpannya di sini.',
       sesFirst: 'Pesan pertama', sesContinue: 'Lanjutkan sesi ini dari kantor', sesNote: 'Sesi ini dimulai di luar kantor (Terminal atau Desktop). Tulis di bawah buat lanjutin dari sini.',
@@ -110,6 +111,7 @@
       schedBtn: '⏰ Schedules', schedTip: 'Tasks that run by themselves at a set time',
       tidyBtn: '🧹', tidyTip: 'Ask about or tidy the Downloads folder (files only move after you approve)', dlName: 'Downloads', tidyDraft: 'Tidy the loose files in Downloads', dlPh: 'Ask about Downloads or ask for a tidy-up, e.g. "find last month\'s invoice" or "tidy the PDFs"', tidyNoFolder: 'The Downloads folder was not found on this Mac.',
       tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
+      modelDefault: '🧠 Default model', modelTip: 'The Claude model to use (default = your Claude Code setting on this Mac)', sesModelOrig: (n) => `🧠 Original (${n})`, sesModelDefault: '🧠 Default',
       archiveAllSessions: (n) => `🗄 Archive ${n} sessions from outside the office`, archiveSure: 'Sure? Click again', archiveRow: 'Archive', unarchiveRow: 'Take out of the archive', archiveFailed: 'Could not archive.',
       fArchived: '🗄 Archive', unarchive: 'Take out of the archive', deletePerm: '🗑 Delete for good', deleteSure: 'Sure? Click again', emptyArchive: 'No archived chats yet. Use the 🗄 button in a chat to keep it here.',
       sesFirst: 'First message', sesContinue: 'Continue this session from the office', sesNote: 'This session was started outside the office (Terminal or Desktop). Write below to continue it from here.',
@@ -343,6 +345,15 @@
   let sending = false;
   const prefs = (() => { try { return JSON.parse(ns.store.get('chatPrefs') || '{}'); } catch { return {}; } })();
   const savePrefs = () => ns.store.set('chatPrefs', JSON.stringify(prefs));
+  /** 'claude-opus-5-5' → 'Opus 5.5', 'claude-haiku-4-5-20251001' → 'Haiku 4.5', an alias → its name. */
+  const modelName = (m) => {
+    if (!m) return '';
+    const fam = /(opus|sonnet|haiku)/i.exec(m)?.[1];
+    if (!fam) return String(m).replace(/^claude-/, '');
+    const nums = (m.slice(m.toLowerCase().indexOf(fam.toLowerCase()) + fam.length).match(/-(\d{1,2})(?=-|$)/g) ?? []).slice(0, 2).map((x) => x.slice(1));
+    return `${fam[0].toUpperCase()}${fam.slice(1).toLowerCase()}${nums.length ? ` ${nums.join('.')}` : ''}`;
+  };
+  const MODEL_CHOICES = [['opus', 'Opus'], ['sonnet', 'Sonnet'], ['haiku', 'Haiku']];
   // Drafts survive closing the panel and reloading the page (one per chat, the newest 20).
   const drafts = (() => { try { return JSON.parse(ns.store.get('chatDrafts') || '{}'); } catch { return {}; } })();
   const draftKey = () => sel ?? 'new';
@@ -722,6 +733,10 @@
       const sendBusy = () => (!ta.value.trim() && !pendingImages().length) || !attach.ready();
       const sendBtn = h('button', { type: 'button', class: 'asa-send', title: S.sesSend, 'aria-label': S.sesSend }, '➤');
       const mode = h('select', { class: 'asa-chipsel', 'aria-label': S.mode }, ['auto', 'plan', 'report'].map((m) => h('option', { value: m }, S.chipModes[m])));
+      // Continuing a session: by default on the model it was last answered with (when known), or pick another.
+      const modelPick = h('select', { class: 'asa-chipsel', title: S.modelTip, 'aria-label': S.modelTip },
+        x.model ? h('option', { value: x.model }, S.sesModelOrig(modelName(x.model))) : null, h('option', { value: '' }, S.sesModelDefault), MODEL_CHOICES.map(([v, t]) => h('option', { value: v }, `🧠 ${t}`)));
+      modelPick.value = x.model ?? '';
       const commitBox = h('input', { type: 'checkbox', id: 'asa-commit-s' });
       const commitLab = h('label', { class: 'asa-chipsel', for: 'asa-commit-s', title: S.commitTip, style: { display: 'inline-flex', gap: '4px', alignItems: 'center' } }, commitBox, S.commitChip);
       const copy = h('button', { type: 'button', class: 'asa-chip', title: S.copyCmd }, S.sesCopy);
@@ -734,7 +749,7 @@
         if (!text || sendBtn.disabled) return;
         sendBtn.disabled = true;
         try {
-          const { letter } = await api('POST', '/api/tasks', { agent: null, cwd: x.cwd, prompt: text, mode: mode.value, commit: commitBox.checked, resumeSession: x.id, images });
+          const { letter } = await api('POST', '/api/tasks', { agent: null, cwd: x.cwd, prompt: text, mode: mode.value, model: modelPick.value || undefined, commit: commitBox.checked, resumeSession: x.id, images });
           clearAtt();
           setDraft('', key);
           dropLetter();
@@ -747,7 +762,7 @@
       sendBtn.onclick = send;
       ta.oninput = () => { setDraft(ta.value, key); grow(); sendBtn.disabled = live || sendBusy(); };
       ta.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } };
-      comp.append(attach.strip, h('div', { class: 'asa-comp-box' }, ta, sendBtn), h('div', { class: 'asa-chips' }, attach.button, mode, commitLab, copy), msg);
+      comp.append(attach.strip, h('div', { class: 'asa-comp-box' }, ta, sendBtn), h('div', { class: 'asa-chips' }, attach.button, mode, modelPick, commitLab, copy), msg);
       setTimeout(grow, 0);
     }
     ui.main.replaceChildren(head, thread, comp);
@@ -823,7 +838,7 @@
       actions.append(del);
     } else if (!busy(l)) actions.append(h('button', { type: 'button', class: 'asa-btn', title: S.archive, 'aria-label': S.archive, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/archive`), leave) }, '🗄'));
     head.replaceChildren(back, face(l), h('div', { class: 'asa-chat-title' }, titleBox,
-      h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.commit ? S.commitShort : null, S[l.status]].filter(Boolean).join(' · '))), actions);
+      h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.commit ? S.commitShort : null, l.usedModel || l.model ? `🧠 ${modelName(l.usedModel || l.model)}` : null, S[l.status]].filter(Boolean).join(' · '))), actions);
   }
 
   /** Calls the task tried that were refused automatically, each with a one-time "Izinkan sekali" when that's safe to offer. */
@@ -971,6 +986,9 @@
       if (options.downloads) projSel.append(h('option', { value: '@downloads', title: '~/Downloads' }, `📥 ${S.dlName}`));
       projSel.value = options.projects.some((p) => p.cwd === prefs.cwd) || (options.downloads && prefs.cwd === '@downloads') ? prefs.cwd : options.projects[0].cwd;
       const modeSel = h('select', { class: 'asa-chipsel', title: S.mode, 'aria-label': S.mode }, Object.entries(S.chipModes).map(([v, t]) => h('option', { value: v }, t)));
+      const modelSel = h('select', { class: 'asa-chipsel', title: S.modelTip, 'aria-label': S.modelTip }, h('option', { value: '' }, S.modelDefault), MODEL_CHOICES.map(([v, t]) => h('option', { value: v }, `🧠 ${t}`)));
+      modelSel.value = MODEL_CHOICES.some(([v]) => v === prefs.model) ? prefs.model : '';
+      modelSel.onchange = () => { prefs.model = modelSel.value; savePrefs(); };
       const styleSel = h('select', { class: 'asa-chipsel', title: S.style, 'aria-label': S.style }, Object.entries(S.chipStyles).map(([v, t]) => h('option', { value: v }, t)));
       styleSel.value = prefs.style ?? 'solo';
       const commitBox = h('input', { type: 'checkbox', id: 'asa-commit' });
@@ -1012,8 +1030,8 @@
       styleSel.onchange = () => { prefs.style = styleSel.value; savePrefs(); };
       update();
       syncDl();
-      Object.assign(controls, { whoSel, projSel, modeSel, styleSel, commitBox, member, setWho });
-      chips.append(whoSel, projSel, modeSel, styleSel, commitLab);
+      Object.assign(controls, { whoSel, projSel, modeSel, modelSel, styleSel, commitBox, member, setWho });
+      chips.append(whoSel, projSel, modeSel, modelSel, styleSel, commitLab);
     } else {
       chips.append(h('span', { class: 'asa-pill' }, `👤 ${who(l)}`), h('span', { class: 'asa-pill', title: l.cwd }, `📁 ${l.project}`), l.mode ? h('span', { class: 'asa-pill' }, S.chipModes[l.mode]) : null);
     }
@@ -1062,10 +1080,10 @@
     ns.notify?.sfx?.('send');
     const landed = flyPlane(sendBtn);
     ta.disabled = true;
-    if (cwd === '@downloads') return sendDownloads(text, landed);
+    if (cwd === '@downloads') return sendDownloads(text, landed, c.modelSel.value);
     try {
       const { letter } = await api('POST', '/api/tasks', {
-        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, style: director ? c.styleSel.value : undefined, commit: c.commitBox.checked, images, hold: true,
+        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, model: c.modelSel.value || undefined, style: director ? c.styleSel.value : undefined, commit: c.commitBox.checked, images, hold: true,
       });
       await landed;
       dropLetter();
@@ -1137,9 +1155,9 @@
       }));
   }
   /** A question or tidy-up request about Downloads: Claude reads, and any moves it proposes wait for your approval. */
-  async function sendDownloads(text, landed) {
+  async function sendDownloads(text, landed, model = '') {
     try {
-      const res = await api('POST', '/api/tidy', { prompt: text === S.lookAtImages ? '' : text });
+      const res = await api('POST', '/api/tidy', { prompt: text === S.lookAtImages ? '' : text, model: model || undefined });
       await landed;
       dropLetter();
       setDraft('', 'new');

@@ -104,6 +104,8 @@ export class ClaudeStats {
       const model = typeof rec.message.model === 'string' ? rec.message.model.replace(/^claude-/, '') : null;
       if (model && model !== '<synthetic>') d.models.set(model, (d.models.get(model) || 0) + 1);
     }
+    // The model a session last answered with (so "continue with the same model" can be offered).
+    if (rec.sessionId && !rec.isSidechain && typeof rec.message?.model === 'string' && rec.message.model.startsWith('claude-')) this.session(rec.sessionId).model = rec.message.model;
     if (!hasTool) return;
     const sess = rec.sessionId ? this.session(rec.sessionId) : null;
     const today = localDay(new Date());
@@ -212,7 +214,7 @@ export class ClaudeStats {
       .slice(0, limit)
       .map(([id, s]) => ({
         id, title: s.title || s.aiTitle || s.first || null, prompt: s.prompt || s.first || null, project: s.project ?? null, cwd: s.cwd ?? null,
-        at: new Date(Math.max(s.lastAt, s.fileAt)).toISOString(),
+        at: new Date(Math.max(s.lastAt, s.fileAt)).toISOString(), model: s.model ?? null,
       }));
   }
 

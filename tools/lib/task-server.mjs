@@ -57,6 +57,9 @@ const TOOLS = {
   ],
 };
 const MODES = ['plan', 'auto', 'report'];
+// The model a task runs on: an alias Claude Code knows, or a full model id (the one a session was last answered with). Anything else = the default.
+const MODEL_ALIASES = ['opus', 'sonnet', 'haiku'];
+const cleanModel = (m) => (MODEL_ALIASES.includes(m) || (typeof m === 'string' && /^claude-[a-z0-9][a-z0-9.-]{2,60}$/.test(m)) ? m : null);
 const READ_ONLY = new Set(['read', 'git', 'web']);
 const DELEGATE_TOOLS = ['Task', 'Agent'];
 const COMMIT_TOOLS = ['Bash(git add:*)', 'Bash(git commit:*)'];
@@ -322,6 +325,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'dontAsk',
       '--allowedTools', ...tools, '--append-system-prompt', system];
     if (letter.thread.some((m) => m.images?.length)) args.push('--add-dir', uploadsDir);
+    if (letter.model) args.push('--model', letter.model);
     if (resume) args.push('--resume', letter.sessionId);
     else args.push('--session-id', letter.sessionId);
     if (letter.agent) args.push('--agent', letter.agent);
@@ -348,6 +352,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         buf = buf.slice(nl + 1);
         let msg;
         try { msg = JSON.parse(line); } catch { continue; }
+        if (msg.type === 'system' && msg.subtype === 'init' && typeof msg.model === 'string') letter.usedModel = msg.model.slice(0, 80);
         if (msg.type === 'assistant') {
           const blocks = msg.message?.content ?? [];
           const t = blocks.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
@@ -653,7 +658,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const letter = {
           id: crypto.randomUUID().slice(0, 8), kind: 'tidy', agent: null, name: null, cwd: inv.dir, project: 'Downloads',
           sessionId: crypto.randomUUID(), status: 'running', read: true, createdAt: new Date().toISOString(),
-          title: `📥 ${titleOf(prompt)}`, mode: 'plan', style: 'solo', phase: 'plan', commit: false,
+          title: `📥 ${titleOf(prompt)}`, mode: 'plan', style: 'solo', phase: 'plan', commit: false, model: cleanModel(body.model),
           thread: [{ from: 'you', text: prompt, at: new Date().toISOString() }],
         };
         letters.unshift(letter);
@@ -683,7 +688,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           id: crypto.randomUUID().slice(0, 8), agent, name: member?.name ?? null, cwd: dir.cwd, project: dir.name,
           sessionId: resumeId ?? crypto.randomUUID(), status: 'running', read: true, createdAt: new Date().toISOString(),
           title: resumeId ? (known.title || titleOf(prompt)) : titleOf(prompt), mode, style, phase: mode === 'plan' ? 'plan' : 'work',
-          commit: body.commit === true && mode !== 'report',
+          commit: body.commit === true && mode !== 'report', model: cleanModel(body.model),
           thread: [{ from: 'you', text: prompt, at: new Date().toISOString(), ...(images.length ? { images } : {}) }],
         };
         letters.unshift(letter);
