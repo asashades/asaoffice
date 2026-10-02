@@ -423,8 +423,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       if (url.pathname === '/api/ledger' && req.method === 'GET') return send(res, 200, loadLedger(), origin);
       if (url.pathname === '/api/ledger/collect' && req.method === 'POST') {
         const b = await readBody(req);
-        const r = collectIncome(b.through, b.amount);
-        return r ? send(res, 200, { ...r.ledger, paid: r.paid }, origin) : send(res, 400, { error: 'collect' }, origin);
+        const r = collectIncome(b.through, b.income ?? b.amount, b.salary ?? 0);
+        return r ? send(res, 200, { ...r.ledger, paid: r.paid, before: r.before ?? r.ledger.kas }, origin) : send(res, 400, { error: 'collect' }, origin);
       }
       // Renaming a villager (staff by agent id, ordinary villagers by face). Shades can't be renamed.
       if (url.pathname === '/api/names' && req.method === 'POST') {

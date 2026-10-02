@@ -279,7 +279,11 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   without coins), it is compared with the day before, and awards appear (🏆 busiest day, 🔥 streak, 🧾 tasks finished). The money
   goes into the **Kas kantor** (`~/.pixel-agents/asaoffice-ledger.json`, written by the Mac so every view agrees): it is paid once, so a
   second tab or a phone can't pay the same day twice, and days the office wasn't opened are paid together as an extra "earlier days"
-  row (up to two weeks back). Below it: what is earned so far today ("cair besok pagi") and what waits today (plans to approve,
+  row (up to two weeks back). **Payroll:** every staff member has a daily salary (`salary` in `staff/roster.json`: Shades 120, Wren 50, Pip 50, Sari 40, Gus 55,
+  Iris 50, Bayu 60), plus a 30% bonus for each one who worked on a mailbox task that day; the card lists the payroll, then the
+  **net profit** (income − payroll), and that is what changes the Kas. A quiet day can be a loss, but the Kas never goes below 0.
+  The salary is charged for yesterday and for the earlier unpaid days on which something was done (being away doesn't drain the till).
+  The Kas also shows as a 💰 chip on the hero card. Below it: what is earned so far today ("cair besok pagi") and what waits today (plans to approve,
   refused steps, unread letters, open to-dos in the bookshelf, today's calendar events; each a link). The 🌙 button on the hero card
   replays it without paying again and pulses until you've seen this morning's payout. `?brief=off` turns the automatic card off. The
   numbers come from the data feed, so they cost no tokens.

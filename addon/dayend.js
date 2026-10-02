@@ -4,6 +4,9 @@
 //     ping in one by one while coins fall, the total counts up and glows, it's compared with the day before, and a few awards
 //     appear. The money goes into the office's Kas (tools/lib/ledger.mjs, once per day, so a second tab or a phone can't pay it
 //     twice); days the office wasn't opened are paid together as one extra row (up to two weeks back).
+//   - Then the payroll: every staff member has a daily salary (staff/roster.json), +30% for those who worked on a mailbox task that
+//     day; the day's income minus the payroll is the net profit, and that is what changes the Kas (never below 0, and a quiet day
+//     can be a loss). Days the office wasn't opened only cost salaries on the days something was done.
 //   - Below that: what is waiting today (plans to approve, refused steps, unread letters, open to-dos, calendar events) and
 //     what has been earned so far today ("cair besok pagi").
 //   - The 🌙 button on the hero card replays it (never pays twice); it pulses until you've looked at this morning's payout.
@@ -24,6 +27,7 @@
       awBusiest: 'Hari tersibuk', awStreak: (n) => `Streak ${n} hari`, awTasks: (n) => `${n} tugas selesai`,
       hello: ['Selamat pagi', 'Selamat siang', 'Selamat sore', 'Selamat malam'], waiting: 'Hari ini menunggu',
       todayTally: (g) => `Hari ini tercatat ${g} · cair besok pagi`,
+      payroll: (n, d) => `👥 Gaji tim (${n} orang${d > 1 ? `, ${d} hari` : ''})`, bonus: (names) => `⭐ Bonus rajin: ${names}`, net: 'Laba bersih', loss: 'Rugi hari ini', noNeg: 'Kas tidak bisa di bawah 0g.', salaryTip: 'Gaji tiap anggota tim ada di staff/roster.json (salary).',
       plans: (n) => `📝 ${n} rencana menunggu persetujuanmu`, denials: (n) => `⛔ ${n} langkah ditolak otomatis (buka suratnya)`, unread: (n) => `📮 ${n} surat belum dibaca`,
       todos: (n) => `💡 ${n} ide/TODO belum selesai di Rak Buku`, events: (n) => `📅 ${n} acara hari ini`, allClear: 'Tidak ada yang menunggu. Santai dulu ☕',
       allDay: 'sepanjang hari',
@@ -38,6 +42,7 @@
       awBusiest: 'Busiest day', awStreak: (n) => `${n}-day streak`, awTasks: (n) => `${n} tasks finished`,
       hello: ['Good morning', 'Good afternoon', 'Good evening', 'Good night'], waiting: 'Waiting today',
       todayTally: (g) => `Earned so far today: ${g} · paid tomorrow morning`,
+      payroll: (n, d) => `👥 Team payroll (${n} people${d > 1 ? `, ${d} days` : ''})`, bonus: (names) => `⭐ Hard-work bonus: ${names}`, net: 'Net profit', loss: 'Loss for the day', noNeg: 'The cash can’t go below 0g.', salaryTip: 'Each member’s salary is in staff/roster.json (salary).',
       plans: (n) => `📝 ${n} plan(s) waiting for your approval`, denials: (n) => `⛔ ${n} step(s) refused automatically (open the letter)`, unread: (n) => `📮 ${n} unread letter(s)`,
       todos: (n) => `💡 ${n} open idea(s)/TODO in the Bookshelf`, events: (n) => `📅 ${n} event(s) today`, allClear: 'Nothing is waiting. Relax for a bit ☕',
       allDay: 'all day',
@@ -51,6 +56,7 @@
   const TASK_PRICE = 100;
   const ICON = { edit: '🌾', search: '🍄', command: '⛏️', web: '🎣', agent: '⚔️' };
   const MAX_CATCHUP_DAYS = 14;
+  const BONUS = 0.3; // extra salary for a staff member who worked on a mailbox task that day
 
   const pad = (n) => String(n).padStart(2, '0');
   const dayKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -88,6 +94,15 @@
   .asa-day-kas { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; padding: 6px 10px; background: #f4e6c4; border: 2px dashed #b8935c; opacity: 0; transition: opacity 0.3s; }
   .asa-day-kas.on { opacity: 1; }
   .asa-day-kas b { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .asa-day-pay { margin-top: 6px; opacity: 0; transition: opacity 0.3s; }
+  .asa-day-pay.on { opacity: 1; }
+  .asa-day-pay .l { display: flex; justify-content: space-between; gap: 8px; padding: 3px 4px; font-size: 14px; border-bottom: 1px dashed #d9c49a; }
+  .asa-day-pay .l b { font-weight: 600; color: #c8503c; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .asa-day-pay .l small { opacity: 0.7; }
+  .asa-day-net { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; padding: 7px 10px; border: 2px solid #744122; background: #fff6dc; }
+  .asa-day-net b { font-size: 22px; font-variant-numeric: tabular-nums; }
+  .asa-day-net.gain b { color: #d98200; text-shadow: 0 0 6px rgba(240,160,32,0.6); } .asa-day-net.lose b { color: #c8503c; }
+  .asa-day-note { font-size: 12px; opacity: 0.65; margin-top: 3px; min-height: 16px; }
   .asa-day-tally { font-size: 12.5px; opacity: 0.7; margin-top: 8px; }
   .asa-day-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 8px; }
   .asa-day-hint { font-size: 12px; opacity: 0.55; }
@@ -95,7 +110,7 @@
   .asa-day-list li { padding: 5px 0; border-bottom: 1px dashed #d9c49a; }
   .asa-day-list li button { font: inherit; background: none; border: 0; padding: 0; color: inherit; text-align: left; cursor: pointer; text-decoration: underline dotted; }
   .asa-day h3 { font-weight: 600; font-size: 14px; margin: 14px 0 2px; color: #973a2f; }
-  @media (prefers-reduced-motion: reduce) { .asa-day-row, .asa-day-total, .asa-day-kas { transition: none; } .asa-day-award, .asa-day-total.glow, .asa-day-total.glow b { animation: none; } .asa-day-coins { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .asa-day-row, .asa-day-total, .asa-day-kas, .asa-day-pay { transition: none; } .asa-day-award, .asa-day-total.glow, .asa-day-total.glow b { animation: none; } .asa-day-coins { display: none; } }
   `;
   const ensureCss = () => { if (!document.getElementById('asa-day-css')) document.head.appendChild(h('style', { id: 'asa-day-css' }, css)); };
 
@@ -128,6 +143,30 @@
     return Object.keys(ns.data?.stats?.days ?? {}).filter((k) => k > paidThrough && k > floor && k < yesterday).sort();
   }
 
+  /** What the team costs for these days: salaries (roster) plus a bonus for each staff member who worked on a letter that day. */
+  function payrollFor(days) {
+    const staff = (ns.data?.staff ?? []).filter((m) => m.installed || m.director);
+    const letters = (ns.data?.mail ?? []).filter((l) => !l.report && l.agent);
+    const workedOn = (agent, key) => letters.some((l) => l.agent === agent && [l.createdAt, l.finishedAt].some((t) => t && dayKey(new Date(t)) === key));
+    let base = 0;
+    let bonus = 0;
+    const names = new Set();
+    for (const key of days) {
+      for (const m of staff) {
+        const salary = Number.isFinite(m.salary) ? m.salary : 50;
+        base += salary;
+        if (workedOn(m.agent, key)) { bonus += Math.round(salary * BONUS); names.add(m.name); }
+      }
+    }
+    return { people: staff.length, days: days.length, base, bonus, names: [...names], total: base + bonus };
+  }
+
+  /** Cash cache for the HUD (refreshed every minute, and after a payout). */
+  let ledgerCache = null;
+  async function refreshLedger() {
+    try { ledgerCache = await ns.localApi('GET', '/api/ledger'); } catch { ledgerCache = null; }
+  }
+
   const seen = () => ns.store.get('dayIncomeSeen');
   let opening = false;
 
@@ -150,15 +189,21 @@
       if (earlierSum > 0) rows.push({ key: 'earlier', icon: '📦', label: S.earlier(earlier.length), count: 0, price: 0, amount: earlierSum, plain: true });
       const total = rows.reduce((n, r) => n + r.amount, 0);
       const prev = incomeOn(dayKey(addDays(today, -2)));
+      const chargedDays = [yKey, ...earlier.filter((k) => (ns.data?.stats?.days?.[k]?.tools ?? 0) > 0)];
+      let pay = payrollFor(chargedDays);
+      const logged = ledger?.log?.find((e) => e.day === yKey && e.salary != null);
+      if (paidAlready && logged) pay = { people: pay.people, days: 1, base: logged.salary, bonus: 0, names: [], total: logged.salary }; // what was really paid back then
 
       // Pay it out (once). If it fails, the card still shows the numbers.
       let kasBefore = ledger?.kas ?? null;
       let kasAfter = ledger?.kas ?? null;
+      const netProfit = total - pay.total;
       if (ledger && !paidAlready) {
         try {
-          const res = await ns.localApi('POST', '/api/ledger/collect', { through: yKey, amount: total });
+          const res = await ns.localApi('POST', '/api/ledger/collect', { through: yKey, income: total, salary: pay.total });
           kasAfter = res.kas;
-          kasBefore = res.paid ? res.kas - total : res.kas;
+          kasBefore = res.before ?? res.kas;
+          ledgerCache = res;
         } catch { /* keep the old numbers */ }
       }
 
@@ -202,6 +247,13 @@
           const totalNum = h('b', {}, '0g');
           const totalEl = h('div', { class: 'asa-day-total' }, h('span', {}, paidAlready || !ledger ? S.totalReplay : S.total), totalNum);
           const delta = h('div', { class: 'asa-day-delta' });
+          const payEl = h('div', { class: 'asa-day-pay', title: S.salaryTip },
+            h('div', { class: 'l' }, h('span', {}, S.payroll(pay.people, pay.days)), h('b', {}, `−${fmtG(pay.base)}`)),
+            pay.bonus > 0 ? h('div', { class: 'l' }, h('span', {}, S.bonus(pay.names.join(', '))), h('b', {}, `−${fmtG(pay.bonus)}`)) : null);
+          const netNum = h('b', {}, '0g');
+          const netEl = h('div', { class: `asa-day-net ${netProfit >= 0 ? 'gain' : 'lose'}` }, h('span', {}, netProfit >= 0 ? S.net : S.loss), netNum);
+          const netNote = h('div', { class: 'asa-day-note' });
+          payEl.append(netEl, netNote);
           const awards = h('div', { class: 'asa-day-awards' });
           const kasNum = h('b', {}, kasBefore == null ? '' : fmtG(kasBefore));
           const kasEl = ledger ? h('div', { class: 'asa-day-kas' }, h('span', {}, `💰 ${S.kas}`), kasNum) : h('p', { class: 'asa-muted' }, S.noLedger);
@@ -210,7 +262,7 @@
           const mailBtn = h('button', { type: 'button', class: 'asa-btn', onclick: () => { p.close(); ns.mailbox?.open(); } }, S.openMail);
           body.append(h('div', { class: 'asa-day' },
             h('div', { class: 'asa-day-date' }, `${S.yesterdayOn} · ${date}`),
-            total === 0 ? null : rowsEl, quiet, total === 0 ? null : totalEl, delta, awards, kasEl,
+            total === 0 ? null : rowsEl, quiet, total === 0 ? null : totalEl, delta, awards, pay.total > 0 || total > 0 ? payEl : null, kasEl,
             h('div', { class: 'asa-day-tally' }, S.todayTally(fmtG(todayTotal))),
             h('h3', {}, S.waiting), lines.length ? h('ul', { class: 'asa-day-list' }, lines) : h('p', {}, S.allClear),
             h('div', { class: 'asa-day-actions' }, h('span', { class: 'asa-day-hint' }, reduced || total === 0 ? '' : S.skip), h('span', {}, mailBtn, ' ', next))));
@@ -232,11 +284,11 @@
               coins.append(coin);
             }
           };
-          const countUp = (el, from, to, ms, done) => {
+          const countUp = (el, from, to, ms, done, fmt = fmtG) => {
             const t0 = performance.now();
             const tick = (now) => {
               const t = Math.min(1, (now - t0) / ms);
-              el.textContent = fmtG(from + (to - from) * (1 - (1 - t) ** 3));
+              el.textContent = fmt(from + (to - from) * (1 - (1 - t) ** 3));
               if (t < 1) requestAnimationFrame(tick); else done?.();
             };
             requestAnimationFrame(tick);
@@ -258,6 +310,9 @@
               delta.className = `asa-day-delta ${diff > 0 ? 'up' : diff < 0 ? 'down' : ''}`;
             }
             awards.replaceChildren(...awardsFor(ysum).map((a) => h('span', { class: 'asa-day-award' }, a)));
+            payEl.classList.add('on');
+            netNum.textContent = `${netProfit >= 0 ? '+' : '−'}${fmtG(Math.abs(netProfit))}`;
+            if (ledger && kasBefore != null && kasBefore + netProfit < 0) netNote.textContent = S.noNeg;
             showKas();
           };
           if (reduced || total === 0) { finish(); return; }
@@ -272,7 +327,12 @@
             } else {
               totalEl.classList.add('on', 'glow');
               rain(Math.min(46, 18 + Math.floor(total / 60)));
-              countUp(totalNum, 0, total, 900, () => { ns.notify?.sfx?.('plan'); finish(); });
+              countUp(totalNum, 0, total, 900, () => {
+                ns.notify?.sfx?.('pickup');
+                payEl.classList.add('on');
+                const sign = netProfit >= 0 ? '+' : '−';
+                timers.push(setTimeout(() => countUp(netNum, 0, Math.abs(netProfit), 700, () => { ns.notify?.sfx?.(netProfit >= 0 ? 'plan' : 'send'); finish(); }, (n) => `${sign}${fmtG(n)}`), 450));
+              });
             }
           };
           step();
@@ -298,5 +358,9 @@
     }, 1000);
   }
 
-  ns.dayEnd = { open: () => open({ auto: false }), morning: () => open({ auto: true }), pending, summary };
+  // Keep the cash for the HUD fresh.
+  setInterval(refreshLedger, 60_000);
+  setTimeout(refreshLedger, 4000);
+
+  ns.dayEnd = { kas: () => ledgerCache?.kas ?? null, open: () => open({ auto: false }), morning: () => open({ auto: true }), pending, summary };
 })();

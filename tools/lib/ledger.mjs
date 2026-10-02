@@ -2,13 +2,14 @@
 //   kas          the money in the office's till, in gold
 //   paidThrough  the last day (YYYY-MM-DD) whose income has been paid out. Like Stardew's shipping bin, a day's work is paid
 //                the next morning, once: collecting is idempotent, so a second tab or a phone can't pay the same day twice.
-//   log          the last payouts: { day, amount, at }
+//   log          the last payouts: { day, income, salary, net, at } (net = what actually changed the Kas: it never goes below 0)
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
 const file = () => path.join(os.homedir(), '.pixel-agents', 'asaoffice-ledger.json');
 const MAX_PAYOUT = 1_000_000;
+const MAX_SALARY = 100_000;
 const KEEP_LOG = 60;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -28,21 +29,25 @@ export function loadLedger() {
 const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 /**
- * Pays out the income of every day up to and including `through` (which must be before today), once.
- * Returns { ledger, paid } where paid is false when that day (or a later one) was already paid, or null when the request is invalid.
+ * Settles every day up to and including `through` (which must be before today), once: `income` comes in, `salary` goes out,
+ * and the Kas never drops below 0 (a bad day can empty the till but not put it in debt).
+ * Returns { ledger, paid } where paid is false when that day (or a later one) was already settled, or null when the request is invalid.
  */
-export function collect(through, amount, now = new Date()) {
-  const sum = Number(amount);
+export function collect(through, income, salary = 0, now = new Date()) {
+  const inc = Number(income);
+  const pay = Number(salary);
   if (typeof through !== 'string' || !DAY.test(through) || through >= localDay(now)) return null;
-  if (!Number.isInteger(sum) || sum < 0 || sum > MAX_PAYOUT) return null;
+  if (!Number.isInteger(inc) || inc < 0 || inc > MAX_PAYOUT) return null;
+  if (!Number.isInteger(pay) || pay < 0 || pay > MAX_SALARY) return null;
   const ledger = loadLedger();
   if (ledger.paidThrough && through <= ledger.paidThrough) return { ledger, paid: false };
-  ledger.kas += sum;
+  const before = ledger.kas;
+  ledger.kas = Math.max(0, before + inc - pay);
   ledger.paidThrough = through;
-  ledger.log.push({ day: through, amount: sum, at: now.toISOString() });
+  ledger.log.push({ day: through, income: inc, salary: pay, net: ledger.kas - before, at: now.toISOString() });
   ledger.log = ledger.log.slice(-KEEP_LOG);
   fs.mkdirSync(path.dirname(file()), { recursive: true });
   fs.writeFileSync(`${file()}.tmp`, JSON.stringify(ledger, null, 2));
   fs.renameSync(`${file()}.tmp`, file());
-  return { ledger, paid: true };
+  return { ledger, paid: true, before };
 }
