@@ -170,6 +170,10 @@ Kantornya sekarang memanjang (33×24 petak, denah lanskap) dan ada halamannya:
   di papannya = jumlah villager yang lagi kerja.
 - **Siang-malam**: kantornya ikut jam kamu. Sore jadi oranye, magrib ungu, malam gelap dengan bintang di jendela,
   lentera dan perapian nyala. Mau matiin? Tambahin `&dayNight=off` di ujung link kantor.
+  **Lampu ruangan:** tiap ruangan (area kerja, ruang rapat, ruang direktur, toilet, pantry, breakout, lounge) punya
+  lampu langit-langit hangat yang menyala pelan-pelan pas senja, **cuma nyala kalau ada orang di dalamnya**, dan padam
+  sekitar dua menit setelah orang terakhir keluar. Villager yang lagi ngetik juga dapat **lampu meja** yang menyala di
+  mejanya. Mau matiin lampu ruangan aja? Tambahin `&roomLights=off`.
 
 Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layout**, cari **Task Board**, tempel di dinding.
 

@@ -259,6 +259,10 @@ calendar names are in that file; the stats are counts only, with no paths, promp
   with stars and a moon in the windows and warm light around the lanterns, the flickering fireplace and the screens
   of working villagers. `&dayNight=off` in the URL turns it off (remembered); `__asaoffice.dayNight.preview(21)` in
   the console previews a time, `preview(null)` goes back to the clock.
+  **Room lights:** each room (work area, meeting room, director's office, toilet, pantry, breakout, lounge) has a warm
+  ceiling light that fades in over dusk, is on only while someone is inside, and fades out about two minutes after the
+  last person leaves; a villager who is working also gets a desk-lamp glow on their desk. `&roomLights=off` turns the
+  room and desk lights off (remembered); `__asaoffice.dayNight.rooms()` shows each room's light level.
 
 Existing offices need the task board placed once, like the Holo-board: `npm run layout`, or **Layout → Task Board**.
 The task board reads the same feed as the Holo-board, which now also carries each recent session's title, last
