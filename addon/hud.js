@@ -27,7 +27,7 @@
       atDesk: 'Di meja direktur', noProject: 'Sesi Claude Code', chatWith: (n) => `Ngobrol sama ${n}`,
       planReady: 'Rencana siap', approveBtn: '✅ Setujui', rejectBtn: '❌ Tolak', openBtn: 'Buka', morePlans: (n) => `+${n} rencana lagi di kotak surat`,
       perm: 'Izin', emptyPerm: 'Belum ada langkah yang ditolak otomatis.', permSource: 'Langkah yang ditolak otomatis karena di luar izin tugas. Klik buat buka suratnya.', stOpen: 'menunggu', stAllowed: 'diizinkan sekali',
-      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
+      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', openEnd: 'Akhir Hari', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
     },
     en: {
       title: 'Asa Office', live: 'Connected', dead: 'Data offline', nodata: 'No data', sessions: 'Sessions working', helpers: 'Helpers', today: 'Sub-agents today',
@@ -43,7 +43,7 @@
       atDesk: "At the director's desk", noProject: 'Claude Code session', chatWith: (n) => `Chatting with ${n}`,
       planReady: 'Plan ready', approveBtn: '✅ Approve', rejectBtn: '❌ Reject', openBtn: 'Open', morePlans: (n) => `+${n} more plans in the mailbox`,
       perm: 'Permissions', emptyPerm: 'Nothing has been refused automatically.', permSource: 'Steps refused automatically because they were outside the task’s permissions. Click to open the letter.', stOpen: 'waiting', stAllowed: 'allowed once',
-      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
+      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', openEnd: 'End of Day', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
     },
   });
 
@@ -78,6 +78,9 @@
   .hud-quick button { position: relative; width: 36px; height: 36px; padding: 0; cursor: pointer; font-size: 18px; line-height: 1;
     background: rgba(244,230,196,0.93); border: 2px solid #744122; box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
   .hud-quick button:hover { background: #fbf0d3; }
+  .hud-quick button.attn { animation: hud-pulse 1.5s ease-in-out infinite; }
+  @keyframes hud-pulse { 0%, 100% { box-shadow: 0 2px 0 rgba(0,0,0,0.25), 0 0 0 0 rgba(242,201,76,0.9); } 50% { box-shadow: 0 2px 0 rgba(0,0,0,0.25), 0 0 0 5px rgba(242,201,76,0); } }
+  @media (prefers-reduced-motion: reduce) { .hud-quick button.attn { animation: none; outline: 3px solid #f2c94c; } }
   .hud-badge { position: absolute; top: -7px; right: -7px; min-width: 17px; height: 17px; padding: 0 3px; background: #c8503c; color: #fff6dc;
     font-size: 11px; line-height: 17px; text-align: center; border: 2px solid #973a2f; box-sizing: content-box; }
   .hud-badge:empty { display: none; }
@@ -218,6 +221,7 @@
           <button type="button" data-open="mail" title="${esc(S.openMail)}" aria-label="${esc(S.openMail)}">📮<i class="hud-badge" id="hud-badge"></i></button>
           <button type="button" data-open="shelf" title="${esc(S.openShelf)}" aria-label="${esc(S.openShelf)}">📚</button>
           <button type="button" data-open="idea" title="${esc(S.idea)}" aria-label="${esc(S.idea)}">💡</button>
+          <button type="button" id="hud-end" data-open="end" title="${esc(S.openEnd)}" aria-label="${esc(S.openEnd)}">🌙</button>
         </div>
         <div class="hud-plate"><b id="hud-time"></b><span id="hud-date"></span><span id="hud-season"></span></div>
         <div class="hud-status"><b>${esc(S.title)}</b><span id="hud-phase"></span>
@@ -284,6 +288,7 @@
     const openBtn = e.target.closest('[data-open]');
     if (openBtn) {
       if (openBtn.dataset.open === 'idea') toggleIdea(true);
+      else if (openBtn.dataset.open === 'end') ns.dayEnd?.open();
       else (openBtn.dataset.open === 'mail' ? ns.mailbox : ns.shelf)?.open();
       return;
     }
@@ -516,6 +521,7 @@
     const unread = ns.mailbox?.unread?.() ?? 0;
     const badge = unread > 0 ? String(Math.min(unread, 99)) : '';
     if (lastHero.badge !== badge) { $('hud-badge').textContent = badge; lastHero.badge = badge; }
+    $('hud-end').classList.toggle('attn', !!ns.dayEnd?.pending?.());
     ns.sky?.draw($('hud-sky'), ns.dayNight?.hour?.() ?? d.getHours() + d.getMinutes() / 60, seasonNow());
   }
 
