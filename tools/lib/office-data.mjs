@@ -11,6 +11,7 @@ import path from 'node:path';
 
 import { ClaudeStats } from './claude-stats.mjs';
 import { loadNames } from './names.mjs';
+import { wornLooks } from './shop.mjs';
 import { startTaskServer } from './task-server.mjs';
 
 const STATS_EVERY_MS = 60_000;
@@ -83,7 +84,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
 
   const stats = new ClaudeStats();
   const data = {
-    version: 1, generatedAt: null, schedules: [], names: loadNames(), stats: null, tasks: [], sessions: [], runs: [], subagents: {}, staff: [], mail: [], taskAgents: {}, taskServer: null,
+    version: 1, generatedAt: null, schedules: [], names: loadNames(), looks: wornLooks(), stats: null, tasks: [], sessions: [], runs: [], subagents: {}, staff: [], mail: [], taskAgents: {}, taskServer: null,
     calendar: { status: calendar ? 'loading' : 'off', events: [] },
   };
   // Staff roster, with which members are installed as Claude Code subagents (npm run staff).
@@ -116,6 +117,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
       data.runs = stats.runs();
       data.staff = readStaff();
       data.names = loadNames();
+      data.looks = wornLooks();
       lastSpawns = stats.spawnsVersion;
       write();
     } catch (err) {

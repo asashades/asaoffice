@@ -21,6 +21,15 @@
   /** An ordinary face's name: the one the Commissioner chose (data feed), else the built-in one. */
   const faceName = (p) => ns.data?.names?.palette?.[String(((p ?? 0) % COUNT + COUNT) % COUNT)] ?? ns.VILLAGERS[((p ?? 0) % COUNT + COUNT) % COUNT];
   ns.faceName = faceName;
+  // What the shop sold: the outfit colour (hue shift) and title a face wears, from the data feed ({ <palette>: { hue, title } }).
+  const look = (p) => ns.data?.looks?.[String(p)] ?? null;
+  const outfitHue = (p) => look(p)?.hue ?? 0;
+  const TITLES = ns.t({
+    id: { gardener: 'Tukang Kebun', chef: 'Chef', sir: 'Sir', dr: 'Dr.', captain: 'Kapten', maestro: 'Maestro' },
+    en: { gardener: 'Gardener', chef: 'Chef', sir: 'Sir', dr: 'Dr.', captain: 'Captain', maestro: 'Maestro' },
+  });
+  ns.titleLabels = TITLES;
+  ns.outfitHue = outfitHue;
   const pick = (v) => (v && typeof v === 'object' ? v[ns.lang] ?? v.en ?? '' : v ?? '');
 
   const assigned = new Map(); // main villager id -> { palette, hueShift }
@@ -54,7 +63,7 @@
   ns.staffDuty = (m) => pick(m?.duty);
   ns.portraitUrl = (ch) => `./asaoffice/characters/char_${(((ch?.palette ?? 0) % COUNT) + COUNT) % COUNT}.png`;
 
-  ns.villagerName = (ch) => {
+  const plainName = (ch) => {
     if (!ch) return '';
     const staff = ns.staffOf(ch);
     if (staff) return staff.name;
@@ -77,6 +86,13 @@
       .sort((a, b) => a.id - b.id);
     const n = twins.findIndex((c) => c.id === ch.id);
     return n > 0 ? `${base} ${n + 1}` : base;
+  };
+  // A title bought in the shop goes in front of the name of a face (not a helper's, and not Shades').
+  ns.villagerName = (ch) => {
+    const name = plainName(ch);
+    if (!ch || ch.isSubagent || ch.asaShades || ch.asaDirector || ch.palette === ns.DIRECTOR_PALETTE) return name;
+    const title = TITLES[look(ch.palette)?.title];
+    return title ? `${title} ${name}` : name;
   };
   ns.subagentCaller = (ch) => {
     const parent = ch?.isSubagent ? ns.view?.office?.characters.get(ch.parentAgentId) : null;
@@ -110,7 +126,8 @@
     for (const ch of mains) {
       const a = assigned.get(ch.id);
       if (ch.palette !== a.palette) ch.palette = a.palette;
-      if ((ch.hueShift ?? 0) !== a.hueShift) ch.hueShift = a.hueShift;
+      const hue = (a.hueShift + outfitHue(a.palette)) % 360; // the shop's outfit colour on top of the repeat-face shift
+      if ((ch.hueShift ?? 0) !== hue) ch.hueShift = hue;
     }
   }
 
@@ -132,7 +149,8 @@
       }
       if (s.staff) {
         if (ch.palette !== s.staff.palette) ch.palette = s.staff.palette;
-        if (ch.hueShift) ch.hueShift = 0;
+        const hue = outfitHue(s.staff.palette);
+        if ((ch.hueShift ?? 0) !== hue) ch.hueShift = hue;
       } else {
         const parent = office.characters.get(ch.parentAgentId);
         const palette = parent?.palette ?? ch.palette;
@@ -161,7 +179,10 @@
     // Staff sessions started from the mailbox, and Agent Teams teammates named after a staff member, wear that villager's face too.
     for (const ch of office.characters.values()) {
       const staff = !ch.isSubagent && !cast(ch) && mainStaff(ch);
-      if (staff && ch.palette !== staff.palette) { ch.palette = staff.palette; ch.hueShift = 0; }
+      if (staff && ch.palette !== staff.palette) ch.palette = staff.palette;
+      if (staff && (ch.hueShift ?? 0) !== outfitHue(staff.palette)) ch.hueShift = outfitHue(staff.palette);
+      // The villagers the office plays itself (director.js) wear what the staff member wears, except Shades.
+      else if (!ch.isSubagent && cast(ch) && !ch.asaShades && !ch.asaDirector && ch.asaStaff && !ch.asaStaff.director && (ch.hueShift ?? 0) !== outfitHue(ch.palette)) ch.hueShift = outfitHue(ch.palette);
     }
   });
 })();
