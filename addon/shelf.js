@@ -29,6 +29,7 @@
       quiet: 'Hari ini belum ada sesi Claude.', streak: (n) => `Streak kerja: ${n} hari 🔥`, done: 'Tugas selesai', decide: 'Menunggu keputusanmu', none: 'Belum ada.',
       ago: (m) => (m < 1 ? 'baru saja' : m < 60 ? `${m} mnt lalu` : m < 1440 ? `${Math.round(m / 60)} jam lalu` : `${Math.round(m / 1440)} hari lalu`),
       ideaSaved: '💡 Tersimpan di Ide & TODO',
+      recent: '🕒 Terbaru', noteCount: (n) => `${n} catatan`, results: (n) => `Hasil pencarian (${n})`,
       folders: 'Folder', foldHome: 'Vault', newFolder: '＋ Folder', newNoteHere: '＋ Catatan', folderName: 'Nama folder baru, Enter untuk buat', emptyFolder: 'Folder ini kosong.',
       items: (n) => `${n} isi`, renameTip: 'Ganti nama', moveTip: 'Pindahkan ke folder lain', trashTip: 'Hapus (dipindah ke .trash)', sure: 'Yakin? Klik lagi', protectedTip: 'Bawaan Rak Buku, tidak bisa diubah',
       moveHere: 'Pindahkan ke…', moveRoot: '🏠 (akar vault)', cancelShort: 'Batal', dropHint: 'Seret catatan ke folder buat memindahkan',
@@ -55,6 +56,7 @@
       quiet: 'No Claude sessions yet today.', streak: (n) => `Work streak: ${n} days 🔥`, done: 'Tasks done', decide: 'Waiting for your decision', none: 'None yet.',
       ago: (m) => (m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`),
       ideaSaved: '💡 Saved to Ideas & TODO',
+      recent: '🕒 Recent', noteCount: (n) => `${n} notes`, results: (n) => `Search results (${n})`,
       folders: 'Folders', foldHome: 'Vault', newFolder: '＋ Folder', newNoteHere: '＋ Note', folderName: 'New folder name, Enter to create', emptyFolder: 'This folder is empty.',
       items: (n) => `${n} items`, renameTip: 'Rename', moveTip: 'Move to another folder', trashTip: 'Delete (moved to .trash)', sure: 'Sure? Click again', protectedTip: 'Part of the Bookshelf, cannot be changed',
       moveHere: 'Move to…', moveRoot: '🏠 (vault root)', cancelShort: 'Cancel', dropHint: 'Drag a note onto a folder to move it',
@@ -121,25 +123,55 @@
   .asa-ncard ul { list-style: none; margin: 0; padding: 0; flex: 1; font-size: 13px; line-height: 1.45; overflow: hidden; }
   .asa-ncard li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .asa-ncard li::before { content: '☐ '; opacity: 0.6; }
-  .asa-fold-crumbs { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; padding: 6px 8px; background: #f4e6c4; border-bottom: 1px solid #e6d3a6; position: sticky; top: 0; z-index: 1; font-size: 13px; }
-  .asa-fold-crumbs button { font: inherit; font-size: 13px; background: none; border: 1px solid transparent; padding: 1px 6px; cursor: pointer; color: #973a2f; }
-  .asa-fold-crumbs button:hover, .asa-fold-crumbs button.drop { background: #fffbe9; border-color: #c9a877; }
-  .asa-fold-crumbs .sep { opacity: 0.5; }
-  .asa-fold-crumbs .grow { flex: 1; }
-  .asa-fold-row { display: flex; align-items: center; gap: 4px; padding: 0 6px 0 0; border-bottom: 1px solid #f0e4c4; }
-  .asa-fold-row:hover { background: #f9f0d6; }
-  .asa-fold-row.drop { background: #e8f2d4; outline: 2px dashed #3f8a36; outline-offset: -2px; }
+  .asa-shelf-split { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 10px; min-height: 380px; }
+  .asa-tree { overflow: auto; max-height: 54vh; border: 2px solid #d9c49a; background: #fffbe9; padding: 4px 0; }
+  .asa-tnode { display: flex; align-items: center; gap: 4px; width: 100%; font: inherit; font-size: 13.5px; text-align: left; padding: 4px 8px 4px 6px; background: none; border: 0; border-left: 3px solid transparent; color: inherit; cursor: pointer; white-space: nowrap; }
+  .asa-tnode:hover { background: #f9f0d6; }
+  .asa-tnode.on { background: #f4e6c4; border-left-color: #c8503c; font-weight: 600; }
+  .asa-tnode.drop { background: #e8f2d4; outline: 2px dashed #3f8a36; outline-offset: -2px; }
+  .asa-tnode .lab { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .asa-tnode small { opacity: 0.5; font-size: 11.5px; }
+  .asa-tnode .caret { width: 14px; flex: none; text-align: center; font-size: 11px; opacity: 0.7; }
+  .asa-tnode .caret:hover { opacity: 1; }
+  .asa-tnode.pin { padding-left: 10px; }
+  .asa-tsep { border-top: 1px dashed #d9c49a; margin: 4px 8px; }
+  .asa-content { overflow: auto; max-height: 54vh; border: 2px solid #d9c49a; background: #fffbe9; padding: 8px 10px; min-width: 0; }
+  .asa-chead { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; position: sticky; top: -8px; background: #fffbe9; padding: 4px 0; z-index: 2; }
+  .asa-chead .grow { flex: 1; min-width: 0; }
+  .asa-chead .asa-btn { padding: 3px 9px; font-size: 13px; }
+  .asa-chead .trail { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-size: 14px; }
+  .asa-chead .trail button { font: inherit; background: none; border: 1px solid transparent; padding: 1px 6px; cursor: pointer; color: #973a2f; }
+  .asa-chead .trail button:hover, .asa-chead .trail button.drop { background: #f4e6c4; border-color: #c9a877; }
+  .asa-chead .sep { opacity: 0.45; }
+  .asa-rows { display: flex; flex-direction: column; }
+  .asa-treebtn { display: none; padding: 4px 10px; }
+  .asa-shelf-cards .asa-ncard { position: relative; cursor: pointer; }
+  .asa-ncard.dir { min-height: 84px; background: #f9f0d6; border-color: #c9a877; }
+  .asa-ncard.dir.drop, .asa-fold-row.drop { background: #e8f2d4; outline: 2px dashed #3f8a36; outline-offset: -2px; }
+  .asa-ncard .acts { position: absolute; top: 4px; right: 4px; display: flex; gap: 2px; opacity: 0; transition: opacity 0.12s; background: rgba(255,251,233,0.95); }
+  .asa-ncard:hover .acts, .asa-ncard:focus-within .acts { opacity: 1; }
+  @media (hover: none) { .asa-ncard .acts { opacity: 0.8; } }
+  .asa-fold-row { display: flex; align-items: center; gap: 4px; padding: 0 6px 0 0; border-bottom: 1px solid #f0e4c4; border-left: 4px solid transparent; }
+  .asa-fold-row:hover, .asa-fold-row.cur { background: #f9f0d6; }
+  .asa-fold-row.cur { border-left-color: #c8503c; }
+  .asa-ncard.cur { border-color: #c8503c; box-shadow: 0 0 0 2px #c8503c; }
   .asa-fold-row .main { flex: 1; min-width: 0; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 0 8px; align-items: baseline; text-align: left; font: inherit; padding: 7px 8px; background: none; border: 0; color: inherit; cursor: pointer; }
   .asa-fold-row .main b { font-weight: 600; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .asa-fold-row .main small { font-size: 12px; opacity: 0.6; white-space: nowrap; }
   .asa-fold-row .acts { display: flex; gap: 2px; flex: none; }
-  .asa-fold-row .acts button { font: inherit; font-size: 14px; background: none; border: 1px solid transparent; cursor: pointer; padding: 1px 5px; opacity: 0.55; }
-  .asa-fold-row .acts button:hover { opacity: 1; border-color: #c9a877; background: #fffbe9; }
-  .asa-fold-row .acts .lock { opacity: 0.35; font-size: 13px; padding: 1px 6px; }
-  .asa-fold-row.editing { padding: 5px 8px; gap: 6px; }
-  .asa-fold-row.editing input[type=text], .asa-fold-row.editing select { flex: 1; min-width: 0; padding: 4px 8px; font-size: 14px; }
-  .asa-fold-row.editing select { font: inherit; background: #fffbe9; color: #3a2117; border: 2px solid #744122; }
+  .acts button { font: inherit; font-size: 14px; background: none; border: 1px solid transparent; cursor: pointer; padding: 1px 5px; opacity: 0.6; }
+  .acts button:hover { opacity: 1; border-color: #c9a877; background: #fffbe9; }
+  .acts .lock { opacity: 0.35; font-size: 13px; padding: 1px 6px; }
+  .asa-editbox { display: flex; align-items: center; gap: 6px; padding: 6px 8px; margin: 2px 0; background: #f9f0d6; border: 1px dashed #c9a877; grid-column: 1 / -1; }
+  .asa-editbox input[type=text], .asa-editbox select { flex: 1; min-width: 0; padding: 4px 8px; font-size: 14px; }
+  .asa-editbox select { font: inherit; background: #fffbe9; color: #3a2117; border: 2px solid #744122; }
   .asa-fold-empty { padding: 14px; opacity: 0.6; font-size: 14px; }
+  @media (max-width: 720px) {
+    .asa-shelf-split { grid-template-columns: 1fr; }
+    .asa-tree { display: none; max-height: 30vh; }
+    .asa-shelf.tree-open .asa-tree { display: block; }
+    .asa-treebtn { display: inline-flex; }
+  }
   .asa-shelf-sub { font-size: 12.5px; color: #973a2f; margin: 10px 2px 4px; }
   `;
 
@@ -160,11 +192,7 @@
   const IDEAS = 'Ide-TODO.md';
   const pad = (n) => String(n).padStart(2, '0');
   const dayKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const GROUPS = ['ideas', 'notes', 'reports', 'other'];
-  const group = (n) => (n.path === IDEAS ? 'ideas' : n.path.startsWith('Laporan/') ? 'reports' : n.path.startsWith('Catatan/') ? 'notes' : 'other');
-  const folded = new Set((() => { try { return JSON.parse(ns.store.get('shelfFolded') || '["reports"]'); } catch { return ['reports']; } })());
-  const saveFolded = () => ns.store.set('shelfFolded', JSON.stringify([...folded]));
-  const modeStore = () => (['list', 'folders'].includes(ns.store.get('shelfMode')) ? ns.store.get('shelfMode') : 'gallery');
+  const modeStore = () => (ns.store.get('shelfMode') === 'list' ? 'list' : 'gallery');
 
   // ── Reading a note: the Markdown reader lives in markdown.js ──
   const dirOf = (rel) => (rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/')) : '');
@@ -224,6 +252,7 @@
     state.obsidian = res.obsidian ?? null;
     state.fromEnv = !!res.fromEnv;
     state.notes = res.notes;
+    if (!q) state.all = res.notes;
     state.cursor = 0;
   }
   async function openNote(rel) {
@@ -241,8 +270,7 @@
     state.sel = null;
     state.draft = null;
     state.pathEdit = false;
-    state.tree = null;
-    try { await loadList(); } catch { /* keep the old list */ }
+    try { await Promise.all([loadList(), loadFolders()]); } catch { /* keep the old list */ }
     rerender();
   }
 
@@ -272,7 +300,7 @@
 
   /** A new note opens straight in the editor, named from its first line when saved. */
   function newNote(title = '', dir = null) {
-    state.newDir = dir ?? (state.mode === 'folders' ? state.dir : null); // null: the Catatan folder
+    state.newDir = dir ?? navDir(); // null: the Catatan folder
     state.view = 'new';
     state.sel = null;
     state.draft = title ? `# ${title}\n\n` : '# ';
@@ -295,194 +323,53 @@
     } catch (err) { say(S.failed + err.message); }
   }
 
-  // ── Views ──
-  /** Rows in the order they appear: "create" rows first when something is typed, then the notes (grouped unless searching). */
-  function visibleRows() {
-    const q = state.q.trim();
-    const rows = [];
-    if (q) {
-      rows.push({ kind: 'create-note', text: q }, { kind: 'create-idea', text: q });
-      for (const n of state.notes) rows.push({ kind: 'note', n });
-      return { rows, groups: null };
-    }
-    if (state.mode === 'gallery') {
-      // Cards: a "new note" card, Ideas & TODO, then notes and other files; reports stay a foldable list below.
-      const cards = [{ kind: 'new' }];
-      const ideas = state.notes.find((n) => n.path === IDEAS);
-      if (ideas) cards.push({ kind: 'note', n: ideas, g: 'ideas', card: true });
-      for (const n of state.notes) if (group(n) === 'notes' || group(n) === 'other') cards.push({ kind: 'note', n, g: group(n), card: true });
-      rows.push(...cards);
-      const reports = state.notes.filter((n) => group(n) === 'reports');
-      if (reports.length && !folded.has('reports')) for (const n of reports) rows.push({ kind: 'note', n, g: 'reports' });
-      return { rows, groups: null, gallery: { cards, reports: reports.length } };
-    }
-    const groups = [];
-    for (const g of GROUPS) {
-      const items = state.notes.filter((n) => group(n) === g);
-      if (!items.length) continue;
-      groups.push({ g, count: items.length });
-      if (!folded.has(g)) for (const n of items) rows.push({ kind: 'note', n, g });
-    }
-    return { rows, groups };
-  }
-
-  function listView() {
-    const search = h('input', { type: 'search', placeholder: S.search, value: state.q, 'aria-label': S.search });
-    let timer = null;
-    search.oninput = () => {
-      state.q = search.value;
-      clearTimeout(timer);
-      timer = setTimeout(async () => {
-        try { await loadList(state.q.trim()); } catch (e) { say(S.failed + e.message); return; }
-        paintList();
-      }, 180);
-    };
-    search.onkeydown = (e) => {
-      const grid = state.mode === 'gallery' && !state.q.trim(); // the card grid also moves with ← →
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || (grid && (e.key === 'ArrowLeft' || e.key === 'ArrowRight'))) {
-        e.preventDefault();
-        const { rows, gallery } = visibleRows();
-        const n = rows.length;
-        if (!n) return;
-        const cols = grid ? Math.max(1, getComputedStyle(state.listEl.querySelector('.asa-shelf-cards')).gridTemplateColumns.split(' ').length) : 1;
-        const cards = grid ? gallery.cards.length : 0;
-        const dir = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : -1;
-        const step = e.key === 'ArrowLeft' || e.key === 'ArrowRight' ? dir : dir * cols;
-        let next = state.cursor + step;
-        if (grid && e.key === 'ArrowDown' && state.cursor < cards && next >= cards) next = cards < n ? cards : state.cursor; // last card row → the reports
-        if (grid && e.key === 'ArrowUp' && state.cursor >= cards) next = cards - 1;
-        state.cursor = next < 0 ? 0 : next >= n ? n - 1 : next;
-        paintList();
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        activate(visibleRows().rows[state.cursor]);
-      }
-    };
-    const list = h('div', { class: 'asa-shelf-list' });
-    state.listEl = list;
-    state.msg = h('div', { class: 'asa-shelf-msg' });
-    const bar = h('div', { class: 'asa-shelf-bar' }, h('span', { class: 'asa-shelf-hint grow' }, S.hint),
-      h('button', { type: 'button', class: 'asa-btn', onclick: writeReport }, S.report));
-    setTimeout(() => { search.focus(); search.setSelectionRange(search.value.length, search.value.length); paintList(); }, 0);
-    const modes = h('div', { class: 'asa-shelf-modes', role: 'group' },
-      ['gallery', 'list', 'folders'].map((m) => h('button', { type: 'button', class: `asa-btn${state.mode === m ? ' on' : ''}`, title: m === 'gallery' ? S.gallery : m === 'list' ? S.listMode : S.folders, 'aria-label': m === 'gallery' ? S.gallery : m === 'list' ? S.listMode : S.folders,
-        onclick: () => { state.mode = m; ns.store.set('shelfMode', m); state.cursor = 0; state.tree = null; state.edit = null; rerender(); } }, m === 'gallery' ? '▦' : m === 'list' ? '☰' : '🗂')));
-    return h('div', { class: 'asa-shelf' }, h('div', { class: 'asa-shelf-top' }, search, modes), list, bar, state.msg, footer());
-  }
-
-  function activate(row) {
-    if (!row) return;
-    if (row.kind === 'note') openNote(row.n.path);
-    else if (row.kind === 'new') newNote('');
-    else if (row.kind === 'create-note') newNote(row.text);
-    else if (row.kind === 'create-idea') {
-      addIdea(row.text).then(async () => { state.q = ''; await loadList(''); rerender(); say(S.ideaSaved); }).catch((e) => say(S.failed + e.message));
-    }
-  }
-
-  function paintList() {
-    const el = state?.listEl;
-    if (!el) return;
-    if (state.mode === 'folders' && !state.q.trim()) return paintFolders(el);
-    const { rows, groups, gallery } = visibleRows();
-    if (state.cursor >= rows.length) state.cursor = Math.max(0, rows.length - 1);
-    if (gallery) return paintGallery(el, rows, gallery);
-    const out = [];
-    const index = new Map(rows.map((r, i) => [r, i]));
-    const rowEl = (row) => {
-      const i = index.get(row);
-      const cur = i === state.cursor ? ' cur' : '';
-      const click = () => { state.cursor = i; activate(row); };
-      if (row.kind === 'create-note') return h('button', { type: 'button', class: `asa-shelf-row create${cur}`, onclick: click }, h('b', {}, S.createNote(row.text)));
-      if (row.kind === 'create-idea') return h('button', { type: 'button', class: `asa-shelf-row create${cur}`, onclick: click }, h('b', {}, S.createIdea(row.text)));
-      const n = row.n;
-      const mins = Math.max(0, Math.round((Date.now() - n.mtime) / 60000));
-      return h('button', { type: 'button', class: `asa-shelf-row${cur}`, onclick: click },
-        h('b', {}, `${n.context ? '🔖 ' : ''}${n.title}`), h('small', {}, S.ago(mins)), h('span', {}, n.snippet || ''));
-    };
-    if (groups) {
-      for (const { g, count } of groups) {
-        out.push(h('button', { type: 'button', class: 'asa-shelf-group', onclick: () => { if (folded.has(g)) folded.delete(g); else folded.add(g); saveFolded(); paintList(); } },
-          folded.has(g) ? '▸' : '▾', S[g], h('small', {}, String(count))));
-        if (!folded.has(g)) for (const row of rows.filter((r) => r.g === g)) out.push(rowEl(row));
-      }
-    } else for (const row of rows) out.push(rowEl(row));
-    if (!state.notes.length && !state.q.trim()) out.push(h('div', { class: 'asa-muted', style: { padding: '14px' } }, S.empty));
-    else if (state.q.trim() && !state.notes.length) out.push(h('div', { class: 'asa-muted', style: { padding: '10px 14px' } }, S.noMatch));
-    el.className = 'asa-shelf-list';
-    el.replaceChildren(...out);
-    el.querySelector('.cur')?.scrollIntoView({ block: 'nearest' });
-  }
-
-  function paintGallery(el, rows, gallery) {
-    const index = new Map(rows.map((r, i) => [r, i]));
-    const cardEl = (row) => {
-      const i = index.get(row);
-      const cur = i === state.cursor ? ' cur' : '';
-      const click = () => { state.cursor = i; activate(row); };
-      if (row.kind === 'new') return h('button', { type: 'button', class: `asa-ncard new${cur}`, onclick: click, title: S.newCard }, h('b', {}, '＋'), h('span', {}, S.newCard));
-      const n = row.n;
-      const mins = Math.max(0, Math.round((Date.now() - n.mtime) / 60000));
-      const title = `${n.context ? '🔖 ' : ''}${row.g === 'ideas' ? S.ideas : n.title}`;
-      if (row.g === 'ideas') {
-        return h('button', { type: 'button', class: `asa-ncard ideas${cur}`, onclick: click },
-          h('b', {}, title), h('small', {}, S.openTodos(n.open ?? 0)),
-          h('ul', {}, (n.todos ?? []).slice(0, 3).map((t) => h('li', {}, t))), h('small', {}, S.ago(mins)));
-      }
-      return h('button', { type: 'button', class: `asa-ncard${cur}`, onclick: click },
-        h('b', {}, title), h('p', {}, n.preview || S.emptyCard), h('small', {}, S.ago(mins)));
-    };
-    const out = [h('div', { class: 'asa-shelf-cards' }, gallery.cards.map(cardEl))];
-    if (gallery.reports) {
-      out.push(h('button', { type: 'button', class: 'asa-shelf-group', style: { marginTop: '10px' }, onclick: () => { if (folded.has('reports')) folded.delete('reports'); else folded.add('reports'); saveFolded(); paintList(); } },
-        folded.has('reports') ? '▸' : '▾', S.reports, h('small', {}, String(gallery.reports))));
-      for (const row of rows) {
-        if (row.g !== 'reports') continue;
-        const n = row.n;
-        const i = index.get(row);
-        const mins = Math.max(0, Math.round((Date.now() - n.mtime) / 60000));
-        out.push(h('button', { type: 'button', class: `asa-shelf-row${i === state.cursor ? ' cur' : ''}`, onclick: () => { state.cursor = i; activate(row); } },
-          h('b', {}, n.title), h('small', {}, S.ago(mins)), h('span', {}, n.snippet || '')));
-      }
-    }
-    el.className = 'asa-shelf-gal';
-    el.replaceChildren(...out);
-    el.querySelector('.cur')?.scrollIntoView({ block: 'nearest' });
-  }
-
-
-  // ── Folder view: browse and organise the vault ──
+  // ── The shelf: a folder tree on the left, the chosen folder (or the newest notes) on the right ──
   const PROTECTED = new Set(['Ide-TODO.md', 'Catatan', 'Laporan']);
   const join = (dir, name) => (dir ? `${dir}/${name}` : name);
   const crumbsOf = (dir) => (dir ? dir.split('/') : []);
+  /** A note is shown under its file name (what renaming changes), like Obsidian's file list; the ideas file keeps its friendly name. */
+  const nameOf = (n) => (n.path === IDEAS ? S.ideas : baseOf(n.path).replace(/\.md$/i, ''));
+  const navDir = () => (state.nav.type === 'dir' ? state.nav.dir : null); // null: not inside a folder (the newest notes)
+  const openDirs = new Set((() => { try { return JSON.parse(ns.store.get('shelfOpenDirs') || '["Catatan"]'); } catch { return ['Catatan']; } })());
+  const saveOpenDirs = () => ns.store.set('shelfOpenDirs', JSON.stringify([...openDirs].slice(-200)));
 
-  async function loadTree(dir = state.dir) {
-    const t = await api('GET', `/api/vault/tree?dir=${encodeURIComponent(dir)}`);
-    state.tree = t;
-    state.dir = t.dir;
+  const childrenOf = (dir) => (state.folders ?? []).filter((f) => dirOf(f) === dir);
+  const notesIn = (dir) => (state.all ?? []).filter((n) => dirOf(n.path) === dir).sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }));
+  const countIn = (dir) => (dir ? (state.all ?? []).filter((n) => n.path.startsWith(`${dir}/`)).length : (state.all ?? []).length);
+
+  async function loadFolders() {
+    try { state.folders = (await api('GET', '/api/vault/tree')).folders ?? []; } catch { state.folders = state.folders ?? []; }
   }
-  async function refreshTree() {
-    state.tree = null;
-    paintList();
-    await loadList('').catch(() => {});
+  /** After the vault changed (rename, move, delete, new folder): fresh data, and a valid place to stand. */
+  async function refreshAll() {
+    await Promise.all([loadList('').catch(() => {}), loadFolders()]);
+    while (state.nav.type === 'dir' && state.nav.dir && !state.folders.includes(state.nav.dir)) state.nav = { type: 'dir', dir: dirOf(state.nav.dir) };
+    paintTree();
+    paintContent();
   }
-  async function goDir(dir) {
-    state.dir = dir;
-    state.tree = null;
+  function go(nav) {
+    state.nav = nav;
     state.edit = null;
-    paintList();
+    state.cursor = 0;
+    state.keyNav = false;
+    if (nav.type === 'dir') for (let d = nav.dir; d; d = dirOf(d)) openDirs.add(d);
+    saveOpenDirs();
+    if (state.q) { state.q = ''; if (state.searchEl) state.searchEl.value = ''; loadList('').then(() => { paintTree(); paintContent(); }); return; }
+    paintTree();
+    paintContent();
   }
+
   async function fileOp(route, body, okText) {
     try {
       const res = await api('POST', route, body);
       state.edit = null;
-      await refreshTree();
+      await refreshAll();
       say(okText?.(res) ?? '');
       return true;
     } catch (err) {
       say(S.fileErr[err.message] ?? S.failed + err.message);
       state.edit = null;
-      paintList();
+      paintContent();
       return false;
     }
   }
@@ -496,104 +383,226 @@
       el.classList.remove('drop');
       const src = state.drag;
       state.drag = null;
-      if (!src || dirOf(src) === destDir) return;
+      if (!src || dirOf(src) === destDir || src === destDir || destDir.startsWith(`${src}/`)) return;
       moveTo(src, destDir, baseOf(src));
     });
   }
 
-  function paintFolders(el) {
-    el.className = 'asa-shelf-list';
-    if (!state.tree) {
-      el.replaceChildren(h('div', { class: 'asa-fold-empty' }, '…'));
-      loadTree().then(() => { if (state?.mode === 'folders' && state.view === 'list' && !state.q.trim()) paintFolders(el); }).catch(async () => {
-        if (!state) return;
-        if (state.dir) { state.dir = ''; paintList(); } else el.replaceChildren(h('div', { class: 'asa-fold-empty' }, S.offline));
-      });
-      return;
-    }
-    const t = state.tree;
+  // ── The tree (left) ──
+  function paintTree() {
+    const el = state?.treeEl;
+    if (!el) return;
     const out = [];
-    // Breadcrumbs (each one also takes dropped notes)
-    const crumbs = h('div', { class: 'asa-fold-crumbs' });
-    const crumb = (label, dir) => {
-      const b = h('button', { type: 'button', onclick: () => goDir(dir) }, label);
-      dropTarget(b, dir);
-      return b;
+    const pin = (label, active, onclick, small) => h('button', { type: 'button', class: `asa-tnode pin${active ? ' on' : ''}`, onclick }, h('span', { class: 'lab' }, label), small ? h('small', {}, small) : null);
+    const ideas = (state.all ?? []).find((n) => n.path === IDEAS);
+    out.push(pin(S.recent, state.nav.type === 'recent' && !state.q.trim(), () => go({ type: 'recent' })));
+    if (ideas) out.push(pin(S.ideas, state.view === 'note' && state.sel === IDEAS, () => openNote(IDEAS), ideas.open ? String(ideas.open) : ''));
+    out.push(h('div', { class: 'asa-tsep' }));
+    const node = (dir, name, depth) => {
+      const kids = dir ? childrenOf(dir) : (state.folders ?? []).filter((f) => !f.includes('/'));
+      const open = !dir || openDirs.has(dir);
+      const active = state.nav.type === 'dir' && state.nav.dir === dir && !state.q.trim();
+      const caret = h('span', { class: `caret${kids.length ? '' : ' none'}` }, kids.length ? (open ? '▾' : '▸') : '');
+      caret.onclick = (e) => { e.stopPropagation(); if (!kids.length || !dir) return; if (open) openDirs.delete(dir); else openDirs.add(dir); saveOpenDirs(); paintTree(); };
+      const row = h('button', { type: 'button', class: `asa-tnode${active ? ' on' : ''}`, style: { paddingLeft: `${6 + depth * 14}px` }, title: dir || S.foldHome, onclick: () => go({ type: 'dir', dir }) },
+        caret, h('span', { class: 'lab' }, `${dir ? '📁' : '🏠'} ${name}`), h('small', {}, String(countIn(dir))));
+      dropTarget(row, dir);
+      out.push(row);
+      if (open) for (const k of kids) node(k, baseOf(k), depth + 1);
     };
-    crumbs.append(crumb(`🏠 ${S.foldHome}`, ''));
-    crumbsOf(t.dir).forEach((seg, k, arr) => crumbs.append(h('span', { class: 'sep' }, '/'), crumb(seg, arr.slice(0, k + 1).join('/'))));
-    crumbs.append(h('span', { class: 'grow' }),
-      h('button', { type: 'button', onclick: () => newNote('', t.dir) }, S.newNoteHere),
-      h('button', { type: 'button', onclick: () => { state.edit = { kind: 'newfolder' }; paintList(); } }, S.newFolder));
-    out.push(crumbs);
+    node('', S.foldHome, 0);
+    el.replaceChildren(...out);
+    el.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+  }
 
-    if (state.edit?.kind === 'newfolder') {
+  // ── The content (right) ──
+  /** What the right side shows: search results, the newest notes, or one folder (its folders first, then its notes). */
+  function contentItems() {
+    const q = state.q.trim();
+    if (q) return [{ kind: 'create-note', text: q }, { kind: 'create-idea', text: q }, ...state.notes.map((n) => ({ kind: 'note', n, showDir: true }))];
+    if (state.nav.type === 'recent') return (state.all ?? []).slice(0, 100).map((n) => ({ kind: 'note', n, showDir: true }));
+    const dir = state.nav.dir;
+    return [...childrenOf(dir).map((path) => ({ kind: 'dir', path, name: baseOf(path), count: countIn(path) })), ...notesIn(dir).map((n) => ({ kind: 'note', n }))];
+  }
+
+  function activate(item) {
+    if (!item) return;
+    if (item.kind === 'note') openNote(item.n.path);
+    else if (item.kind === 'dir') go({ type: 'dir', dir: item.path });
+    else if (item.kind === 'create-note') newNote(item.text);
+    else if (item.kind === 'create-idea') {
+      addIdea(item.text).then(async () => { state.q = ''; if (state.searchEl) state.searchEl.value = ''; await refreshAll(); say(S.ideaSaved); }).catch((e) => say(S.failed + e.message));
+    }
+  }
+
+  /** ✏️ 📂 🗑 for one entry (🔒 for the Bookshelf's own files), and the drag handles. */
+  function entryActions(el, kind, rel, name) {
+    const locked = PROTECTED.has(rel);
+    if (locked) return h('div', { class: 'acts' }, h('span', { class: 'lock', title: S.protectedTip }, '🔒'));
+    const trash = h('button', { type: 'button', title: S.trashTip, 'aria-label': S.trashTip }, '🗑');
+    trash.onclick = (e) => {
+      e.stopPropagation();
+      if (state.armed === rel && Date.now() < state.armedUntil) { state.armed = null; return fileOp('/api/vault/trash', { path: rel }, () => S.trashed(name)); }
+      state.armed = rel;
+      state.armedUntil = Date.now() + 3500;
+      trash.textContent = S.sure;
+      setTimeout(() => { if (trash.isConnected && state.armed === rel) { state.armed = null; trash.textContent = '🗑'; } }, 3600);
+    };
+    el.draggable = true;
+    el.addEventListener('dragstart', (e) => { state.drag = rel; e.dataTransfer?.setData('text/plain', rel); });
+    el.addEventListener('dragend', () => { state.drag = null; });
+    return h('div', { class: 'acts' },
+      h('button', { type: 'button', title: S.renameTip, 'aria-label': S.renameTip, onclick: (e) => { e.stopPropagation(); state.edit = { kind: 'rename', rel }; paintContent(); } }, '✏️'),
+      h('button', { type: 'button', title: S.moveTip, 'aria-label': S.moveTip, onclick: (e) => { e.stopPropagation(); state.edit = { kind: 'move', rel }; paintContent(); } }, '📂'),
+      trash);
+  }
+
+  /** The inline rename / move box that replaces an entry while it is being changed. */
+  function editBox(kind, rel, name) {
+    const isDir = kind === 'dir';
+    const dir = dirOf(rel);
+    const cancel = h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.edit = null; paintContent(); } }, S.cancelShort);
+    const box = h('div', { class: 'asa-editbox' }, h('span', {}, isDir ? '📁' : '📝'));
+    if (state.edit.kind === 'rename') {
+      const shown = isDir ? name : name.replace(/\.md$/i, '');
+      const input = h('input', { type: 'text', value: shown, 'aria-label': S.renameTip });
+      const doIt = () => {
+        const v = input.value.trim().replace(/\.md$/i, '');
+        if (!v || v === shown) { state.edit = null; paintContent(); return; }
+        fileOp('/api/vault/move', { from: rel, to: join(dir, isDir ? v : `${v}.md`) }, (res) => S.renamed(v) + S.linksFixed(res.links?.links, res.links?.files));
+      };
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); doIt(); }
+        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); state.edit = null; paintContent(); }
+      };
+      box.append(input, h('button', { type: 'button', class: 'asa-btn primary', onclick: doIt }, S.save), cancel);
+      setTimeout(() => { input.focus(); input.select(); }, 0);
+    } else {
+      const dirs = (state.folders ?? []).filter((f) => f !== rel && !f.startsWith(`${rel}/`) && f !== dir);
+      const pick = h('select', { 'aria-label': S.moveHere }, h('option', { value: '__' }, S.moveHere), dir ? h('option', { value: '' }, S.moveRoot) : null, dirs.map((f) => h('option', { value: f }, `📁 ${f}`)));
+      pick.onchange = () => { if (pick.value !== '__') moveTo(rel, pick.value, name); };
+      box.append(h('b', {}, isDir ? name : name.replace(/\.md$/i, '')), pick, cancel);
+    }
+    return box;
+  }
+
+  function paintContent() {
+    const el = state?.contentEl;
+    if (!el) return;
+    const q = state.q.trim();
+    const items = contentItems();
+    if (state.cursor >= items.length) state.cursor = Math.max(0, items.length - 1);
+    const out = [];
+
+    // Header: where you are
+    const head = h('div', { class: 'asa-chead' });
+    if (q) head.append(h('b', { class: 'grow' }, `🔍 ${S.results(state.notes.length)}`));
+    else if (state.nav.type === 'recent') head.append(h('b', { class: 'grow' }, S.recent));
+    else {
+      const crumb = (label, dir) => { const b = h('button', { type: 'button', onclick: () => go({ type: 'dir', dir }) }, label); dropTarget(b, dir); return b; };
+      const trail = h('span', { class: 'trail grow' }, crumb(`🏠 ${S.foldHome}`, ''));
+      crumbsOf(state.nav.dir).forEach((seg, k, arr) => trail.append(h('span', { class: 'sep' }, '/'), crumb(seg, arr.slice(0, k + 1).join('/'))));
+      head.append(trail);
+    }
+    if (!q) {
+      head.append(h('button', { type: 'button', class: 'asa-btn', onclick: () => newNote('') }, S.newNoteHere));
+      if (state.nav.type === 'dir') head.append(h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.edit = { kind: 'newfolder' }; paintContent(); } }, S.newFolder));
+    }
+    out.push(head);
+
+    if (state.edit?.kind === 'newfolder' && state.nav.type === 'dir') {
       const input = h('input', { type: 'text', placeholder: S.folderName, 'aria-label': S.folderName });
       input.onkeydown = (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); const name = input.value.trim(); if (name) fileOp('/api/vault/folder', { path: join(t.dir, name) }, () => S.madeFolder(join(t.dir, name))); }
-        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); state.edit = null; paintList(); }
+        if (e.key === 'Enter') { e.preventDefault(); const name = input.value.trim(); if (name) fileOp('/api/vault/folder', { path: join(state.nav.dir, name) }, () => S.madeFolder(join(state.nav.dir, name))); }
+        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); state.edit = null; paintContent(); }
       };
-      out.push(h('div', { class: 'asa-fold-row editing' }, h('span', {}, '📁'), input, h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.edit = null; paintList(); } }, S.cancelShort)));
+      out.push(h('div', { class: 'asa-editbox' }, h('span', {}, '📁'), input, h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.edit = null; paintContent(); } }, S.cancelShort)));
       setTimeout(() => input.focus(), 0);
     }
 
-    const item = (kind, name, sub, onOpen) => {
-      const rel = join(t.dir, name);
-      const locked = !t.dir && PROTECTED.has(name);
-      const editing = state.edit?.rel === rel ? state.edit : null;
-      const row = h('div', { class: `asa-fold-row${editing ? ' editing' : ''}` });
-      if (editing?.kind === 'rename') {
-        const shown = kind === 'file' ? name.replace(/\.md$/i, '') : name;
-        const input = h('input', { type: 'text', value: shown, 'aria-label': S.renameTip });
-        const go = () => {
-          const v = input.value.trim().replace(/\.md$/i, '');
-          if (!v || v === shown) { state.edit = null; paintList(); return; }
-          fileOp('/api/vault/move', { from: rel, to: join(t.dir, kind === 'file' ? `${v}.md` : v) }, (res) => S.renamed(v) + S.linksFixed(res.links?.links, res.links?.files));
-        };
-        input.onkeydown = (e) => {
-          if (e.key === 'Enter') { e.preventDefault(); go(); }
-          else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); state.edit = null; paintList(); }
-        };
-        row.append(h('span', {}, kind === 'dir' ? '📁' : '📝'), input, h('button', { type: 'button', class: 'asa-btn primary', onclick: go }, S.save), h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.edit = null; paintList(); } }, S.cancelShort));
-        setTimeout(() => { input.focus(); input.select(); }, 0);
-        return row;
+    const grid = state.mode === 'gallery';
+    const cards = [];
+    items.forEach((it, i) => {
+      const cur = state.keyNav && i === state.cursor ? ' cur' : '';
+      const click = () => { state.cursor = i; activate(it); };
+      if (it.kind === 'create-note' || it.kind === 'create-idea') {
+        cards.push(h('button', { type: 'button', class: `asa-shelf-row create${cur}`, style: grid ? { gridColumn: '1 / -1' } : {}, onclick: click }, h('b', {}, it.kind === 'create-note' ? S.createNote(it.text) : S.createIdea(it.text))));
+        return;
       }
-      if (editing?.kind === 'move') {
-        const dirs = (t.folders ?? []).filter((f) => f !== rel && !f.startsWith(`${rel}/`));
-        const pick = h('select', { 'aria-label': S.moveHere }, h('option', { value: '__' }, S.moveHere), h('option', { value: '' }, S.moveRoot), dirs.map((f) => h('option', { value: f }, `📁 ${f}`)));
-        pick.onchange = () => { if (pick.value !== '__') moveTo(rel, pick.value, name); };
-        row.append(h('span', {}, kind === 'dir' ? '📁' : '📝'), h('b', { style: { fontWeight: 600 } }, name), pick, h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.edit = null; paintList(); } }, S.cancelShort));
-        return row;
+      const isDir = it.kind === 'dir';
+      const rel = isDir ? it.path : it.n.path;
+      const name = isDir ? it.name : baseOf(it.n.path);
+      if (state.edit?.rel === rel) { cards.push(editBox(it.kind, rel, name)); return; }
+      const mins = isDir ? 0 : Math.max(0, Math.round((Date.now() - it.n.mtime) / 60000));
+      const where = it.showDir && dirOf(it.n?.path ?? '') ? `📁 ${dirOf(it.n.path)} · ` : '';
+      let node;
+      if (grid) {
+        node = isDir
+          ? h('div', { class: `asa-ncard dir${cur}`, onclick: click }, h('b', {}, `📁 ${it.name}`), h('p', {}, S.noteCount(it.count)))
+          : h('div', { class: `asa-ncard${cur}`, onclick: click }, h('b', {}, `${it.n.context ? '🔖 ' : ''}${nameOf(it.n)}`), h('p', {}, it.n.preview || S.emptyCard), h('small', {}, `${where}${S.ago(mins)}`));
+        node.append(entryActions(node, isDir ? 'dir' : 'note', rel, name));
+      } else {
+        node = h('div', { class: `asa-fold-row${cur}` });
+        node.append(h('button', { type: 'button', class: 'main', onclick: click },
+          h('span', {}, isDir ? '📁' : '📝'), h('b', {}, isDir ? it.name : `${it.n.context ? '🔖 ' : ''}${nameOf(it.n)}`),
+          h('small', {}, isDir ? S.noteCount(it.count) : `${where}${S.ago(mins)}`)), entryActions(node, isDir ? 'dir' : 'note', rel, name));
       }
-      const mins = kind === 'file' ? Math.max(0, Math.round((Date.now() - sub.mtime) / 60000)) : 0;
-      const main = h('button', { type: 'button', class: 'main', onclick: onOpen },
-        h('span', {}, kind === 'dir' ? '📁' : '📝'), h('b', {}, kind === 'file' ? name.replace(/\.md$/i, '') : name), h('small', {}, kind === 'dir' ? S.items(sub.count) : S.ago(mins)));
-      row.append(main);
-      if (locked) row.append(h('div', { class: 'acts' }, h('span', { class: 'lock', title: S.protectedTip }, '🔒')));
-      else {
-        const trash = h('button', { type: 'button', title: S.trashTip, 'aria-label': S.trashTip }, '🗑');
-        trash.onclick = () => {
-          if (trash.dataset.sure) return fileOp('/api/vault/trash', { path: rel }, () => S.trashed(name));
-          trash.dataset.sure = '1';
-          trash.textContent = S.sure;
-          setTimeout(() => { if (trash.isConnected) { delete trash.dataset.sure; trash.textContent = '🗑'; } }, 3500);
-        };
-        row.append(h('div', { class: 'acts' },
-          h('button', { type: 'button', title: S.renameTip, 'aria-label': S.renameTip, onclick: () => { state.edit = { kind: 'rename', rel }; paintList(); } }, '✏️'),
-          h('button', { type: 'button', title: S.moveTip, 'aria-label': S.moveTip, onclick: () => { state.edit = { kind: 'move', rel }; paintList(); } }, '📂'),
-          trash));
-        row.draggable = true;
-        row.addEventListener('dragstart', (e) => { state.drag = rel; e.dataTransfer?.setData('text/plain', rel); });
-        row.addEventListener('dragend', () => { state.drag = null; });
-      }
-      if (kind === 'dir') dropTarget(row, rel);
-      return row;
-    };
-    for (const d of t.dirs) out.push(item('dir', d.name, d, () => goDir(join(t.dir, d.name))));
-    for (const f of t.files) out.push(item('file', f.name, f, () => openNote(join(t.dir, f.name))));
-    if (!t.dirs.length && !t.files.length) out.push(h('div', { class: 'asa-fold-empty' }, S.emptyFolder));
-    else out.push(h('div', { class: 'asa-fold-empty', style: { fontSize: '12px', padding: '8px 12px' } }, S.dropHint));
+      if (isDir) dropTarget(node, rel);
+      cards.push(node);
+    });
+    if (!items.length) cards.push(h('div', { class: 'asa-fold-empty' }, q ? S.noMatch : state.nav.type === 'recent' ? S.empty : S.emptyFolder));
+    out.push(h('div', { class: grid ? 'asa-shelf-cards' : 'asa-rows' }, cards));
+    if (!q && state.nav.type === 'dir' && items.length) out.push(h('div', { class: 'asa-fold-empty', style: { fontSize: '12px', padding: '8px 4px' } }, S.dropHint));
     el.replaceChildren(...out);
+    el.querySelector('.cur')?.scrollIntoView({ block: 'nearest' });
+  }
+
+  function listView() {
+    const search = h('input', { type: 'search', placeholder: S.search, value: state.q, 'aria-label': S.search });
+    state.searchEl = search;
+    let timer = null;
+    search.oninput = () => {
+      state.q = search.value;
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        try { await loadList(state.q.trim()); } catch (e) { say(S.failed + e.message); return; }
+        state.cursor = 0;
+        paintTree();
+        paintContent();
+      }, 180);
+    };
+    search.onkeydown = (e) => {
+      const grid = state.mode === 'gallery';
+      if (['ArrowDown', 'ArrowUp'].includes(e.key) || (grid && ['ArrowLeft', 'ArrowRight'].includes(e.key))) {
+        e.preventDefault();
+        const n = contentItems().length;
+        if (!n) return;
+        const cols = grid ? Math.max(1, getComputedStyle(state.contentEl.querySelector('.asa-shelf-cards') ?? state.contentEl).gridTemplateColumns.split(' ').length) : 1;
+        const dir = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : -1;
+        const step = e.key === 'ArrowLeft' || e.key === 'ArrowRight' ? dir : dir * cols;
+        const next = state.keyNav ? state.cursor + step : 0;
+        state.keyNav = true;
+        state.cursor = next < 0 ? 0 : next >= n ? n - 1 : next;
+        paintContent();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        activate(contentItems()[state.keyNav || state.q.trim() ? state.cursor : 0]);
+      }
+    };
+    const tree = h('aside', { class: 'asa-tree', 'aria-label': S.folders });
+    const content = h('section', { class: 'asa-content' });
+    state.treeEl = tree;
+    state.contentEl = content;
+    state.msg = h('div', { class: 'asa-shelf-msg' });
+    const bar = h('div', { class: 'asa-shelf-bar' }, h('span', { class: 'asa-shelf-hint grow' }, S.hint),
+      h('button', { type: 'button', class: 'asa-btn', onclick: writeReport }, S.report));
+    const modes = h('div', { class: 'asa-shelf-modes', role: 'group' },
+      ['gallery', 'list'].map((m) => h('button', { type: 'button', class: `asa-btn${state.mode === m ? ' on' : ''}`, title: m === 'gallery' ? S.gallery : S.listMode, 'aria-label': m === 'gallery' ? S.gallery : S.listMode,
+        onclick: () => { state.mode = m; ns.store.set('shelfMode', m); state.cursor = 0; state.edit = null; for (const b of modes.children) b.classList.toggle('on', b === modes.children[m === 'gallery' ? 0 : 1]); paintContent(); } }, m === 'gallery' ? '▦' : '☰')));
+    const treeBtn = h('button', { type: 'button', class: 'asa-btn asa-treebtn', title: S.folders, 'aria-label': S.folders, onclick: () => { state.treeOpen = !state.treeOpen; root.classList.toggle('tree-open', state.treeOpen); } }, '📁');
+    const root = h('div', { class: `asa-shelf${state.treeOpen ? ' tree-open' : ''}` }, h('div', { class: 'asa-shelf-top' }, treeBtn, search, modes), h('div', { class: 'asa-shelf-split' }, tree, content), bar, state.msg, footer());
+    setTimeout(() => { search.focus(); search.setSelectionRange(search.value.length, search.value.length); paintTree(); paintContent(); }, 0);
+    return root;
   }
 
   const startEdit = () => { state.view = 'edit'; state.draft = state.text; rerender(); };
@@ -636,7 +645,7 @@
     const sel = state.notes.find((n) => n.path === state.sel);
     const bar = h('div', { class: 'asa-shelf-bar' },
       h('button', { type: 'button', class: 'asa-btn', onclick: backToList }, `← ${S.back}`),
-      h('b', { class: 'grow', title: state.sel }, sel?.title ?? state.sel));
+      h('b', { class: 'grow', title: state.sel }, state.sel === IDEAS ? S.ideas : baseOf(state.sel).replace(/\.md$/i, '')));
     const doc = h('div', { class: 'asa-shelf-doc', title: S.edit });
     renderNote(doc, state.text, state.sel);
     doc.ondblclick = (e) => { if (!e.target.closest('button, input, a')) startEdit(); };
@@ -707,7 +716,7 @@
 
   function open(startText) {
     if (!document.getElementById('asa-shelf-css')) document.head.appendChild(h('style', { id: 'asa-shelf-css' }, css));
-    state = { view: 'list', mode: modeStore(), notes: [], sel: null, text: '', q: '', cursor: 0, vault: null, obsidian: null, dir: '', tree: null, newDir: null, edit: null, fromEnv: false, draft: null, panel: null, msg: null, listEl: null, pathEdit: false, warned: false };
+    state = { view: 'list', mode: modeStore(), notes: [], sel: null, text: '', q: '', cursor: 0, vault: null, obsidian: null, nav: { type: 'recent' }, all: [], folders: [], treeOpen: false, newDir: null, edit: null, fromEnv: false, draft: null, panel: null, msg: null, listEl: null, pathEdit: false, warned: false };
     state.panel = ns.panel.open({
       theme: 'cozy',
       dock: 'hud',
@@ -723,9 +732,9 @@
         }
         if (state.view === 'note') { backToList(); return true; }
         if (state.view === 'list' && state.pathEdit) { state.pathEdit = false; rerender(); return true; }
-        if (state.view === 'list' && state.mode === 'folders' && !state.q && state.edit) { state.edit = null; paintList(); return true; }
-        if (state.view === 'list' && state.mode === 'folders' && !state.q && state.dir) { goDir(dirOf(state.dir)); return true; }
+        if (state.view === 'list' && !state.q && state.edit) { state.edit = null; paintContent(); return true; }
         if (state.view === 'list' && state.q) { state.q = ''; loadList('').then(rerender); return true; }
+        if (state.view === 'list' && state.nav.type === 'dir') { go(state.nav.dir ? { type: 'dir', dir: dirOf(state.nav.dir) } : { type: 'recent' }); return true; }
         return false;
       },
       render(body) {
@@ -734,7 +743,7 @@
       },
     });
     state.panel.el.classList.add('asa-plain');
-    ns.refreshData().then(() => loadList('')).then(async () => {
+    ns.refreshData().then(() => Promise.all([loadList(''), loadFolders()])).then(async () => {
       if (typeof startText === 'string' && startText.trim()) { state.q = startText.trim(); await loadList(state.q); }
       rerender();
     }).catch(() => { if (state) { state.offline = true; rerender(); } });

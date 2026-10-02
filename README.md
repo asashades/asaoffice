@@ -182,8 +182,8 @@ from each session: the last tool it used (edits, searches, Bash, web, sub-agents
 - **Bookshelf (Rak Buku), your notes in Obsidian:** open it with the 📚 button on the hero card (or click any bookshelf).
   **Reading:** `addon/markdown.js` renders notes like Obsidian does (built as DOM, never innerHTML): front matter as properties, headings 1–6, inline styles,
   fenced code, nested/ordered lists, task lists (tickable), tables, quotes and `> [!callouts]`, links, `#tags`, `[[wikilinks]]` (click to open; a missing one starts
-  a new note) and images (`![[pic.png]]`, `![](Gambar/pic.png)`, served from the vault by `GET /api/vault/asset`, png/jpg/gif/webp ≤ 8 MB). **Folder view 🗂** (third
-  mode next to ▦ ☰): breadcrumbs, new note/folder here, rename, move (picker or drag and drop), and delete = move to the vault's `.trash`; hidden entries are never
+  a new note) and images (`![[pic.png]]`, `![](Gambar/pic.png)`, served from the vault by `GET /api/vault/asset`, png/jpg/gif/webp ≤ 8 MB). **Layout:** a folder tree on the left (collapsible, with 🕒 Recent as the start screen and 💡 Ideas & TODO pinned), and the chosen folder's own
+  content on the right (folders as cards first, then its notes; ▦ / ☰ only change the form; notes show under their file name); breadcrumbs, new note/folder here, rename, move (picker or drag and drop onto the tree, breadcrumbs or folder cards), and delete = move to the vault's `.trash`; hidden entries are never
   shown and Ide-TODO.md, Catatan/ and Laporan/ are locked. API: `GET /api/vault/tree`, `POST /api/vault/folder|move|trash`. **Links follow a rename or move**, like in
   Obsidian (`rewriteLinks` in `vault.mjs`): path links (`[[Folder/Note]]`, `![[Folder/pic.png]]`, `[x](Folder/Note.md)`, relative or from the vault root) follow a move, bare names
   (`[[Note]]`) follow a rename unless another note has that name; code blocks and spans are left alone. Not adjusted: relative Markdown links *inside* a moved note.
