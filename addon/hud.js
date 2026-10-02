@@ -25,6 +25,8 @@
       running: 'bekerja', finished: 'selesai', source: 'Sumber: transkrip Claude Code, 24 jam terakhir (terbaru di atas)',
       todoSource: (n) => `Sumber: TodoWrite · ${n} sesi terbaru`, main: 'Sesi utama', director: 'Direktur', actingFor: 'Bantu Shades',
       atDesk: 'Di meja direktur', noProject: 'Sesi Claude Code', chatWith: (n) => `Ngobrol sama ${n}`,
+      planReady: 'Rencana siap', approveBtn: '✅ Setujui', rejectBtn: '❌ Tolak', openBtn: 'Buka', morePlans: (n) => `+${n} rencana lagi di kotak surat`,
+      perm: 'Izin', emptyPerm: 'Belum ada langkah yang ditolak otomatis.', permSource: 'Langkah yang ditolak otomatis karena di luar izin tugas. Klik buat buka suratnya.', stOpen: 'menunggu', stAllowed: 'diizinkan sekali',
       seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
     },
     en: {
@@ -39,6 +41,8 @@
       running: 'working', finished: 'done', source: 'Source: Claude Code transcripts, last 24 hours (newest first)',
       todoSource: (n) => `Source: TodoWrite · ${n} latest sessions`, main: 'Main session', director: 'Director', actingFor: 'Helping Shades',
       atDesk: "At the director's desk", noProject: 'Claude Code session', chatWith: (n) => `Chatting with ${n}`,
+      planReady: 'Plan ready', approveBtn: '✅ Approve', rejectBtn: '❌ Reject', openBtn: 'Open', morePlans: (n) => `+${n} more plans in the mailbox`,
+      perm: 'Permissions', emptyPerm: 'Nothing has been refused automatically.', permSource: 'Steps refused automatically because they were outside the task’s permissions. Click to open the letter.', stOpen: 'waiting', stAllowed: 'allowed once',
       seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
     },
   });
@@ -95,6 +99,18 @@
   .hud-stat b { font-weight: normal; font-size: 17px; }
   .hud-dot { display: inline-block; width: 8px; height: 8px; margin-right: 5px; background: #4f9a45; }
   .hud-dot.off { background: #c8503c; } .hud-dot.none { background: #9a8a7a; }
+  .hud-pending { position: fixed; top: 136px; left: 64px; width: 360px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+  .hud-pending > * { pointer-events: auto; }
+  .hud-plan { padding: 7px 10px 8px; border-color: #3f74b8; box-shadow: inset 0 0 0 2px #9fc2ea, 0 4px 0 rgba(0,0,0,0.25); animation: hud-plan-in 0.2s ease-out; }
+  .hud-plan small { display: block; font-size: 11.5px; color: #3f74b8; }
+  .hud-plan .t { font-size: 13.5px; line-height: 1.3; margin: 2px 0 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .hud-plan .b { display: flex; gap: 6px; }
+  .hud-plan button { padding: 3px 9px; font-size: 13px; cursor: pointer; background: #fffbe9; border: 2px solid #744122; box-shadow: 0 2px 0 #744122; }
+  .hud-plan button.go { background: #c8503c; color: #fff6dc; border-color: #973a2f; box-shadow: 0 2px 0 #973a2f; }
+  .hud-plan button:disabled { opacity: 0.5; cursor: default; }
+  .hud-more { font-size: 12px; opacity: 0.75; padding: 0 4px; }
+  @keyframes hud-plan-in { from { transform: translateY(-6px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .hud-plan { animation: none; } }
   .hud-side { position: fixed; top: 74px; right: 12px; width: 300px; max-height: calc(100vh - 74px - 128px); display: flex; flex-direction: column; overflow: hidden; }
   .hud-tabs { display: flex; align-items: stretch; border-bottom: 2px solid #c9a877; }
   .hud-tabs button { flex: 1; background: none; border: 0; border-bottom: 3px solid transparent; padding: 7px 4px; font-size: 13px; cursor: pointer; opacity: 0.7; white-space: nowrap; }
@@ -147,6 +163,7 @@
   @media (max-width: 820px) {
     .hud-top { flex-wrap: wrap; left: 60px; right: 8px; gap: 6px; }
     .hud-hero { flex: 1 1 100%; width: auto; height: 108px; }
+    .hud-pending { left: 60px; right: 8px; width: auto; top: 124px; }
     .hud-stats { flex: 1 1 100%; } .hud-stat { flex: 1 1 0; padding: 4px 8px; } .hud-stat b { font-size: 15px; }
     .hud-bottom { left: 8px; right: 8px; bottom: 62px; }
     .hud-side { position: static; width: auto; }
@@ -213,17 +230,20 @@
         <div class="hud-stat"><small>${esc(S.today)}</small><b id="hud-today">0</b></div>
       </div>
     </div>
+    <div class="hud-pending" id="hud-pending"></div>
     <aside class="hud-side hud-box">
       <div class="hud-tabs" role="tablist">
         <button type="button" role="tab" data-tab="feed">${esc(S.feed)}<span class="n" id="hud-n-feed">0</span></button>
         <button type="button" role="tab" data-tab="runs">${esc(S.history)}<span class="n" id="hud-n-runs">0</span></button>
         <button type="button" role="tab" data-tab="todos">${esc(S.todos)}<span class="n" id="hud-n-todos">0</span></button>
+        <button type="button" role="tab" data-tab="perm">${esc(S.perm)}<span class="n" id="hud-n-perm">0</span></button>
         <button type="button" class="min" title="${esc(S.min)}" aria-label="${esc(S.min)}">▾</button>
       </div>
       <div class="hud-scroll">
         <section class="hud-pane" data-pane="feed"><ul class="hud-feed" id="hud-feed"></ul></section>
         <section class="hud-pane" data-pane="runs" id="hud-runs"></section>
         <section class="hud-pane" data-pane="todos" id="hud-todos"></section>
+        <section class="hud-pane" data-pane="perm" id="hud-perm"></section>
       </div>
     </aside>
     <div class="hud-bottom"><div class="hud-cards" id="hud-cards"></div></div>`;
@@ -250,6 +270,17 @@
     applyChrome();
   }
   root.addEventListener('click', (e) => {
+    const planBtn = e.target.closest('[data-plan]');
+    if (planBtn) {
+      const l = (ns.data?.mail ?? []).find((x) => x.id === planBtn.dataset.id);
+      if (!l) return;
+      if (planBtn.dataset.plan === 'approve') { planBtn.disabled = true; ns.mailbox?.approve(l, planBtn); }
+      else if (planBtn.dataset.plan === 'reject') { planBtn.disabled = true; ns.mailbox?.reject(l); }
+      else ns.mailbox?.openLetter(l.id);
+      return;
+    }
+    const permRow = e.target.closest('[data-letter]');
+    if (permRow) { ns.mailbox?.openLetter(permRow.dataset.letter); return; }
     const openBtn = e.target.closest('[data-open]');
     if (openBtn) {
       if (openBtn.dataset.open === 'idea') toggleIdea(true);
@@ -335,7 +366,7 @@
   }
 
   // ── Rendering (only touches the DOM when the text changed) ──
-  const last = { cards: '', feed: '', runs: '', todos: '', phase: '' };
+  const last = { cards: '', feed: '', runs: '', todos: '', phase: '', pending: '', perm: '' };
   function setHtml(el, html, key) {
     if (last[key] !== html) { el.innerHTML = html; last[key] = html; }
   }
@@ -410,6 +441,23 @@
     }).join('') : `<div class="hud-empty">${esc(S.emptyRuns)}</div>`);
     setHtml($('hud-runs'), runsHtml, 'runs');
     $('hud-n-runs').textContent = String(runs.length);
+
+    // Plans waiting for you: approve or reject without opening the mailbox
+    const waiting = (ns.data?.mail ?? []).filter((l) => l.status === 'awaiting' && !l.report).slice(0, 3);
+    const moreWaiting = (ns.data?.mail ?? []).filter((l) => l.status === 'awaiting' && !l.report).length - waiting.length;
+    const pendingHtml = waiting.map((l) => `<div class="hud-plan hud-box"><small>📝 ${esc(S.planReady)} · ${esc([l.name ?? '', l.project ?? ''].filter(Boolean).join(' · '))}</small><div class="t" title="${esc(l.title)}">${esc(l.title)}</div><div class="b"><button type="button" class="go" data-plan="approve" data-id="${esc(l.id)}">${esc(S.approveBtn)}</button><button type="button" data-plan="reject" data-id="${esc(l.id)}">${esc(S.rejectBtn)}</button><button type="button" data-plan="open" data-id="${esc(l.id)}">${esc(S.openBtn)}</button></div></div>`).join('')
+      + (moreWaiting > 0 ? `<div class="hud-more">${esc(S.morePlans(moreWaiting))}</div>` : '');
+    setHtml($('hud-pending'), pendingHtml, 'pending');
+
+    // Permissions: what the tasks tried that was refused automatically
+    const denials = (ns.data?.mail ?? []).flatMap((l) => (l.denials ?? []).map((d) => ({ ...d, letter: l }))).sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 15);
+    const openDenials = denials.filter((d) => d.state === 'open').length;
+    const permHtml = `<div class="hud-src">${esc(S.permSource)}</div>` + (denials.length ? denials.map((d) => {
+      const css2 = d.state === 'open' ? STATE.izin.css : STATE.selesai.css;
+      return `<div class="hud-run" data-letter="${esc(d.letter.id)}" style="cursor:pointer"><i style="background:${css2}"></i><span class="t" title="${esc(d.text)}">${esc(`${d.tool}${d.text ? `: ${d.text}` : ''}`)}</span><span class="hud-chip" style="color:${css2}">${esc(d.state === 'open' ? S.stOpen : S.stAllowed)}</span><span class="w">${esc([d.letter.title, clock(fmtMin, Date.parse(d.at))].filter(Boolean).join(' · '))}</span></div>`;
+    }).join('') : `<div class="hud-empty">${esc(S.emptyPerm)}</div>`);
+    setHtml($('hud-perm'), permHtml, 'perm');
+    $('hud-n-perm').textContent = String(openDenials);
 
     // Todos
     const withTodos = (ns.data?.tasks ?? []).filter((x) => x.todos?.length).slice(0, 3);

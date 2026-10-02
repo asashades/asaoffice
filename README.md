@@ -269,6 +269,9 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   **📚 Bookshelf**. They open as panels that grow out of the card and float over the office with no dimming, so the
   office stays visible and clickable (full-width on phones). Top right: whether the data feed is alive and counters
   (sessions working, helpers working, sub-agents started today).
+- **Plans waiting for you:** a card under the hero card for each plan waiting for approval (up to 3), with **✅ Setujui**,
+  **❌ Tolak** and **Buka**, so you can approve without opening the mailbox. The side panel's **Izin** tab lists steps
+  refused automatically (see "Refused steps" under the mailbox).
 - **Cards along the bottom:** one per villager (Shades, sessions, helpers, staff acting for Shades) with its state
   (Bekerja, Santai, Selesai for 45 s after work, Nunggu kamu, Butuh izin), its project or task and what it's doing right
   now. Click a card to select and follow that villager.
@@ -377,6 +380,13 @@ What a task may do depends on who does it (`staff/roster.json` → `access`). Ev
 | `edit` | Edit, MultiEdit, Write, NotebookEdit (inside the project) |
 | `git` | `git status / diff / log / show` |
 | `test` | common test runners (`npm test`, `npm run test/lint/check`, `vitest`, `jest`, `pnpm/yarn test`, `pytest`, `go test`, `cargo test`), plus `git` |
+
+**Refused steps and "Allow once".** When a task tries something outside its permissions (a `git commit` without the checkbox, an edit
+the staff member can't make...), `claude -p` refuses it and reports it; the letter lists these under the answer
+(⛔ N steps refused automatically) and the HUD's **Izin** tab keeps the recent ones. Each can be opened up **once** with
+**Izinkan sekali**: the office derives the rule from what was refused (for example `Bash(git commit:*)`), runs one follow-up
+for that letter with it, and tells Claude not to push. Risky commands (`push`, `rm`, `sudo`, pipes, redirects, `curl`,
+shell invocations...) are never offered; run those yourself in Terminal.
 
 **May commit (per task):** the new-chat form has a **🔀 May commit** checkbox, off by default. When ticked, that task may also run `git add` and `git commit` while it does the work (not in the plan phase or report-only mode). `git push` is never allowed, so pushing stays with you.
 
