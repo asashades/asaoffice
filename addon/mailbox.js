@@ -51,7 +51,7 @@
       attach: 'Lampirkan gambar', attachTip: 'Lampirkan gambar (atau tempel / seret ke sini)', attachFail: 'Gambar gak bisa dilampirkan (png, jpg, gif, webp; maks 8 MB, 4 gambar).', lookAtImages: 'Tolong lihat gambar terlampir.', remove: 'Hapus',
       denied: (n) => `⛔ ${n} langkah ditolak otomatis (di luar izin tugas ini)`, allowOnce: 'Izinkan sekali', cantAllow: 'terlalu berisiko dari sini, jalankan sendiri di Terminal',
       schedBtn: '⏰ Jadwal', schedTip: 'Tugas yang jalan sendiri pada jam tertentu',
-      tidyBtn: '🧹', tidyTip: 'Rapikan folder Downloads: Claude membuat rencana, kamu setujui dulu', tidyEmpty: 'Downloads sudah rapi: tidak ada file lepas yang perlu dipindah.',
+      tidyBtn: '🧹', tidyTip: 'Rapikan folder Downloads: tulis catatan kalau perlu, Claude membuat rencana, kamu setujui dulu', dlName: 'Downloads', dlRead: '👀 Baca saja (cari, ringkas, jawab)', dlTidy: '🧹 Rapikan (rencana pindah file)', dlPh: 'Mis. "cari invoice bulan lalu", atau (mode Rapikan) "fokus ke file bulan ini"', tidyEmpty: 'Downloads sudah rapi: tidak ada file lepas yang perlu dipindah.',
       tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.', tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
       sesFirst: 'Pesan pertama', sesContinue: 'Lanjutkan sesi ini dari kantor', sesNote: 'Sesi ini dimulai di luar kantor (Terminal atau Desktop). Tulis di bawah buat lanjutin dari sini.',
       sesContinueHint: 'Tulis lanjutannya…', sesSend: 'Kirim', sesLive: 'Sesi ini lagi dipakai di tempat lain. Tunggu sebentar biar nggak tabrakan.', sesCopy: '📋 Salin perintah Terminal',
@@ -106,7 +106,7 @@
       attach: 'Attach an image', attachTip: 'Attach an image (or paste / drag it here)', attachFail: 'Could not attach the image (png, jpg, gif, webp; max 8 MB, 4 images).', lookAtImages: 'Please look at the attached images.', remove: 'Remove',
       denied: (n) => `⛔ ${n} step(s) refused automatically (outside this task's permissions)`, allowOnce: 'Allow once', cantAllow: 'too risky from here, run it yourself in Terminal',
       schedBtn: '⏰ Schedules', schedTip: 'Tasks that run by themselves at a set time',
-      tidyBtn: '🧹', tidyTip: 'Tidy the Downloads folder: Claude makes a plan, you approve it first', tidyEmpty: 'Downloads is already tidy: no loose files to move.',
+      tidyBtn: '🧹', tidyTip: 'Tidy the Downloads folder: add a note if you like, Claude makes a plan, you approve it first', dlName: 'Downloads', dlRead: '👀 Read only (find, summarise, answer)', dlTidy: '🧹 Tidy (plan to move files)', dlPh: 'E.g. "find last month\'s invoice", or (Tidy mode) "focus on this month\'s files"', tidyEmpty: 'Downloads is already tidy: no loose files to move.',
       tidyNoFolder: 'The Downloads folder was not found on this Mac.', tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
       sesFirst: 'First message', sesContinue: 'Continue this session from the office', sesNote: 'This session was started outside the office (Terminal or Desktop). Write below to continue it from here.',
       sesContinueHint: 'Write the follow-up…', sesSend: 'Send', sesLive: 'This session is in use elsewhere. Wait a moment to avoid clashing.', sesCopy: '📋 Copy Terminal command',
@@ -621,7 +621,7 @@
       h('div', { style: { display: 'flex', gap: '6px' } },
         h('button', { type: 'button', class: `asa-btn primary asa-newchat${sel === 'new' ? ' on' : ''}`, style: { flex: '1' }, onclick: () => select('new') }, S.newChat),
         h('button', { type: 'button', class: 'asa-btn', title: S.schedTip, onclick: () => ns.schedule?.open() }, S.schedBtn),
-        h('button', { type: 'button', class: 'asa-btn', title: S.tidyTip, 'aria-label': S.tidyTip, onclick: () => startTidy() }, S.tidyBtn)),
+        h('button', { type: 'button', class: 'asa-btn', title: S.tidyTip, 'aria-label': S.tidyTip, onclick: () => { prefs.cwd = '@downloads'; prefs.dlMode = 'tidy'; savePrefs(); select('new'); } }, S.tidyBtn)),
       search, chips, rows);
     ui.refill();
   }
@@ -895,7 +895,8 @@
         staff.map((m) => h('option', { value: m.agent }, `👤 ${m.name}`)));
       whoSel.value = staff.some((m) => m.agent === prefs.agent) || prefs.agent === '' ? prefs.agent : staff.find((m) => m.director)?.agent ?? '';
       const projSel = h('select', { class: 'asa-chipsel', title: S.project, 'aria-label': S.project }, options.projects.map((p) => h('option', { value: p.cwd, title: p.cwd }, `📁 ${p.name}`)));
-      projSel.value = options.projects.some((p) => p.cwd === prefs.cwd) ? prefs.cwd : options.projects[0].cwd;
+      if (options.downloads) projSel.append(h('option', { value: '@downloads', title: '~/Downloads' }, `📥 ${S.dlName}`));
+      projSel.value = options.projects.some((p) => p.cwd === prefs.cwd) || (options.downloads && prefs.cwd === '@downloads') ? prefs.cwd : options.projects[0].cwd;
       const modeSel = h('select', { class: 'asa-chipsel', title: S.mode, 'aria-label': S.mode }, Object.entries(S.chipModes).map(([v, t]) => h('option', { value: v }, t)));
       const styleSel = h('select', { class: 'asa-chipsel', title: S.style, 'aria-label': S.style }, Object.entries(S.chipStyles).map(([v, t]) => h('option', { value: v }, t)));
       styleSel.value = prefs.style ?? 'solo';
@@ -903,26 +904,46 @@
       const commitLab = h('label', { class: 'asa-chipsel', for: 'asa-commit', title: S.commitTip, style: { display: 'inline-flex', gap: '4px', alignItems: 'center' } }, commitBox, S.commitChip);
       const member = () => staff.find((m) => m.agent === whoSel.value) ?? null;
       const defaultMode = () => prefs.modes?.[whoSel.value] ?? (member()?.director ? 'plan' : 'auto');
+      const isDl = () => projSel.value === '@downloads';
+      // The Downloads folder only offers reading, or a tidy-up plan (the office moves the files after you approve it).
+      const syncDl = () => {
+        const dl = isDl();
+        if (modeSel.dataset.dl !== String(dl)) {
+          modeSel.dataset.dl = String(dl);
+          modeSel.replaceChildren(...(dl ? [['report', S.dlRead], ['tidy', S.dlTidy]] : Object.entries(S.chipModes)).map(([v, t]) => h('option', { value: v }, t)));
+          modeSel.value = dl ? (prefs.dlMode === 'tidy' ? 'tidy' : 'report') : defaultMode();
+        }
+        styleSel.style.display = !dl && member()?.director ? '' : 'none';
+        commitLab.style.display = dl ? 'none' : '';
+        whoSel.style.display = dl && modeSel.value === 'tidy' ? 'none' : '';
+        ta.placeholder = dl ? S.dlPh : S.placeholder;
+      };
       const update = () => {
-        modeSel.value = defaultMode();
+        if (!isDl()) modeSel.value = defaultMode();
         styleSel.style.display = member()?.director ? '' : 'none';
         const access = member()?.access ?? options.general?.access ?? ['read'];
         whoSel.title = `${S.who} — ${S.canDo(access.map((a) => S.access[a] ?? a).join(', '))}`;
       };
-      whoSel.onchange = () => { prefs.agent = whoSel.value; savePrefs(); update(); };
+      whoSel.onchange = () => { prefs.agent = whoSel.value; savePrefs(); update(); syncDl(); };
       const setWho = (agent) => {
         whoSel.value = agent;
         prefs.agent = agent;
         savePrefs();
         update();
+        syncDl();
         whoSel.classList.remove('asa-flash');
         void whoSel.offsetWidth; // restart the animation
         whoSel.classList.add('asa-flash');
       };
-      projSel.onchange = () => { prefs.cwd = projSel.value; savePrefs(); };
-      modeSel.onchange = () => { prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value }; savePrefs(); };
+      projSel.onchange = () => { prefs.cwd = projSel.value; savePrefs(); syncDl(); };
+      modeSel.onchange = () => {
+        if (isDl()) prefs.dlMode = modeSel.value; else prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value };
+        savePrefs();
+        syncDl();
+      };
       styleSel.onchange = () => { prefs.style = styleSel.value; savePrefs(); };
       update();
+      syncDl();
       Object.assign(controls, { whoSel, projSel, modeSel, styleSel, commitBox, member, setWho });
       chips.append(whoSel, projSel, modeSel, styleSel, commitLab);
     } else {
@@ -973,6 +994,7 @@
     ns.notify?.sfx?.('send');
     const landed = flyPlane(sendBtn);
     ta.disabled = true;
+    if (cwd === '@downloads' && c.modeSel.value === 'tidy') return sendTidy(ta, sendBtn, text, landed);
     try {
       const { letter } = await api('POST', '/api/tasks', {
         agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, style: director ? c.styleSel.value : undefined, commit: c.commitBox.checked, images, hold: true,
@@ -989,7 +1011,7 @@
       clearAtt();
       // Shades takes the letter from the mailbox and hands it over; the task starts when he does (or right away).
       const deliver = async () => {
-        if (director) ns.director?.expect({ cwd, prompt: text, meeting: true });
+        if (director) ns.director?.expect({ cwd: letter.cwd, prompt: text, meeting: true });
         try { await api('POST', `/api/tasks/${letter.id}/deliver`); } catch { /* the server starts it by itself after 30 s */ }
         // The office learns who runs the new session from the data feed: look a few times so the face is right early.
         for (const ms of [0, 2500, 5000]) setTimeout(() => ns.refreshData(), ms);
@@ -1046,22 +1068,28 @@
         return h('label', {}, box, h('span', { class: 'f' }, m.file), h('span', { class: 'to' }, `${S.tidyTo} ${m.to}`), m.why ? h('small', {}, m.why) : null);
       }));
   }
-  async function startTidy() {
-    notice = '';
-    ns.notify?.sfx?.('send');
+  /** "Rapikan" from the new-chat form: the text is a note for the plan (the office never moves anything before you approve). */
+  async function sendTidy(ta, sendBtn, text, landed) {
     try {
-      const res = await api('POST', '/api/tidy', {});
+      const res = await api('POST', '/api/tidy', { note: text === S.lookAtImages ? '' : text });
+      await landed;
       if (res.empty) notice = S.tidyEmpty;
       else {
+        dropLetter();
+        setDraft('', 'new');
+        clearAtt();
         await ns.refreshData();
         sel = res.letter.id;
         select(res.letter.id);
       }
     } catch (err) {
+      await landed;
       notice = err.message === 'downloads' ? S.tidyNoFolder : errorText(err);
+    } finally {
+      sending = false;
     }
     await ns.refreshData();
-    if (panel) refreshMain();
+    if (panel) { ui.keys.comp = null; refreshMain(); }
   }
   async function approve(l, btn) {
     btn.disabled = true;
