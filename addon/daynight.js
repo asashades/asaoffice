@@ -18,6 +18,18 @@
     { id: 'toilet', c0: 4, r0: 11, c1: 8, r1: 15 }, { id: 'pantry', c0: 10, r0: 11, c1: 13, r1: 15 },
     { id: 'breakout', c0: 14, r0: 11, c1: 22, r1: 15 }, { id: 'lounge', c0: 24, r0: 11, c1: 28, r1: 15 },
   ];
+  // Ceiling-light colour per room (the toilet is a cooler tube, the lounge is cosy amber), and the doorways light spills through
+  // (centre in tiles, and which way it points from `a` to `b`). `outside` only receives: the path in front of the front door.
+  const LIGHT_RGB = {
+    work: [255, 218, 160], meeting: [255, 224, 176], director: [255, 192, 118], toilet: [226, 236, 255],
+    pantry: [255, 238, 205], breakout: [255, 208, 134], lounge: [255, 176, 100],
+  };
+  const OUTSIDE = { id: 'outside', c0: 14, r0: 18, c1: 18, r1: 22 };
+  const DOORS = [
+    { a: 'work', b: 'meeting', x: 16.5, y: 6.5, dx: 1, dy: 0 }, { a: 'meeting', b: 'director', x: 24.5, y: 7, dx: 1, dy: 0 },
+    { a: 'work', b: 'breakout', x: 15, y: 10.5, dx: 0, dy: 1 }, { a: 'toilet', b: 'pantry', x: 9.5, y: 14, dx: 1, dy: 0 },
+    { a: 'breakout', b: 'lounge', x: 23.5, y: 14, dx: 1, dy: 0 }, { a: 'breakout', b: 'outside', x: 16.5, y: 17, dx: 0, dy: 1 },
+  ];
   const HOLD_MS = 120_000; // a room stays lit this long after the last person left
   const FADE_IN_MS = 1200;
   const FADE_OUT_MS = 6000;
@@ -52,6 +64,19 @@
       return { tint: mixRgb(c0, c1, t), alpha: mix(a0, a1, t), light: mix(l0, l1, t), sky, skyAlpha };
     }
     return { tint: [255, 255, 255], alpha: 0, light: 0, sky: null, skyAlpha: 0 };
+  }
+
+  // A soft pool of light: smooth falloff (no visible ring), optionally stretched into an ellipse (rx, ry) for door spill.
+  function lightPool(ctx, x, y, radius, rgb, strength, rx = radius, ry = radius) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(rx / radius, ry / radius);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+    const c = rgb.join(',');
+    for (const [stop, k] of [[0, 1], [0.2, 0.74], [0.4, 0.46], [0.6, 0.22], [0.8, 0.07], [1, 0]]) g.addColorStop(stop, `rgba(${c},${(0.3 * strength * k).toFixed(4)})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
+    ctx.restore();
   }
 
   function glow(ctx, x, y, radius, rgb, strength) {
@@ -127,28 +152,60 @@
       const dt = lastFrame ? Math.min(250, nowMs - lastFrame) : 0;
       lastFrame = nowMs;
       const people = [...office.characters.values()].filter((c) => c.matrixEffect !== 'despawn' && !c.isGreeter && c.tileCol != null);
+      const rect = new Map();
       for (const room of ROOMS) {
+        rect.set(room.id, room);
         if (people.some((c) => c.tileCol >= room.c0 && c.tileCol <= room.c1 && c.tileRow >= room.r0 && c.tileRow <= room.r1)) seen.set(room.id, nowMs);
         const want = nowMs - (seen.get(room.id) ?? -Infinity) < HOLD_MS ? 1 : 0;
         const cur = levels.get(room.id) ?? (seen.has(room.id) ? want : 0);
         levels.set(room.id, want > cur ? Math.min(want, cur + dt / FADE_IN_MS) : Math.max(want, cur - dt / FADE_OUT_MS));
-        const a = levels.get(room.id) * ceil;
-        if (a < 0.02) continue;
-        const x0 = offX + px(room.c0 * 16);
-        const y0 = offY + px(room.r0 * 16);
-        const w = px((room.c1 - room.c0 + 1) * 16);
-        const hh = px((room.r1 - room.r0 + 1) * 16);
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(x0, y0, w, hh);
-        ctx.clip();
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.fillStyle = `rgba(255,206,130,${0.07 * a})`;
-        ctx.fillRect(x0, y0, w, hh);
-        const lights = Math.max(1, Math.round((room.c1 - room.c0 + 1) / 5)); // one pool per ~5 tiles of width
-        for (let k = 0; k < lights; k++) glow(ctx, x0 + (w * (k + 0.5)) / lights, y0 + hh * 0.5, Math.max(hh * 0.62, w / lights * 0.7), [255, 206, 130], 0.5 * a);
-        ctx.restore();
       }
+      rect.set(OUTSIDE.id, OUTSIDE);
+      const clipTo = (r) => { ctx.beginPath(); ctx.rect(offX + px(r.c0 * 16), offY + px(r.r0 * 16), px((r.c1 - r.c0 + 1) * 16), px((r.r1 - r.r0 + 1) * 16)); ctx.clip(); };
+      // An empty room is darker than a lit one: walls separate them, so the edge reads as a wall, not a seam.
+      for (const room of ROOMS) {
+        const dark = (1 - levels.get(room.id)) * ceil;
+        if (dark < 0.02) continue;
+        ctx.fillStyle = `rgba(6,10,36,${0.3 * dark})`;
+        ctx.fillRect(offX + px(room.c0 * 16), offY + px(room.r0 * 16), px((room.c1 - room.c0 + 1) * 16), px((room.r1 - room.r0 + 1) * 16));
+      }
+      ctx.globalCompositeOperation = 'lighter';
+      // Ceiling lights: a few soft pools per room, each with its own switch-on delay, a slight breathing and no hard edge.
+      ROOMS.forEach((room, ri) => {
+        const lvl = levels.get(room.id) * ceil;
+        if (lvl < 0.02) return;
+        const cols = Math.max(1, Math.round((room.c1 - room.c0 + 1) / 5));
+        const rows = room.r1 - room.r0 + 1 >= 6 ? 2 : 1;
+        const sx = ((room.c1 - room.c0 + 1) * 16) / cols;
+        const sy = ((room.r1 - room.r0 + 1) * 16) / rows;
+        ctx.save();
+        clipTo(room);
+        for (let k = 0; k < cols * rows; k++) {
+          const delay = ((k * 0.37 + ri * 0.21) % 1) * 0.4;
+          const on = Math.min(1, Math.max(0, (levels.get(room.id) - delay) / (1 - delay))) * ceil;
+          if (on < 0.02) continue;
+          const breath = 1 + 0.03 * Math.sin(t * 1.7 + k * 2.1 + ri);
+          const lx = room.c0 * 16 + sx * ((k % cols) + 0.5);
+          const ly = room.r0 * 16 + sy * (Math.floor(k / cols) + 0.5);
+          lightPool(ctx, offX + px(lx), offY + px(ly), px(Math.max(sx, sy) * 0.85), LIGHT_RGB[room.id], 1.25 * on * breath);
+        }
+        ctx.restore();
+      });
+      // Light spilling through the doorways into whatever is next door (the front door lights the path outside).
+      for (const d of DOORS) {
+        for (const [from, to, sgn] of [[d.a, d.b, 1], [d.b, d.a, -1]]) {
+          const lvl = (levels.get(from) ?? 0) * ceil;
+          if (lvl < 0.02 || (to === 'outside' && sgn < 0)) continue;
+          ctx.save();
+          clipTo(rect.get(to));
+          const cx = offX + px((d.x + sgn * d.dx * 0.9) * 16);
+          const cy = offY + px((d.y + sgn * d.dy * 0.9) * 16);
+          const long = px(54), wide = px(26);
+          lightPool(ctx, cx, cy, 1, LIGHT_RGB[from], 0.7 * lvl, d.dx ? long : wide, d.dx ? wide : long);
+          ctx.restore();
+        }
+      }
+      ctx.globalCompositeOperation = 'source-atop';
     }
 
     // Warm light pools.
@@ -178,7 +235,11 @@
         }
         const sat = Math.min(1, p.light * 1.6);
         ctx.globalCompositeOperation = 'lighter';
-        for (const d of lit) glow(ctx, offX + px(d.x), offY + px(d.y), px(24), [255, 214, 140], 0.55 * sat);
+        for (const d of lit) {
+          const dx = offX + px(d.x), dy = offY + px(d.y);
+          lightPool(ctx, dx, dy, px(30), [255, 196, 100], 0.55 * sat, px(34), px(24)); // the wider warm pool on the floor around the desk
+          lightPool(ctx, dx, dy - px(2), px(11), [255, 238, 176], 0.9 * sat); // the bright spot right under the lamp
+        }
       }
     }
     ctx.restore();
