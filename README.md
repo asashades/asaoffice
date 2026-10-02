@@ -302,6 +302,11 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   hidden files, partial downloads and files from the last 3 minutes, and refusing anything outside Downloads. Every move is listed in the letter with
   **↩️ Kembalikan semua** to put everything back. Reply to the plan to revise it ("jangan pindahin file skripsi"). The first run makes macOS ask whether
   Terminal (or Asa Office) may access the Downloads folder: allow it.
+- **Downloads in New chat (📥).** The folder list in a new chat also offers **📥 Downloads**, with two ways of working: **👀 Read only** (ask anything about
+  the folder: "cari invoice bulan lalu", "ringkas PDF terbaru"; Claude gets only Read/Grep/Glob/LS, whatever the staff member's own access is, and the
+  server forces report mode and no commits) and **🧹 Tidy** (the plan described above; the text box is a note for the plan, e.g. "fokus ke file bulan ini").
+  The 🧹 button in the sidebar opens the form already set to Downloads + Tidy. Downloads is never in the project list used by schedules or the
+  other modes, so nothing there can be edited.
 - **Shop (🛒 Toko).** Click the 💰 Kas chip. **Décor** (garden: bench 200g, lantern 150g, apple tree 400g, berry bush 80g, flowers 60g, scarecrow 250g, barrel 120g,
   crate 70g, basket 90g, well 600g, pond 900g; walls: painting 350g, clock 200g, bookshelf 450g) is placed **automatically** on a spot the
   server has checked is free and out of the way (`tools/lib/shop.mjs`: grass outside the building, never the entrance path; bare wall; and a
