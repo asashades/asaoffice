@@ -418,7 +418,7 @@
 
     // Cards: Shades first, then sessions, staff acting, helpers.
     const order = (c) => (c.asaShades || c.asaDirector ? 0 : isReal(c) ? 1 : c.asaActing ? 2 : 3);
-    const cards = chars.slice().sort((a, b) => order(a) - order(b) || a.id - b.id).map((c) => {
+    const cards = chars.filter((c) => !c.asaResident).sort((a, b) => order(a) - order(b) || a.id - b.id).map((c) => {
       const st = stateOf(c, now);
       const ui = STATE[st];
       const { task, act } = lines(office, c, st);
