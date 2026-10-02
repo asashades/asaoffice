@@ -21,7 +21,7 @@
       yesterdayLine: (g, t, s) => `${g}g · ${t} tugas surat selesai · ${s} sesi`, waiting: 'Hari ini menunggu',
       plans: (n) => `📝 ${n} rencana menunggu persetujuanmu`, denials: (n) => `⛔ ${n} langkah ditolak otomatis (buka suratnya)`, unread: (n) => `📮 ${n} surat belum dibaca`,
       todos: (n) => `💡 ${n} ide/TODO belum selesai di Rak Buku`, events: (n) => `📅 ${n} acara hari ini`, allClear: 'Tidak ada yang menunggu. Santai dulu ☕',
-      allDay: 'sepanjang hari', daysShort: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+      allDay: 'sepanjang hari', schedules: (n) => `⏰ ${n} jadwal hari ini`, daysShort: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
     },
     en: {
       endTitle: 'End of Day', morningTitle: 'Good morning', next: 'Continue', start: 'Start the day ☀️', openMail: 'Open the mailbox',
@@ -33,7 +33,7 @@
       yesterdayLine: (g, t, s) => `${g}g · ${t} mailbox tasks finished · ${s} sessions`, waiting: 'Waiting today',
       plans: (n) => `📝 ${n} plan(s) waiting for your approval`, denials: (n) => `⛔ ${n} step(s) refused automatically (open the letter)`, unread: (n) => `📮 ${n} unread letter(s)`,
       todos: (n) => `💡 ${n} open idea(s)/TODO in the Bookshelf`, events: (n) => `📅 ${n} event(s) today`, allClear: 'Nothing is waiting. Relax for a bit ☕',
-      allDay: 'all day', daysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      allDay: 'all day', schedules: (n) => `⏰ ${n} schedule(s) today`, daysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     },
   });
   const locale = ns.lang === 'id' ? 'id-ID' : 'en-US';
@@ -221,6 +221,11 @@
     if (denials) lines.push(link(S.denials(denials), () => ns.mailbox?.open()));
     if (unread) lines.push(link(S.unread(unread), () => ns.mailbox?.open()));
     if (todos) lines.push(link(S.todos(todos), () => ns.shelf?.open()));
+    const todaySchedules = (ns.data?.schedules ?? []).filter((x) => x.enabled && x.next && new Date(x.next).toDateString() === today.toDateString());
+    if (todaySchedules.length) {
+      const first = todaySchedules.slice(0, 3).map((x) => `${x.time.replace(':', '.')} ${x.title}`).join(' · ');
+      lines.push(h('li', {}, h('button', { type: 'button', onclick: () => { panel?.close(); ns.schedule?.open(); } }, S.schedules(todaySchedules.length)), h('br'), h('small', { class: 'asa-muted' }, first)));
+    }
     if (events.length) {
       const first = events.slice(0, 3).map((e) => `${e.allDay ? S.allDay : new Date(e.start).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} ${e.title}`).join(' · ');
       lines.push(h('li', {}, S.events(events.length), h('br'), h('small', { class: 'asa-muted' }, first)));

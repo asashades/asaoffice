@@ -27,6 +27,7 @@ const SCRIPTS = [
   'pomodoro.js',
   'mailbox.js',
   'shelf.js',
+  'schedule.js',
   'garden.js',
   'sky.js',
   'dayend.js',
