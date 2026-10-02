@@ -312,11 +312,6 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   hidden files, partial downloads and files from the last 3 minutes, and refusing anything outside Downloads. Every move is listed in the letter with
   **↩️ Kembalikan semua** to put everything back. Reply to the plan to revise it ("jangan pindahin file skripsi"). The first run makes macOS ask whether
   Terminal (or Asa Office) may access the Downloads folder: allow it.
-- **Downloads in New chat (📥).** The folder list in a new chat also offers **📥 Downloads**, with two ways of working: **👀 Read only** (ask anything about
-  the folder: "cari invoice bulan lalu", "ringkas PDF terbaru"; Claude gets only Read/Grep/Glob/LS, whatever the staff member's own access is, and the
-  server forces report mode and no commits) and **🧹 Tidy** (the plan described above; the text box is a note for the plan, e.g. "fokus ke file bulan ini").
-  The 🧹 button in the sidebar opens the form already set to Downloads + Tidy. Downloads is never in the project list used by schedules or the
-  other modes, so nothing there can be edited.
 - **Residents.** The team lives in the office: each installed staff member (Wren, Pip, Sari, Gus, Iris, Bayu) is a villager who is around during the
   working day with or without a Claude session. They come in through the front door between 07:00 and 08:15 and head home between 18:00 and 20:00 (staggered,
   following the office clock and the day-night preview), and in between they do what idle villagers do (coffee, plants, books, canteen at noon, chats), and
