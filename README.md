@@ -306,12 +306,6 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   Downloads: allow it.
 - **Archive (🗄).** The 🗄 button in a chat moves it out of the main list into the **🗄 Arsip** filter (kept, up to 100 chats, apart from the 60 recent ones);
   from there ↩️ takes it back and 🗑 deletes it for good (click twice to confirm). Archived chats don't count as unread or as waiting plans.
-- **Tidy Downloads (🧹 in the mailbox sidebar).** Claude reads `~/Downloads` (read-only tools, no shell) and proposes where each loose file belongs: a folder that
-  already exists inside Downloads (two levels deep) when it clearly fits, otherwise `Arsip`. Nothing moves until you approve: the plan lists every move with a tick
-  to untick; **the office does the moving itself** (`tools/lib/tidy.mjs`), never deleting or overwriting (a clashing name becomes "name (2)"), skipping symlinks,
-  hidden files, partial downloads and files from the last 3 minutes, and refusing anything outside Downloads. Every move is listed in the letter with
-  **↩️ Kembalikan semua** to put everything back. Reply to the plan to revise it ("jangan pindahin file skripsi"). The first run makes macOS ask whether
-  Terminal (or Asa Office) may access the Downloads folder: allow it.
 - **Residents.** The team lives in the office: each installed staff member (Wren, Pip, Sari, Gus, Iris, Bayu) is a villager who is around during the
   working day with or without a Claude session. They come in through the front door between 07:00 and 08:15 and head home between 18:00 and 20:00 (staggered,
   following the office clock and the day-night preview), and in between they do what idle villagers do (coffee, plants, books, canteen at noon, chats), and
