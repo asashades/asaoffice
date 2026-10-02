@@ -30,7 +30,7 @@
       payroll: (n, d) => `👥 Gaji tim (${n} orang${d > 1 ? `, ${d} hari` : ''})`, bonus: (names) => `⭐ Bonus rajin: ${names}`, net: 'Laba bersih', loss: 'Rugi hari ini', noNeg: 'Kas tidak bisa di bawah 0g.', salaryTip: 'Gaji tiap anggota tim ada di staff/roster.json (salary).',
       plans: (n) => `📝 ${n} rencana menunggu persetujuanmu`, denials: (n) => `⛔ ${n} langkah ditolak otomatis (buka suratnya)`, unread: (n) => `📮 ${n} surat belum dibaca`,
       todos: (n) => `💡 ${n} ide/TODO belum selesai di Rak Buku`, events: (n) => `📅 ${n} acara hari ini`, allClear: 'Tidak ada yang menunggu. Santai dulu ☕',
-      allDay: 'sepanjang hari',
+      allDay: 'sepanjang hari', schedules: (n) => `⏰ ${n} jadwal hari ini`,
     },
     en: {
       replayTitle: "Yesterday's income", next: 'Continue', start: 'Start the day ☀️', openMail: 'Open the mailbox', yesterdayOn: 'Yesterday',
@@ -45,7 +45,7 @@
       payroll: (n, d) => `👥 Team payroll (${n} people${d > 1 ? `, ${d} days` : ''})`, bonus: (names) => `⭐ Hard-work bonus: ${names}`, net: 'Net profit', loss: 'Loss for the day', noNeg: 'The cash can’t go below 0g.', salaryTip: 'Each member’s salary is in staff/roster.json (salary).',
       plans: (n) => `📝 ${n} plan(s) waiting for your approval`, denials: (n) => `⛔ ${n} step(s) refused automatically (open the letter)`, unread: (n) => `📮 ${n} unread letter(s)`,
       todos: (n) => `💡 ${n} open idea(s)/TODO in the Bookshelf`, events: (n) => `📅 ${n} event(s) today`, allClear: 'Nothing is waiting. Relax for a bit ☕',
-      allDay: 'all day',
+      allDay: 'all day', schedules: (n) => `⏰ ${n} schedule(s) today`,
     },
   });
   const locale = ns.lang === 'id' ? 'id-ID' : 'en-US';
@@ -230,6 +230,11 @@
       if (denials) lines.push(link(S.denials(denials), () => ns.mailbox?.open()));
       if (unread) lines.push(link(S.unread(unread), () => ns.mailbox?.open()));
       if (todos) lines.push(link(S.todos(todos), () => ns.shelf?.open()));
+      const todaySchedules = (ns.data?.schedules ?? []).filter((x) => x.enabled && x.next && new Date(x.next).toDateString() === today.toDateString());
+      if (todaySchedules.length) {
+        const first = todaySchedules.slice(0, 3).map((x) => `${x.time.replace(':', '.')} ${x.title}`).join(' · ');
+        lines.push(h('li', {}, h('button', { type: 'button', onclick: () => { panel?.close(); ns.schedule?.open(); } }, S.schedules(todaySchedules.length)), h('br'), h('small', { class: 'asa-muted' }, first)));
+      }
       if (events.length) {
         const first = events.slice(0, 3).map((e) => `${e.allDay ? S.allDay : new Date(e.start).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} ${e.title}`).join(' · ');
         lines.push(h('li', {}, S.events(events.length), h('br'), h('small', { class: 'asa-muted' }, first)));

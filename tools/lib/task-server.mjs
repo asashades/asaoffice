@@ -29,6 +29,7 @@ import * as vault from './vault.mjs';
 import { collect as collectIncome, loadLedger } from './ledger.mjs';
 import { buy as shopBuy, shopInfo } from './shop.mjs';
 import { loadNames, setName } from './names.mjs';
+import { cleanSchedule, dueAction, loadSchedules, MAX_SCHEDULES, newSchedule, nextDue, saveSchedules } from './schedules.mjs';
 
 const MAX_RUNNING = 3;
 const MAX_PROMPT = 4000;
@@ -376,6 +377,42 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     });
   }
 
+  // ── Scheduled tasks (see schedules.mjs): read-only reports or plans, fired while the office runs ──
+  let schedules = loadSchedules();
+  const saveSched = () => { saveSchedules(schedules); onChange(); };
+  const schedView = () => schedules.map((x) => ({ ...x, next: nextDue(x)?.toISOString() ?? null }));
+  const agentIds = () => roster().staff.map((m) => m.agent).filter(installed);
+  function fireSchedule(sch, stamp) {
+    if (running.size >= MAX_RUNNING || directorBusy(sch.agent)) return false; // try again at the next tick
+    if (!allowedDirs().some((p) => p.cwd === sch.cwd)) { sch.lastFor = stamp; return true; } // the folder is gone: drop this time
+    const member = sch.agent ? roster().staff.find((m) => m.agent === sch.agent) : null;
+    const letter = {
+      id: crypto.randomUUID().slice(0, 8), agent: sch.agent, name: member?.name ?? null, cwd: sch.cwd, project: allowedDirs().find((p) => p.cwd === sch.cwd)?.name ?? path.basename(sch.cwd),
+      sessionId: crypto.randomUUID(), status: 'running', read: false, createdAt: new Date().toISOString(), title: `⏰ ${sch.title}`,
+      mode: sch.mode, style: 'solo', phase: sch.mode === 'plan' ? 'plan' : 'work', commit: false, scheduled: sch.id,
+      thread: [{ from: 'you', text: sch.prompt, at: new Date().toISOString() }],
+    };
+    letters.unshift(letter);
+    sch.lastFor = stamp;
+    sch.lastRunAt = letter.createdAt;
+    sch.lastLetter = letter.id;
+    run(letter, promptWith(sch.prompt, []), { resume: false });
+    log(`[asaoffice] schedule "${sch.title}" started (${letter.id})`);
+    return true;
+  }
+  function tickSchedules() {
+    let changed = false;
+    for (const sch of schedules) {
+      const due = dueAction(sch);
+      if (!due) continue;
+      if (due.action === 'skip') { sch.lastFor = due.stamp; changed = true; continue; }
+      if (fireSchedule(sch, due.stamp)) changed = true;
+    }
+    if (changed) saveSched();
+  }
+  const schedTimer = setInterval(tickSchedules, 30_000);
+  setTimeout(tickSchedules, 3000); // catch up on what was missed while the office was off
+
   // ── HTTP ──
   const originOk = (origin) => origin === `http://127.0.0.1:${officePort}` || origin === `http://localhost:${officePort}`;
   function send(res, status, body, origin) {
@@ -419,6 +456,46 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           claude: !!findClaude(),
           running: running.size,
         }, origin);
+      }
+      // Scheduled tasks
+      if (url.pathname === '/api/schedules' && req.method === 'GET') return send(res, 200, { schedules: schedView() }, origin);
+      if (url.pathname === '/api/schedules' && req.method === 'POST') {
+        if (schedules.length >= MAX_SCHEDULES) return send(res, 429, { error: 'too many' }, origin);
+        const clean = cleanSchedule(await readBody(req), { maxPrompt: MAX_PROMPT, knownCwd: (c) => allowedDirs().some((p) => p.cwd === c), agents: agentIds() });
+        if (!clean) return send(res, 400, { error: 'schedule' }, origin);
+        const sch = newSchedule(clean);
+        // A schedule made after today's time doesn't fire retroactively: its first run is the next occurrence.
+        sch.lastFor = dueAction({ ...sch, lastFor: null })?.stamp ?? null;
+        schedules.push(sch);
+        saveSched();
+        return send(res, 200, { schedule: schedView().find((x) => x.id === sch.id) }, origin);
+      }
+      const sm = /^\/api\/schedules\/([\w-]+)(?:\/(run))?$/.exec(url.pathname);
+      if (sm) {
+        const sch = schedules.find((x) => x.id === sm[1]);
+        if (!sch) return send(res, 404, { error: 'schedule' }, origin);
+        if (req.method === 'DELETE' && !sm[2]) {
+          schedules = schedules.filter((x) => x.id !== sch.id);
+          saveSched();
+          return send(res, 200, { ok: true }, origin);
+        }
+        if (req.method === 'POST' && sm[2] === 'run') {
+          if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
+          if (directorBusy(sch.agent)) return send(res, 429, { error: 'director busy' }, origin);
+          const before = sch.lastFor;
+          fireSchedule(sch, before ?? ''); // "run now" doesn't change which time counts as handled
+          sch.lastFor = before;
+          saveSched();
+          return send(res, 200, { schedule: schedView().find((x) => x.id === sch.id) }, origin);
+        }
+        if (req.method === 'POST' && !sm[2]) {
+          const b = await readBody(req);
+          const merged = cleanSchedule({ ...sch, ...b }, { maxPrompt: MAX_PROMPT, knownCwd: (c) => allowedDirs().some((p) => p.cwd === c), agents: agentIds() });
+          if (!merged) return send(res, 400, { error: 'schedule' }, origin);
+          Object.assign(sch, merged);
+          saveSched();
+          return send(res, 200, { schedule: schedView().find((x) => x.id === sch.id) }, origin);
+        }
       }
       // The cash book: yesterday's income is paid out once, the next morning (see ledger.mjs).
       if (url.pathname === '/api/ledger' && req.method === 'GET') return send(res, 200, loadLedger(), origin);
@@ -628,7 +705,9 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     port: actualPort,
     letters: () => letters,
     agentMap,
+    schedules: schedView,
     stop() {
+      clearInterval(schedTimer);
       for (const timer of holds.values()) clearTimeout(timer);
       for (const [id, child] of running) {
         const l = letters.find((x) => x.id === id);

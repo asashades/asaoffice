@@ -50,6 +50,7 @@
       commitChip: '🔀 Boleh commit', commitTip: 'Boleh git add dan git commit (tanpa push) selama tugas ini', commitShort: 'boleh commit',
       attach: 'Lampirkan gambar', attachTip: 'Lampirkan gambar (atau tempel / seret ke sini)', attachFail: 'Gambar gak bisa dilampirkan (png, jpg, gif, webp; maks 8 MB, 4 gambar).', lookAtImages: 'Tolong lihat gambar terlampir.', remove: 'Hapus',
       denied: (n) => `⛔ ${n} langkah ditolak otomatis (di luar izin tugas ini)`, allowOnce: 'Izinkan sekali', cantAllow: 'terlalu berisiko dari sini, jalankan sendiri di Terminal',
+      schedBtn: '⏰ Jadwal', schedTip: 'Tugas yang jalan sendiri pada jam tertentu',
       sesFirst: 'Pesan pertama', sesContinue: 'Lanjutkan sesi ini dari kantor', sesNote: 'Sesi ini dimulai di luar kantor (Terminal atau Desktop). Tulis di bawah buat lanjutin dari sini.',
       sesContinueHint: 'Tulis lanjutannya…', sesSend: 'Kirim', sesLive: 'Sesi ini lagi dipakai di tempat lain. Tunggu sebentar biar nggak tabrakan.', sesCopy: '📋 Salin perintah Terminal',
       gToday: 'Hari ini', gYesterday: 'Kemarin', gWeek: '7 hari terakhir', gOlder: 'Lebih lama',
@@ -102,6 +103,7 @@
       commitChip: '🔀 May commit', commitTip: 'Allow git add and git commit (never push) for this task', commitShort: 'may commit',
       attach: 'Attach an image', attachTip: 'Attach an image (or paste / drag it here)', attachFail: 'Could not attach the image (png, jpg, gif, webp; max 8 MB, 4 images).', lookAtImages: 'Please look at the attached images.', remove: 'Remove',
       denied: (n) => `⛔ ${n} step(s) refused automatically (outside this task's permissions)`, allowOnce: 'Allow once', cantAllow: 'too risky from here, run it yourself in Terminal',
+      schedBtn: '⏰ Schedules', schedTip: 'Tasks that run by themselves at a set time',
       sesFirst: 'First message', sesContinue: 'Continue this session from the office', sesNote: 'This session was started outside the office (Terminal or Desktop). Write below to continue it from here.',
       sesContinueHint: 'Write the follow-up…', sesSend: 'Send', sesLive: 'This session is in use elsewhere. Wait a moment to avoid clashing.', sesCopy: '📋 Copy Terminal command',
       gToday: 'Today', gYesterday: 'Yesterday', gWeek: 'Last 7 days', gOlder: 'Older',
@@ -609,7 +611,9 @@
         return c;
       }));
     ui.side.replaceChildren(
-      h('button', { type: 'button', class: `asa-btn primary asa-newchat${sel === 'new' ? ' on' : ''}`, onclick: () => select('new') }, S.newChat),
+      h('div', { style: { display: 'flex', gap: '6px' } },
+        h('button', { type: 'button', class: `asa-btn primary asa-newchat${sel === 'new' ? ' on' : ''}`, style: { flex: '1' }, onclick: () => select('new') }, S.newChat),
+        h('button', { type: 'button', class: 'asa-btn', title: S.schedTip, onclick: () => ns.schedule?.open() }, S.schedBtn)),
       search, chips, rows);
     ui.refill();
   }

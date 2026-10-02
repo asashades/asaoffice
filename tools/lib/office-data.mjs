@@ -84,7 +84,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
 
   const stats = new ClaudeStats();
   const data = {
-    version: 1, generatedAt: null, names: loadNames(), looks: wornLooks(), stats: null, tasks: [], sessions: [], runs: [], subagents: {}, staff: [], mail: [], taskAgents: {}, taskServer: null,
+    version: 1, generatedAt: null, schedules: [], names: loadNames(), looks: wornLooks(), stats: null, tasks: [], sessions: [], runs: [], subagents: {}, staff: [], mail: [], taskAgents: {}, taskServer: null,
     calendar: { status: calendar ? 'loading' : 'off', events: [] },
   };
   // Staff roster, with which members are installed as Claude Code subagents (npm run staff).
@@ -177,12 +177,14 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
         onNamesChange: () => refreshStats(),
         onChange: () => {
           const chosen = loadNames().staff;
+          data.schedules = taskApi?.schedules?.() ?? [];
           data.mail = (taskApi?.letters() ?? []).map((l) => (l.agent && chosen[l.agent] ? { ...l, name: chosen[l.agent] } : l));
           data.taskAgents = taskApi?.agentMap() ?? {};
           write();
         },
       });
       data.taskServer = { port: taskApi.port };
+      data.schedules = taskApi.schedules?.() ?? [];
       data.mail = (taskApi.letters() ?? []).map((l) => (l.agent && loadNames().staff[l.agent] ? { ...l, name: loadNames().staff[l.agent] } : l));
       write();
     } catch (err) {

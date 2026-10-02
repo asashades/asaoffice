@@ -460,6 +460,18 @@ in during the last 45 days (15 at most, plus the office workspace), shown with t
 | ⚡ **Langsung jalan** (just do it) | Works straight away within its access. The default for everyone else. |
 | 👀 **Cuma laporan** (report only) | Read-only from start to finish (read, git, and web if the member has it). |
 
+### Schedules (⏰ Jadwal)
+
+The **⏰ Jadwal** button next to *New chat* in the mailbox opens a list of tasks that run by themselves: a task, who does it, the
+project, a time and the weekdays (default Mon–Fri). A schedule **only reads**: **Cuma laporan** (read-only, the default) or
+**Rencana dulu** (a read-only plan that waits for your approval); it never edits or commits on its own, and the
+"just do it" mode isn't offered. Each run arrives as a **⏰ letter** in the mailbox (unread, so the badge counts it) and a plan
+waits as a card on the HUD like any other. Each schedule can be switched on/off, edited, run right now, or deleted (at most 20).
+The office checks them every 30 seconds while it runs, so **the office must be running at that time**: a time missed while it was
+off or the Mac asleep runs **once** when the office comes back if it was less than 12 hours ago (older ones are skipped, so nothing
+old springs back to life). A schedule made after today's time first runs at its next occurrence. They're kept in
+`~/.pixel-agents/asaoffice-schedules.json`, and the morning card lists today's. Setting them needs the Mac that runs the office.
+
 ## Shades, the director
 
 Shades (sunglasses, navy suit, red tie) is always in the office, even when no Claude Code session is running
