@@ -68,7 +68,7 @@
     attachCanvas(canvas);
     placeToolbar();
     for (const fn of frameHandlers) {
-      try { fn(canvas, office, offX, offY, zoom, editMode); } catch (err) { console.error('[asaoffice]', err); }
+      try { fn(canvas, office, offX, offY, zoom, editMode, panRef); } catch (err) { console.error('[asaoffice]', err); }
     }
   };
 

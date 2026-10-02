@@ -68,6 +68,10 @@
   #asa-hud { position: fixed; inset: 0; z-index: 20; pointer-events: none; font-family: "FS Pixel Sans", sans-serif; color: #3a2117; }
   #asa-hud.off { display: none; }
   #asa-hud > * { pointer-events: auto; }
+  /* The full-width rows only lay their cards out: the empty space between the cards must let clicks through to the office
+     (the wall's mailbox and boards sit right under the top row). The id selector is needed to beat the rule above. */
+  #asa-hud > .hud-top, #asa-hud > .hud-bottom, #asa-hud > .hud-pending { pointer-events: none; }
+  .hud-cards { pointer-events: none; } .hud-card { pointer-events: auto; }
   #asa-hud button { font: inherit; color: inherit; }
   .hud-box { background: #f4e6c4; border: 3px solid #744122; box-shadow: inset 0 0 0 2px #dca05f, 0 4px 0 rgba(0,0,0,0.25); }
   .hud-top { position: fixed; top: 8px; left: 64px; right: 12px; display: flex; gap: 8px; align-items: stretch; pointer-events: none; }

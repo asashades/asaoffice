@@ -1,5 +1,5 @@
 // asaoffice camera lock (🔒 under the zoom buttons, on by default). While locked, the view stays
-// centred: clicking a villager selects it (and shows its card) without the camera chasing it, and
+// centred (or top-aligned when the window is shorter than the office): clicking a villager selects it (and shows its card) without the camera chasing it, and
 // trackpad scrolling / middle-drag don't pan. Zoom still works with +/− and pinch. The Layout editor
 // is always free. Click 🔓 to get pixel-agents' original free camera back (remembered).
 (() => {
@@ -50,10 +50,18 @@
     // The greeter's welcome camera chases the greeter, who starts outside now (bottom-left of the garden): don't follow.
     if (office.greeterCameraTarget) office.cancelGreeterCamera?.();
     const pan = panRef?.current;
-    if (!pan || (pan.x === 0 && pan.y === 0)) return;
-    // Glide back to the centre (after unlocking-then-locking, or leftovers from the greeter camera).
+    if (!pan) return;
+    // Centred, unless the window is shorter than the office: then the top stays in view (the wall with the mailbox, boards
+    // and bookshelves matters more than the bottom of the garden, and a locked camera can't be scrolled to reach it).
+    const rect = canvas.getBoundingClientRect();
+    const px = rect.width ? canvas.width / rect.width : 1; // device pixels per CSS pixel
+    const margin = Math.round(6 * px);
+    const height = office.getLayout().rows * 16 * zoom;
+    const targetY = height > canvas.height - 2 * margin ? margin - (canvas.height - height) / 2 : 0;
+    if (pan.x === 0 && Math.abs(pan.y - targetY) < 0.5) return;
+    // Glide there (after unlocking-then-locking, or leftovers from the greeter camera).
     const x = pan.x * 0.8;
-    const y = pan.y * 0.8;
-    panRef.current = { x: Math.abs(x) < 0.5 ? 0 : x, y: Math.abs(y) < 0.5 ? 0 : y };
+    const y = targetY + (pan.y - targetY) * 0.8;
+    panRef.current = { x: Math.abs(x) < 0.5 ? 0 : x, y: Math.abs(y - targetY) < 0.5 ? targetY : y };
   });
 })();
