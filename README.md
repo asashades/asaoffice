@@ -272,14 +272,17 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
 - **Plans waiting for you:** a card under the hero card for each plan waiting for approval (up to 3), with **✅ Setujui**,
   **❌ Tolak** and **Buka**, so you can approve without opening the mailbox. The side panel's **Izin** tab lists steps
   refused automatically (see "Refused steps" under the mailbox).
-- **End of Day and the morning brief (Stardew-style):** the 🌙 button on the hero card opens **Akhir Hari**, the day's work as
-  goods shipped: 🌾 files edited ×12g, 🍄 files read ×3g, ⛏️ commands ×8g, 🎣 web searches ×6g, ⚔️ sub-agents ×25g and 🧾 mailbox
-  tasks finished ×100g. The rows ping in one by one, the total counts up while pixel coins tumble down the panel and the total glows gold (click to skip; reduced-motion shows it at once, without coins), it
-  is compared with yesterday, and awards appear (🏆 busiest day, 🔥 streak, ⏰ busiest hour, 🧾 tasks finished). The button
-  pulses after 18:00 until you've looked at today. The first time the office is opened on a morning (05:00–12:00) a **Selamat
-  pagi** card shows yesterday's income and what waits today: plans to approve, refused steps, unread letters, open to-dos in
-  the bookshelf, and today's calendar events (each a link). `?brief=off` turns the automatic morning card off. These numbers
-  come from the data feed, so they cost no tokens.
+- **Yesterday's income, paid in the morning (Stardew-style):** what you ship today is paid **tomorrow morning**. The first time the
+  office is opened on a new day, a **Selamat pagi** card shows yesterday's work as goods shipped: 🌾 files edited ×12g,
+  🍄 files read ×3g, ⛏️ commands ×8g, 🎣 web searches ×6g, ⚔️ sub-agents ×25g and 🧾 mailbox tasks finished ×100g. The rows ping in
+  one by one, pixel coins tumble down the card, the total counts up and glows gold (click to skip; reduced-motion shows it at once,
+  without coins), it is compared with the day before, and awards appear (🏆 busiest day, 🔥 streak, 🧾 tasks finished). The money
+  goes into the **Kas kantor** (`~/.pixel-agents/asaoffice-ledger.json`, written by the Mac so every view agrees): it is paid once, so a
+  second tab or a phone can't pay the same day twice, and days the office wasn't opened are paid together as an extra "earlier days"
+  row (up to two weeks back). Below it: what is earned so far today ("cair besok pagi") and what waits today (plans to approve,
+  refused steps, unread letters, open to-dos in the bookshelf, today's calendar events; each a link). The 🌙 button on the hero card
+  replays it without paying again and pulses until you've seen this morning's payout. `?brief=off` turns the automatic card off. The
+  numbers come from the data feed, so they cost no tokens.
 - **Cards along the bottom:** one per villager (Shades, sessions, helpers, staff acting for Shades) with its state
   (Bekerja, Santai, Selesai for 45 s after work, Nunggu kamu, Butuh izin), its project or task and what it's doing right
   now. Click a card to select and follow that villager.
