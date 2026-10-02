@@ -296,17 +296,16 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
 - **H** or the 🧭 button under the zoom buttons hides the HUD for a clear view. On phones the panel sits above the
   cards and starts minimised. `?hud=off` turns the HUD off (remembered; `?hud=on` brings it back).
 
-- **Tidy Downloads (🧹 in the mailbox sidebar).** Claude reads `~/Downloads` (read-only tools, no shell) and proposes where each loose file belongs: a folder that
-  already exists inside Downloads (two levels deep) when it clearly fits, otherwise `Arsip`. Nothing moves until you approve: the plan lists every move with a tick
-  to untick; **the office does the moving itself** (`tools/lib/tidy.mjs`), never deleting or overwriting (a clashing name becomes "name (2)"), skipping symlinks,
-  hidden files, partial downloads and files from the last 3 minutes, and refusing anything outside Downloads. Every move is listed in the letter with
-  **↩️ Kembalikan semua** to put everything back. Reply to the plan to revise it ("jangan pindahin file skripsi"). The first run makes macOS ask whether
-  Terminal (or Asa Office) may access the Downloads folder: allow it.
-- **Downloads in New chat (📥).** The folder list in a new chat also offers **📥 Downloads**, with two ways of working: **👀 Read only** (ask anything about
-  the folder: "cari invoice bulan lalu", "ringkas PDF terbaru"; Claude gets only Read/Grep/Glob/LS, whatever the staff member's own access is, and the
-  server forces report mode and no commits) and **🧹 Tidy** (the plan described above; the text box is a note for the plan, e.g. "fokus ke file bulan ini").
-  The 🧹 button in the sidebar opens the form already set to Downloads + Tidy. Downloads is never in the project list used by schedules or the
-  other modes, so nothing there can be edited.
+- **Downloads (📥 in New chat, or the 🧹 button).** One mode for the folder: ask anything about `~/Downloads` ("cari invoice bulan lalu", "ringkas PDF terbaru")
+  or ask for a tidy-up ("rapikan file PDF"). Claude only reads (Read/Grep/Glob/LS, no shell, no web). A plain question just gets an answer; a tidy-up request gets a
+  **plan**: every move listed with a tick to untick, and nothing moves until you approve. **The office does the moving itself** (`tools/lib/tidy.mjs`): files
+  go to a folder that already exists inside Downloads (two levels deep) when one clearly fits, otherwise to `Arsip` (the only folder the office creates); nothing is
+  deleted or overwritten (a clashing name becomes "name (2)"); symlinks, hidden files, partial downloads, files from the last 3 minutes and `.app` bundles are
+  skipped; every entry is re-checked against the real folder. Each batch of moves is listed in the letter with **↩️ Kembalikan semua**. Keep chatting in the same
+  letter: ask a question, then ask for a plan, and earlier batches stay undoable. The first run makes macOS ask whether Terminal (or Asa Office) may access
+  Downloads: allow it.
+- **Archive (🗄).** The 🗄 button in a chat moves it out of the main list into the **🗄 Arsip** filter (kept, up to 100 chats, apart from the 60 recent ones);
+  from there ↩️ takes it back and 🗑 deletes it for good (click twice to confirm). Archived chats don't count as unread or as waiting plans.
 - **Shop (🛒 Toko).** Click the 💰 Kas chip. **Décor** (garden: bench 200g, lantern 150g, apple tree 400g, berry bush 80g, flowers 60g, scarecrow 250g, barrel 120g,
   crate 70g, basket 90g, well 600g, pond 900g; walls: painting 350g, clock 200g, bookshelf 450g) is placed **automatically** on a spot the
   server has checked is free and out of the way (`tools/lib/shop.mjs`: grass outside the building, never the entrance path; bare wall; and a

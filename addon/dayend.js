@@ -208,7 +208,7 @@
       }
 
       // What waits today
-      const mail = (ns.data?.mail ?? []).filter((l) => !l.report);
+      const mail = (ns.data?.mail ?? []).filter((l) => !l.report && !l.archived);
       const plans = mail.filter((l) => l.status === 'awaiting');
       const denials = mail.reduce((n, l) => n + (l.denials ?? []).filter((d) => d.state === 'open').length, 0);
       const unread = mail.filter((l) => !l.read && l.status !== 'running' && l.status !== 'queued').length;

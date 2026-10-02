@@ -51,8 +51,9 @@
       attach: 'Lampirkan gambar', attachTip: 'Lampirkan gambar (atau tempel / seret ke sini)', attachFail: 'Gambar gak bisa dilampirkan (png, jpg, gif, webp; maks 8 MB, 4 gambar).', lookAtImages: 'Tolong lihat gambar terlampir.', remove: 'Hapus',
       denied: (n) => `⛔ ${n} langkah ditolak otomatis (di luar izin tugas ini)`, allowOnce: 'Izinkan sekali', cantAllow: 'terlalu berisiko dari sini, jalankan sendiri di Terminal',
       schedBtn: '⏰ Jadwal', schedTip: 'Tugas yang jalan sendiri pada jam tertentu',
-      tidyBtn: '🧹', tidyTip: 'Rapikan folder Downloads: tulis catatan kalau perlu, Claude membuat rencana, kamu setujui dulu', dlName: 'Downloads', dlRead: '👀 Baca saja (cari, ringkas, jawab)', dlTidy: '🧹 Rapikan (rencana pindah file)', dlPh: 'Mis. "cari invoice bulan lalu", atau (mode Rapikan) "fokus ke file bulan ini"', tidyEmpty: 'Downloads sudah rapi: tidak ada file lepas yang perlu dipindah.',
-      tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.', tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
+      tidyBtn: '🧹', tidyTip: 'Tanya atau rapikan folder Downloads (file baru dipindah setelah kamu setujui)', dlName: 'Downloads', tidyDraft: 'Rapikan file lepas di Downloads', dlPh: 'Tanya soal Downloads atau minta dirapikan, mis. "cari invoice bulan lalu" atau "rapikan file PDF"', tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.',
+      tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
+      fArchived: '🗄 Arsip', unarchive: 'Keluarkan dari arsip', deletePerm: '🗑 Hapus permanen', deleteSure: 'Yakin? Klik lagi', emptyArchive: 'Belum ada chat yang diarsipkan. Pakai tombol 🗄 di chat buat menyimpannya di sini.',
       sesFirst: 'Pesan pertama', sesContinue: 'Lanjutkan sesi ini dari kantor', sesNote: 'Sesi ini dimulai di luar kantor (Terminal atau Desktop). Tulis di bawah buat lanjutin dari sini.',
       sesContinueHint: 'Tulis lanjutannya…', sesSend: 'Kirim', sesLive: 'Sesi ini lagi dipakai di tempat lain. Tunggu sebentar biar nggak tabrakan.', sesCopy: '📋 Salin perintah Terminal',
       gToday: 'Hari ini', gYesterday: 'Kemarin', gWeek: '7 hari terakhir', gOlder: 'Lebih lama',
@@ -106,8 +107,9 @@
       attach: 'Attach an image', attachTip: 'Attach an image (or paste / drag it here)', attachFail: 'Could not attach the image (png, jpg, gif, webp; max 8 MB, 4 images).', lookAtImages: 'Please look at the attached images.', remove: 'Remove',
       denied: (n) => `⛔ ${n} step(s) refused automatically (outside this task's permissions)`, allowOnce: 'Allow once', cantAllow: 'too risky from here, run it yourself in Terminal',
       schedBtn: '⏰ Schedules', schedTip: 'Tasks that run by themselves at a set time',
-      tidyBtn: '🧹', tidyTip: 'Tidy the Downloads folder: add a note if you like, Claude makes a plan, you approve it first', dlName: 'Downloads', dlRead: '👀 Read only (find, summarise, answer)', dlTidy: '🧹 Tidy (plan to move files)', dlPh: 'E.g. "find last month\'s invoice", or (Tidy mode) "focus on this month\'s files"', tidyEmpty: 'Downloads is already tidy: no loose files to move.',
-      tidyNoFolder: 'The Downloads folder was not found on this Mac.', tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
+      tidyBtn: '🧹', tidyTip: 'Ask about or tidy the Downloads folder (files only move after you approve)', dlName: 'Downloads', tidyDraft: 'Tidy the loose files in Downloads', dlPh: 'Ask about Downloads or ask for a tidy-up, e.g. "find last month\'s invoice" or "tidy the PDFs"', tidyNoFolder: 'The Downloads folder was not found on this Mac.',
+      tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
+      fArchived: '🗄 Archive', unarchive: 'Take out of the archive', deletePerm: '🗑 Delete for good', deleteSure: 'Sure? Click again', emptyArchive: 'No archived chats yet. Use the 🗄 button in a chat to keep it here.',
       sesFirst: 'First message', sesContinue: 'Continue this session from the office', sesNote: 'This session was started outside the office (Terminal or Desktop). Write below to continue it from here.',
       sesContinueHint: 'Write the follow-up…', sesSend: 'Send', sesLive: 'This session is in use elsewhere. Wait a moment to avoid clashing.', sesCopy: '📋 Copy Terminal command',
       gToday: 'Today', gYesterday: 'Yesterday', gWeek: 'Last 7 days', gOlder: 'Older',
@@ -315,7 +317,7 @@
     const report = dailyReport();
     return report ? [report, ...list] : list;
   };
-  const unread = () => letters().filter((l) => !l.read && l.status !== 'running').length;
+  const unread = () => letters().filter((l) => !l.read && !l.archived && l.status !== 'running').length;
   const staffFor = (l) => (l.agent ? (ns.data?.staff ?? []).find((m) => m.agent === l.agent) : null);
   const who = (l) => (l.report ? S.reportFrom : l.name ?? S.general);
   const face = (l) => {
@@ -554,16 +556,18 @@
     const q = filter.q.trim().toLowerCase();
     const mailSessions = new Set((ns.data?.mail ?? []).map((l) => l.sessionId));
     const items = [];
+    const archive = filter.status === 'archived';
     for (const l of letters()) {
       if (l.report) {
         if (filter.status === 'all' && !q) items.push({ kind: 'report', l, at: Infinity });
         continue;
       }
-      if (filter.status !== 'all' && statusGroup(l) !== filter.status) continue;
+      if (!!l.archived !== archive) continue; // archived chats only show under 🗄
+      if (!archive && filter.status !== 'all' && statusGroup(l) !== filter.status) continue;
       if (q && ![letterTitle(l), l.project, who(l), ...(l.thread ?? []).map((m) => m.text)].some((t) => has(t, q))) continue;
       items.push({ kind: 'letter', l, at: Date.parse(l.finishedAt ?? l.createdAt) || 0 });
     }
-    for (const x of ns.data?.sessions ?? []) {
+    for (const x of archive ? [] : ns.data?.sessions ?? []) {
       if (mailSessions.has(x.id)) continue; // already a mailbox chat
       const live = Date.now() - Date.parse(x.at) < 90_000;
       if (filter.status !== 'all' && filter.status !== (live ? 'running' : 'done')) continue;
@@ -603,7 +607,7 @@
           busy(l) ? h('div', {}, l.status === 'queued' ? S.queuedShort : progressText(l)) : null),
         h('div', { class: 'asa-letter-status' }, status)));
     }
-    container.replaceChildren(...(out.length ? out : [h('p', { class: 'asa-muted' }, letters().length || ns.data?.sessions?.length ? S.noMatch : S.empty)]));
+    container.replaceChildren(...(out.length ? out : [h('p', { class: 'asa-muted' }, filter.status === 'archived' && !filter.q ? S.emptyArchive : letters().length || ns.data?.sessions?.length ? S.noMatch : S.empty)]));
   }
 
   function fillSide() {
@@ -612,7 +616,7 @@
     const search = h('input', { type: 'search', placeholder: S.search, value: filter.q, 'aria-label': S.search });
     search.oninput = () => { filter.q = search.value; ui.refill(); };
     const chips = h('div', { class: 'asa-filters' },
-      [['all', S.fAll], ['running', S.fRunning], ['awaiting', S.fAwaiting], ['done', S.fDone]].map(([v, t]) => {
+      [['all', S.fAll], ['running', S.fRunning], ['awaiting', S.fAwaiting], ['done', S.fDone], ['archived', S.fArchived]].map(([v, t]) => {
         const c = h('button', { type: 'button', class: `asa-chip${filter.status === v ? ' on' : ''}` }, t);
         c.onclick = () => { filter.status = v; chips.querySelectorAll('.asa-chip').forEach((el) => el.classList.toggle('on', el === c)); ui.refill(); };
         return c;
@@ -621,7 +625,7 @@
       h('div', { style: { display: 'flex', gap: '6px' } },
         h('button', { type: 'button', class: `asa-btn primary asa-newchat${sel === 'new' ? ' on' : ''}`, style: { flex: '1' }, onclick: () => select('new') }, S.newChat),
         h('button', { type: 'button', class: 'asa-btn', title: S.schedTip, onclick: () => ns.schedule?.open() }, S.schedBtn),
-        h('button', { type: 'button', class: 'asa-btn', title: S.tidyTip, 'aria-label': S.tidyTip, onclick: () => { prefs.cwd = '@downloads'; prefs.dlMode = 'tidy'; savePrefs(); select('new'); } }, S.tidyBtn)),
+        h('button', { type: 'button', class: 'asa-btn', title: S.tidyTip, 'aria-label': S.tidyTip, onclick: () => { prefs.cwd = '@downloads'; savePrefs(); setDraft(S.tidyDraft, 'new'); select('new'); setTimeout(() => ui.comp?.querySelector('textarea')?.focus(), 60); } }, S.tidyBtn)),
       search, chips, rows);
     ui.refill();
   }
@@ -750,7 +754,18 @@
     const copy = h('button', { type: 'button', class: 'asa-btn', title: S.copyCmd, 'aria-label': S.copyCmd }, '📋');
     copy.onclick = async () => { if (await copyText(terminalCommand(l))) { copy.textContent = '✅'; setTimeout(() => { copy.textContent = '📋'; }, 2000); } };
     actions.append(copy);
-    if (!busy(l)) actions.append(h('button', { type: 'button', class: 'asa-btn', title: S.archive, 'aria-label': S.archive, onclick: () => act(() => api('DELETE', `/api/tasks/${l.id}`), () => { sel = null; syncLayout(); buildMain(); }) }, '🗄'));
+    const leave = () => { sel = null; syncLayout(); buildMain(); };
+    if (!busy(l) && l.archived) {
+      actions.append(h('button', { type: 'button', class: 'asa-btn', title: S.unarchive, 'aria-label': S.unarchive, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/unarchive`), leave) }, '↩️'));
+      const del = h('button', { type: 'button', class: 'asa-btn', title: S.deletePerm, 'aria-label': S.deletePerm }, '🗑');
+      del.onclick = () => {
+        if (del.dataset.sure) return act(() => api('DELETE', `/api/tasks/${l.id}`), leave);
+        del.dataset.sure = '1';
+        del.textContent = S.deleteSure;
+        setTimeout(() => { delete del.dataset.sure; del.textContent = '🗑'; }, 4000);
+      };
+      actions.append(del);
+    } else if (!busy(l)) actions.append(h('button', { type: 'button', class: 'asa-btn', title: S.archive, 'aria-label': S.archive, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/archive`), leave) }, '🗄'));
     head.replaceChildren(back, face(l), h('div', { class: 'asa-chat-title' }, titleBox,
       h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.commit ? S.commitShort : null, S[l.status]].filter(Boolean).join(' · '))), actions);
   }
@@ -797,9 +812,11 @@
             h('span', { class: 'asa-muted' }, S.reviseHint)));
         }
       });
-      if (l.kind === 'tidy' && l.tidy?.applied?.length && l.status === 'done') {
-        out.push(h('div', { class: 'asa-tidy' }, ...l.tidy.applied.slice(0, 200).map((a) => h('div', { class: 'asa-muted' }, `${a.file} → ${a.to}${a.name !== a.file ? ` (${a.name})` : ''}`))));
-        out.push(l.tidy.undone
+      const batches = l.kind === 'tidy' ? l.tidy?.batches ?? (l.tidy?.applied ? [{ applied: l.tidy.applied, undone: l.tidy.undone }] : []) : [];
+      const lastBatch = batches.filter((b) => b.applied?.length).pop();
+      if (lastBatch && !busy(l) && l.status === 'done') {
+        out.push(h('div', { class: 'asa-tidy' }, ...lastBatch.applied.slice(0, 200).map((a) => h('div', { class: 'asa-muted' }, `${a.file} → ${a.to}${a.name !== a.file ? ` (${a.name})` : ''}`))));
+        out.push(lastBatch.undone
           ? h('div', { class: 'asa-sys' }, S.tidyUndone)
           : h('div', { class: 'asa-actions asa-plan-actions' }, h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('POST', `/api/tasks/${l.id}/undo`)) }, S.tidyUndo)));
       }
@@ -905,17 +922,16 @@
       const member = () => staff.find((m) => m.agent === whoSel.value) ?? null;
       const defaultMode = () => prefs.modes?.[whoSel.value] ?? (member()?.director ? 'plan' : 'auto');
       const isDl = () => projSel.value === '@downloads';
-      // The Downloads folder only offers reading, or a tidy-up plan (the office moves the files after you approve it).
+      // The Downloads folder is one mode: ask anything, or ask for a tidy-up (the office moves files only after you approve the plan).
       const syncDl = () => {
         const dl = isDl();
         if (modeSel.dataset.dl !== String(dl)) {
           modeSel.dataset.dl = String(dl);
-          modeSel.replaceChildren(...(dl ? [['report', S.dlRead], ['tidy', S.dlTidy]] : Object.entries(S.chipModes)).map(([v, t]) => h('option', { value: v }, t)));
-          modeSel.value = dl ? (prefs.dlMode === 'tidy' ? 'tidy' : 'report') : defaultMode();
+          modeSel.replaceChildren(...Object.entries(S.chipModes).map(([v, t]) => h('option', { value: v }, t)));
+          if (!dl) modeSel.value = defaultMode();
         }
+        for (const el of [modeSel, whoSel, commitLab]) el.style.display = dl ? 'none' : '';
         styleSel.style.display = !dl && member()?.director ? '' : 'none';
-        commitLab.style.display = dl ? 'none' : '';
-        whoSel.style.display = dl && modeSel.value === 'tidy' ? 'none' : '';
         ta.placeholder = dl ? S.dlPh : S.placeholder;
       };
       const update = () => {
@@ -936,11 +952,7 @@
         whoSel.classList.add('asa-flash');
       };
       projSel.onchange = () => { prefs.cwd = projSel.value; savePrefs(); syncDl(); };
-      modeSel.onchange = () => {
-        if (isDl()) prefs.dlMode = modeSel.value; else prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value };
-        savePrefs();
-        syncDl();
-      };
+      modeSel.onchange = () => { prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value }; savePrefs(); };
       styleSel.onchange = () => { prefs.style = styleSel.value; savePrefs(); };
       update();
       syncDl();
@@ -994,7 +1006,7 @@
     ns.notify?.sfx?.('send');
     const landed = flyPlane(sendBtn);
     ta.disabled = true;
-    if (cwd === '@downloads' && c.modeSel.value === 'tidy') return sendTidy(ta, sendBtn, text, landed);
+    if (cwd === '@downloads') return sendDownloads(text, landed);
     try {
       const { letter } = await api('POST', '/api/tasks', {
         agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, style: director ? c.styleSel.value : undefined, commit: c.commitBox.checked, images, hold: true,
@@ -1068,20 +1080,17 @@
         return h('label', {}, box, h('span', { class: 'f' }, m.file), h('span', { class: 'to' }, `${S.tidyTo} ${m.to}`), m.why ? h('small', {}, m.why) : null);
       }));
   }
-  /** "Rapikan" from the new-chat form: the text is a note for the plan (the office never moves anything before you approve). */
-  async function sendTidy(ta, sendBtn, text, landed) {
+  /** A question or tidy-up request about Downloads: Claude reads, and any moves it proposes wait for your approval. */
+  async function sendDownloads(text, landed) {
     try {
-      const res = await api('POST', '/api/tidy', { note: text === S.lookAtImages ? '' : text });
+      const res = await api('POST', '/api/tidy', { prompt: text === S.lookAtImages ? '' : text });
       await landed;
-      if (res.empty) notice = S.tidyEmpty;
-      else {
-        dropLetter();
-        setDraft('', 'new');
-        clearAtt();
-        await ns.refreshData();
-        sel = res.letter.id;
-        select(res.letter.id);
-      }
+      dropLetter();
+      setDraft('', 'new');
+      clearAtt();
+      await ns.refreshData();
+      sel = res.letter.id;
+      select(res.letter.id);
     } catch (err) {
       await landed;
       notice = err.message === 'downloads' ? S.tidyNoFolder : errorText(err);
@@ -1155,7 +1164,7 @@
     sending = false;
     if (next.name === 'compose' || next === 'new') sel = 'new';
     else if (next.name === 'letter') sel = next.id;
-    else sel = narrow() ? null : (letters().find((l) => l.status === 'awaiting') ?? letters().find((l) => !l.read && !l.report && !busy(l)))?.id ?? 'new';
+    else sel = narrow() ? null : (letters().find((l) => l.status === 'awaiting' && !l.archived) ?? letters().find((l) => !l.read && !l.report && !l.archived && !busy(l)))?.id ?? 'new';
     if (next.text) setDraft(next.text, 'new');
     let timer = null;
     panel = ns.panel.open({ theme: 'cozy', dock: 'hud', title: `📮 ${S.title}`, render, onClose: () => { pendingUndo?.('go'); flushDrafts(); clearInterval(timer); panel = null; } });
