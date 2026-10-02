@@ -313,7 +313,7 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   letter: ask a question, then ask for a plan, and earlier batches stay undoable. The first run makes macOS ask whether Terminal (or Asa Office) may access
   Downloads: allow it.
 - **Archive (🗄).** The 🗄 button in a chat moves it out of the main list into the **🗄 Arsip** filter (kept, up to 100 chats, apart from the 60 recent ones);
-  from there ↩️ takes it back and 🗑 deletes it for good (click twice to confirm). Archived chats don't count as unread or as waiting plans.
+  from there ↩️ takes it back and 🗑 deletes it for good (click twice to confirm). Archived chats don't count as unread or as waiting plans. Every kind of chat can be archived: mailbox letters, Claude Code sessions started outside the office (💬) and the daily report; a 🗄 shows on a row's corner on hover (always on touch screens) and in the chat's header, and one button archives all idle outside sessions at once. Sessions and reports are archived in `~/.pixel-agents/asaoffice-archive.json` (`POST /api/archive`; the feed carries `archive`); running chats must be stopped first.
 - **Residents.** The team lives in the office: each installed staff member (Wren, Pip, Sari, Gus, Iris, Bayu) is a villager who is around during the
   working day with or without a Claude session. They come in through the front door between 07:00 and 08:15 and head home between 18:00 and 20:00 (staggered,
   following the office clock and the day-night preview), and in between they do what idle villagers do (coffee, plants, books, canteen at noon, chats), and

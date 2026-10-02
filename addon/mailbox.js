@@ -53,6 +53,7 @@
       schedBtn: '⏰ Jadwal', schedTip: 'Tugas yang jalan sendiri pada jam tertentu',
       tidyBtn: '🧹', tidyTip: 'Tanya atau rapikan folder Downloads (file baru dipindah setelah kamu setujui)', dlName: 'Downloads', tidyDraft: 'Rapikan file lepas di Downloads', dlPh: 'Tanya soal Downloads atau minta dirapikan, mis. "cari invoice bulan lalu" atau "rapikan file PDF"', tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.',
       tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
+      archiveAllSessions: (n) => `🗄 Arsipkan ${n} sesi dari luar kantor`, archiveSure: 'Yakin? Klik lagi', archiveRow: 'Arsipkan', unarchiveRow: 'Keluarkan dari arsip', archiveFailed: 'Gagal mengarsipkan.',
       fArchived: '🗄 Arsip', unarchive: 'Keluarkan dari arsip', deletePerm: '🗑 Hapus permanen', deleteSure: 'Yakin? Klik lagi', emptyArchive: 'Belum ada chat yang diarsipkan. Pakai tombol 🗄 di chat buat menyimpannya di sini.',
       sesFirst: 'Pesan pertama', sesContinue: 'Lanjutkan sesi ini dari kantor', sesNote: 'Sesi ini dimulai di luar kantor (Terminal atau Desktop). Tulis di bawah buat lanjutin dari sini.',
       sesContinueHint: 'Tulis lanjutannya…', sesSend: 'Kirim', sesLive: 'Sesi ini lagi dipakai di tempat lain. Tunggu sebentar biar nggak tabrakan.', sesCopy: '📋 Salin perintah Terminal',
@@ -109,6 +110,7 @@
       schedBtn: '⏰ Schedules', schedTip: 'Tasks that run by themselves at a set time',
       tidyBtn: '🧹', tidyTip: 'Ask about or tidy the Downloads folder (files only move after you approve)', dlName: 'Downloads', tidyDraft: 'Tidy the loose files in Downloads', dlPh: 'Ask about Downloads or ask for a tidy-up, e.g. "find last month\'s invoice" or "tidy the PDFs"', tidyNoFolder: 'The Downloads folder was not found on this Mac.',
       tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
+      archiveAllSessions: (n) => `🗄 Archive ${n} sessions from outside the office`, archiveSure: 'Sure? Click again', archiveRow: 'Archive', unarchiveRow: 'Take out of the archive', archiveFailed: 'Could not archive.',
       fArchived: '🗄 Archive', unarchive: 'Take out of the archive', deletePerm: '🗑 Delete for good', deleteSure: 'Sure? Click again', emptyArchive: 'No archived chats yet. Use the 🗄 button in a chat to keep it here.',
       sesFirst: 'First message', sesContinue: 'Continue this session from the office', sesNote: 'This session was started outside the office (Terminal or Desktop). Write below to continue it from here.',
       sesContinueHint: 'Write the follow-up…', sesSend: 'Send', sesLive: 'This session is in use elsewhere. Wait a moment to avoid clashing.', sesCopy: '📋 Copy Terminal command',
@@ -185,6 +187,10 @@
   .asa-dots i:nth-child(2) { animation-delay: 0.2s; } .asa-dots i:nth-child(3) { animation-delay: 0.4s; }
   @keyframes asa-dot { 0%, 60%, 100% { opacity: 0.25; transform: none; } 30% { opacity: 1; transform: translateY(-3px); } }
   .asa-sys { align-self: center; font-size: 12px; padding: 2px 10px; background: #e6d3a6; border: 1px solid #c9a877; }
+  .asa-lwrap { position: relative; }
+  .asa-lwrap .asa-rowact { position: absolute; top: 6px; right: 6px; font: inherit; font-size: 13px; line-height: 1; padding: 3px 5px; cursor: pointer; background: #fffbe9; border: 1px solid #c9a877; opacity: 0; transition: opacity 0.12s; z-index: 1; }
+  .asa-lwrap:hover .asa-rowact, .asa-lwrap:focus-within .asa-rowact { opacity: 0.95; }
+  @media (hover: none) { .asa-lwrap .asa-rowact { opacity: 0.7; } }
   .asa-plan-actions { align-items: center; margin: -2px 0 0 32px; }
   .asa-tidy { flex: none; margin: 4px 0 4px 32px; padding: 8px 10px; background: #fffbe9; border: 2px solid #c9a877; display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow: auto; }
   .asa-tidy label { display: flex; gap: 6px; align-items: baseline; font-size: 13px; cursor: pointer; }
@@ -309,7 +315,7 @@
     const doneTasks = (ns.data?.mail ?? []).filter((l) => l.status === 'done' && l.finishedAt?.startsWith(key)).length;
     if (doneTasks) lines.push(S.reportTasks(doneTasks));
     if (stats.streak) lines.push(S.reportStreak(stats.streak));
-    return { id: `report-${key}`, report: true, day: key, read: readReports.has(key), text: lines.join('\n\n') };
+    return { id: `report-${key}`, report: true, day: key, read: readReports.has(key), archived: (ns.data?.archive?.reports ?? []).includes(key), text: lines.join('\n\n') };
   }
 
   const letters = () => {
@@ -559,7 +565,7 @@
     const archive = filter.status === 'archived';
     for (const l of letters()) {
       if (l.report) {
-        if (filter.status === 'all' && !q) items.push({ kind: 'report', l, at: Infinity });
+        if (l.archived ? archive : filter.status === 'all' && !q) items.push({ kind: 'report', l, at: archive ? Date.parse(l.day) || 0 : Infinity });
         continue;
       }
       if (!!l.archived !== archive) continue; // archived chats only show under 🗄
@@ -567,19 +573,67 @@
       if (q && ![letterTitle(l), l.project, who(l), ...(l.thread ?? []).map((m) => m.text)].some((t) => has(t, q))) continue;
       items.push({ kind: 'letter', l, at: Date.parse(l.finishedAt ?? l.createdAt) || 0 });
     }
-    for (const x of archive ? [] : ns.data?.sessions ?? []) {
+    const archivedSessions = new Set(ns.data?.archive?.sessions ?? []);
+    for (const x of ns.data?.sessions ?? []) {
       if (mailSessions.has(x.id)) continue; // already a mailbox chat
+      if (archivedSessions.has(x.id) !== archive) continue;
       const live = Date.now() - Date.parse(x.at) < 90_000;
-      if (filter.status !== 'all' && filter.status !== (live ? 'running' : 'done')) continue;
+      if (!archive && filter.status !== 'all' && filter.status !== (live ? 'running' : 'done')) continue;
       if (q && ![x.title, x.prompt, x.project, x.cwd].some((t) => has(t, q))) continue;
       items.push({ kind: 'session', x, live, at: Date.parse(x.at) || 0 });
     }
     return items.sort((a, b) => b.at - a.at);
   }
 
+  /** Archive or restore a chat that is a mailbox letter, an outside Claude Code session or the daily report. */
+  async function setArchive(target, archived) {
+    notice = '';
+    try {
+      if (target.t === 'letter') await api('POST', `/api/tasks/${target.id}/${archived ? 'archive' : 'unarchive'}`);
+      else await api('POST', '/api/archive', { kind: target.t === 'session' ? 'sessions' : 'reports', id: target.id, archived });
+      if (sel === target.id || sel === `session:${target.id}` || sel === `report-${target.id}`) { sel = null; syncLayout(); buildMain(); }
+      await ns.refreshData();
+      refreshAll?.();
+    } catch (err) {
+      notice = errorText(err);
+    }
+    ui.refill?.();
+  }
+  /** The 🗄 (or ↩️) button in a chat's header. */
+  const headArchive = (target, archived) => h('div', { class: 'asa-head-actions' },
+    h('button', { type: 'button', class: 'asa-btn', title: archived ? S.unarchiveRow : S.archiveRow, 'aria-label': archived ? S.unarchiveRow : S.archiveRow, onclick: () => setArchive(target, !archived) }, archived ? '↩️' : '🗄'));
+  /** A list row with a small 🗄 (or ↩️ in the archive) that shows on hover, so no chat has to be opened just to archive it. */
+  function rowWrap(row, target, restore) {
+    const btn = h('button', { type: 'button', class: 'asa-rowact', title: restore ? S.unarchiveRow : S.archiveRow, 'aria-label': restore ? S.unarchiveRow : S.archiveRow }, restore ? '↩️' : '🗄');
+    btn.onclick = (e) => { e.stopPropagation(); setArchive(target, !restore); };
+    return h('div', { class: 'asa-lwrap' }, row, btn);
+  }
+
+  let bulkArmedUntil = 0;
   function chatRows(container) {
+    const archiveMode = filter.status === 'archived';
     const items = chatItems();
     const out = [];
+    // Outside sessions can pile up: one button archives all the ones that aren't running now.
+    const idleSessions = items.filter((it) => it.kind === 'session' && !it.live).map((it) => it.x.id);
+    if (!archiveMode && filter.status === 'all' && !filter.q.trim() && idleSessions.length >= 3) {
+      // The list is rebuilt every few seconds, so "armed" lives here and not on the button.
+      const armed = Date.now() < bulkArmedUntil;
+      const all = h('button', { type: 'button', class: 'asa-chip', style: { margin: '2px 0 6px' } }, armed ? S.archiveSure : S.archiveAllSessions(idleSessions.length));
+      all.onclick = async () => {
+        if (Date.now() >= bulkArmedUntil) {
+          bulkArmedUntil = Date.now() + 5000;
+          all.textContent = S.archiveSure;
+          setTimeout(() => { if (all.isConnected && Date.now() >= bulkArmedUntil) all.textContent = S.archiveAllSessions(idleSessions.length); }, 5100);
+          return;
+        }
+        bulkArmedUntil = 0;
+        all.disabled = true;
+        try { await api('POST', '/api/archive', { kind: 'sessions', ids: idleSessions.slice(0, 500), archived: true }); await ns.refreshData(); } catch (err) { notice = errorText(err); }
+        ui.refill?.();
+      };
+      out.push(all);
+    }
     let group = null;
     for (const it of items) {
       if (it.kind !== 'report' && dayGroup(it.at) !== group) {
@@ -594,18 +648,19 @@
           h('div', { class: 'asa-letter-body' },
             h('b', {}, x.title || x.project || x.id.slice(0, 8)),
             h('div', { title: x.cwd ?? '' }, [x.project, live ? S.live : S.ago(mins)].filter(Boolean).join(' · '))));
-        out.push(row);
+        out.push(live ? row : rowWrap(row, { t: 'session', id: x.id }, archiveMode));
         continue;
       }
       const l = it.l;
       const status = l.report ? '' : S[l.status] ?? '';
-      out.push(h('button', { type: 'button', class: `asa-letter${l.read || busy(l) ? '' : ' unread'}${sel === l.id ? ' on' : ''}`, onclick: () => pickLetter(l.id) },
+      const row = h('button', { type: 'button', class: `asa-letter${l.read || busy(l) ? '' : ' unread'}${sel === l.id ? ' on' : ''}`, onclick: () => pickLetter(l.id) },
         face(l),
         h('div', { class: 'asa-letter-body' },
           h('b', {}, l.report ? S.report : letterTitle(l)),
           h('div', {}, l.report ? l.day : [who(l), l.project, l.createdAt ? timeOf(l.createdAt) : null].filter(Boolean).join(' · ')),
           busy(l) ? h('div', {}, l.status === 'queued' ? S.queuedShort : progressText(l)) : null),
-        h('div', { class: 'asa-letter-status' }, status)));
+        h('div', { class: 'asa-letter-status' }, status));
+      out.push(busy(l) ? row : rowWrap(row, l.report ? { t: 'report', id: l.day } : { t: 'letter', id: l.id }, archiveMode));
     }
     container.replaceChildren(...(out.length ? out : [h('p', { class: 'asa-muted' }, filter.status === 'archived' && !filter.q ? S.emptyArchive : letters().length || ns.data?.sessions?.length ? S.noMatch : S.empty)]));
   }
@@ -653,7 +708,8 @@
     const back = h('button', { type: 'button', class: 'asa-btn asa-back', onclick: () => { sel = null; syncLayout(); ui.refill?.(); }, 'aria-label': S.back }, '←');
     const head = h('div', { class: 'asa-chat-head' }, back, h('div', { class: 'asa-face envelope' }, '💬'),
       h('div', { class: 'asa-chat-title' }, h('b', {}, x.title || x.project || x.id.slice(0, 8)),
-        h('span', { class: 'asa-muted', title: x.cwd ?? '' }, [x.project, x.cwd ? home(x.cwd) : null, live ? S.live : timeOf(x.at)].filter(Boolean).join(' · '))));
+        h('span', { class: 'asa-muted', title: x.cwd ?? '' }, [x.project, x.cwd ? home(x.cwd) : null, live ? S.live : timeOf(x.at)].filter(Boolean).join(' · '))),
+      live ? null : headArchive({ t: 'session', id: x.id }, (ns.data?.archive?.sessions ?? []).includes(x.id)));
     const thread = h('div', { class: 'asa-thread-box' },
       h('div', { class: 'asa-sys' }, S.sesNote),
       h('div', { class: 'asa-b you' }, h('div', { class: 'asa-b-text' }, x.prompt || x.title || x.id), h('small', {}, `${S.sesFirst} · ${timeOf(x.at)}`)));
@@ -745,7 +801,7 @@
     const head = ui.head;
     const back = h('button', { type: 'button', class: 'asa-btn asa-back', onclick: () => { sel = null; syncLayout(); ui.refill?.(); }, 'aria-label': S.back }, '←');
     if (sel === 'new') return head.replaceChildren(back, h('div', { class: 'asa-chat-title' }, h('b', {}, S.newChat.replace(/^＋\s*/, '')), h('span', { class: 'asa-muted' }, S.newChatSub)));
-    if (l.report) return head.replaceChildren(back, face(l), h('div', { class: 'asa-chat-title' }, h('b', {}, S.report), h('span', { class: 'asa-muted' }, l.day)));
+    if (l.report) return head.replaceChildren(back, face(l), h('div', { class: 'asa-chat-title' }, h('b', {}, S.report), h('span', { class: 'asa-muted' }, l.day)), headArchive({ t: 'report', id: l.day }, !!l.archived));
     const m = staffFor(l);
     const titleBox = h('input', { class: 'asa-title-input', value: letterTitle(l), maxlength: '80', title: S.rename, 'aria-label': S.rename });
     titleBox.onchange = () => { if (titleBox.value.trim()) act(() => api('POST', `/api/tasks/${l.id}/rename`, { title: titleBox.value.trim() })); };
