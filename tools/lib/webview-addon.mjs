@@ -16,6 +16,7 @@ const SCRIPTS = [
   'notify.js',
   'status-icons.js',
   'director.js',
+  'residents.js',
   'idle-activities.js',
   'expressions.js',
   'idle-chat-lines.js',

@@ -306,6 +306,12 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   Downloads: allow it.
 - **Archive (🗄).** The 🗄 button in a chat moves it out of the main list into the **🗄 Arsip** filter (kept, up to 100 chats, apart from the 60 recent ones);
   from there ↩️ takes it back and 🗑 deletes it for good (click twice to confirm). Archived chats don't count as unread or as waiting plans.
+- **Residents.** The team lives in the office: each installed staff member (Wren, Pip, Sari, Gus, Iris, Bayu) is a villager who is around during the
+  working day with or without a Claude session. They come in through the front door between 07:00 and 08:15 and head home between 18:00 and 20:00 (staggered,
+  following the office clock and the day-night preview), and in between they do what idle villagers do (coffee, plants, books, canteen at noon, chats), and
+  now and then sit at a work desk (only while at least three desks are free; they give one up when a session needs it). When a real session plays that
+  staff member (a mailbox task, a sub-agent) the resident steps aside and returns afterwards. They are scenery (`asaNpc`): no session, no tokens, not in
+  the HUD cards, counters or notifications. `addon/residents.js`; `?residents=off` turns it off (remembered).
 - **Shop (🛒 Toko).** Click the 💰 Kas chip. **Décor** (garden: bench 200g, lantern 150g, apple tree 400g, berry bush 80g, flowers 60g, scarecrow 250g, barrel 120g,
   crate 70g, basket 90g, well 600g, pond 900g; walls: painting 350g, clock 200g, bookshelf 450g) is placed **automatically** on a spot the
   server has checked is free and out of the way (`tools/lib/shop.mjs`: grass outside the building, never the entrance path; bare wall; and a
