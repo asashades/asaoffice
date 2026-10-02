@@ -19,7 +19,8 @@
         "web",
         "edit",
         "test"
-      ]
+      ],
+      "salary": 120
     },
     {
       "agent": "wren-tester",
@@ -37,7 +38,8 @@
         "read",
         "edit",
         "test"
-      ]
+      ],
+      "salary": 50
     },
     {
       "agent": "pip-reviewer",
@@ -54,7 +56,8 @@
       "access": [
         "read",
         "git"
-      ]
+      ],
+      "salary": 50
     },
     {
       "agent": "sari-writer",
@@ -71,7 +74,8 @@
       "access": [
         "read",
         "edit"
-      ]
+      ],
+      "salary": 40
     },
     {
       "agent": "gus-planner",
@@ -88,7 +92,8 @@
       "access": [
         "read",
         "web"
-      ]
+      ],
+      "salary": 55
     },
     {
       "agent": "iris-researcher",
@@ -105,7 +110,8 @@
       "access": [
         "read",
         "web"
-      ]
+      ],
+      "salary": 50
     },
     {
       "agent": "bayu-debugger",
@@ -123,7 +129,8 @@
         "read",
         "edit",
         "test"
-      ]
+      ],
+      "salary": 60
     }
   ],
   "general": {
