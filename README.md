@@ -312,6 +312,10 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   skipped; every entry is re-checked against the real folder. Each batch of moves is listed in the letter with **↩️ Kembalikan semua**. Keep chatting in the same
   letter: ask a question, then ask for a plan, and earlier batches stay undoable. The first run makes macOS ask whether Terminal (or Asa Office) may access
   Downloads: allow it.
+- **Model picker (🧠).** New chat has a **🧠 Default / Opus / Sonnet / Haiku** chip (Downloads too), sent as `claude --model <alias>`; "Default" leaves the flag out, so Claude Code's own
+  setting decides. The choice is kept on the letter (replies reuse it) and the letter header shows the model actually used (read from the stream's `init` message, e.g. "🧠 Haiku 4.5").
+  Continuing an outside session (💬) defaults to the model it was last answered with (`claude-stats.mjs` records it per session; passed as the full id), with the same chip to change it.
+  Only aliases and `claude-…` ids are accepted. Scheduled tasks and staff keep the default.
 - **Archive (🗄).** The 🗄 button in a chat moves it out of the main list into the **🗄 Arsip** filter (kept, up to 100 chats, apart from the 60 recent ones);
   from there ↩️ takes it back and 🗑 deletes it for good (click twice to confirm). Archived chats don't count as unread or as waiting plans. Every kind of chat can be archived: mailbox letters, Claude Code sessions started outside the office (💬) and the daily report; a 🗄 shows on a row's corner on hover (always on touch screens) and in the chat's header, and one button archives all idle outside sessions at once. Sessions and reports are archived in `~/.pixel-agents/asaoffice-archive.json` (`POST /api/archive`; the feed carries `archive`); running chats must be stopped first.
 - **Residents.** The team lives in the office: each installed staff member (Wren, Pip, Sari, Gus, Iris, Bayu) is a villager who is around during the
