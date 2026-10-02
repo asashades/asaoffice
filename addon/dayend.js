@@ -1,57 +1,67 @@
-// asaoffice day summary, in the Stardew spirit:
-//   - "Akhir Hari" (the 🌙 button on the HUD's hero card, pulsing after 18:00 while today hasn't been looked at): the day's
-//     work as goods shipped. Each kind of work is priced (🌾 edits, 🍄 reads, ⛏️ commands, 🎣 web, ⚔️ sub-agents, 🧾 mailbox
-//     tasks finished), the rows ping in one by one, the total counts up, and it's compared with yesterday, with a few awards.
-//   - "Selamat pagi": the first time the office is opened on a morning, a short brief: yesterday's income and what is waiting
-//     today (plans to approve, refused steps, unread letters, open to-dos, calendar events).
+// asaoffice daily income, the way Stardew pays it: what you ship today is paid out TOMORROW MORNING.
+//   - The first time the office is opened on a new day, a "Selamat pagi" card opens with yesterday's income as goods shipped:
+//     each kind of work is priced (🌾 edits, 🍄 reads, ⛏️ commands, 🎣 web, ⚔️ sub-agents, 🧾 mailbox tasks finished), the rows
+//     ping in one by one while coins fall, the total counts up and glows, it's compared with the day before, and a few awards
+//     appear. The money goes into the office's Kas (tools/lib/ledger.mjs, once per day, so a second tab or a phone can't pay it
+//     twice); days the office wasn't opened are paid together as one extra row (up to two weeks back).
+//   - Below that: what is waiting today (plans to approve, refused steps, unread letters, open to-dos, calendar events) and
+//     what has been earned so far today ("cair besok pagi").
+//   - The 🌙 button on the hero card replays it (never pays twice); it pulses until you've looked at this morning's payout.
 // The numbers come from the data feed (tool-call counts per day, mailbox letters): nothing here costs a token.
-// ?brief=off turns the automatic morning brief off.
+// ?brief=off turns the automatic morning card off.
 (() => {
   'use strict';
   const ns = window.__asaoffice;
   const h = ns.h;
   const S = ns.t({
     id: {
-      endTitle: 'Akhir Hari', morningTitle: 'Selamat pagi', next: 'Lanjut', start: 'Mulai hari ☀️', openMail: 'Buka kotak surat',
+      replayTitle: 'Pendapatan kemarin', next: 'Lanjut', start: 'Mulai hari ☀️', openMail: 'Buka kotak surat', yesterdayOn: 'Kemarin',
       cats: { edit: 'File diedit', search: 'File dibaca', command: 'Command dijalankan', web: 'Pencarian web', agent: 'Sub-agent turun tangan' },
-      tasks: 'Tugas kotak surat selesai', total: 'Pendapatan hari ini', vsYesterday: (d) => (d > 0 ? `▲ ${d}g lebih banyak dari kemarin` : d < 0 ? `▼ ${-d}g lebih sedikit dari kemarin` : 'sama seperti kemarin'),
-      firstDay: 'Hari pertama yang tercatat!', quiet: 'Hari ini sepi. Belum ada barang yang dikirim.', skip: 'klik untuk melewati animasi',
-      awBusiest: 'Hari tersibuk', awStreak: (n) => `Streak ${n} hari`, awHour: (hh) => `Jam tersibuk ${hh}.00`, awTasks: (n) => `${n} tugas selesai`,
-      hello: ['Selamat pagi', 'Selamat siang', 'Selamat sore', 'Selamat malam'], yesterday: 'Kemarin', yesterdayQuiet: 'Kemarin kantor sepi. Hari baru, lembaran baru 🌻',
-      yesterdayLine: (g, t, s) => `${g}g · ${t} tugas surat selesai · ${s} sesi`, waiting: 'Hari ini menunggu',
+      tasks: 'Tugas kotak surat selesai', earlier: (n) => `Hari sebelumnya yang belum cair (${n} hari)`,
+      total: 'Uang masuk pagi ini', totalReplay: 'Pendapatan kemarin', vsPrev: (d) => (d > 0 ? `▲ ${d}g lebih banyak dari hari sebelumnya` : d < 0 ? `▼ ${-d}g lebih sedikit dari hari sebelumnya` : 'sama seperti hari sebelumnya'),
+      firstDay: 'Hari pertama yang tercatat!', quiet: 'Kemarin sepi, belum ada barang yang dikirim. Hari baru, lembaran baru 🌻', skip: 'klik untuk melewati animasi',
+      kas: 'Kas kantor', paidAlready: 'sudah cair pagi ini', noLedger: 'Kas hanya dicatat dari Mac yang menjalankan kantor.',
+      awBusiest: 'Hari tersibuk', awStreak: (n) => `Streak ${n} hari`, awTasks: (n) => `${n} tugas selesai`,
+      hello: ['Selamat pagi', 'Selamat siang', 'Selamat sore', 'Selamat malam'], waiting: 'Hari ini menunggu',
+      todayTally: (g) => `Hari ini tercatat ${g} · cair besok pagi`,
       plans: (n) => `📝 ${n} rencana menunggu persetujuanmu`, denials: (n) => `⛔ ${n} langkah ditolak otomatis (buka suratnya)`, unread: (n) => `📮 ${n} surat belum dibaca`,
       todos: (n) => `💡 ${n} ide/TODO belum selesai di Rak Buku`, events: (n) => `📅 ${n} acara hari ini`, allClear: 'Tidak ada yang menunggu. Santai dulu ☕',
-      allDay: 'sepanjang hari', daysShort: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+      allDay: 'sepanjang hari',
     },
     en: {
-      endTitle: 'End of Day', morningTitle: 'Good morning', next: 'Continue', start: 'Start the day ☀️', openMail: 'Open the mailbox',
+      replayTitle: "Yesterday's income", next: 'Continue', start: 'Start the day ☀️', openMail: 'Open the mailbox', yesterdayOn: 'Yesterday',
       cats: { edit: 'Files edited', search: 'Files read', command: 'Commands run', web: 'Web searches', agent: 'Sub-agents pitched in' },
-      tasks: 'Mailbox tasks finished', total: "Today's income", vsYesterday: (d) => (d > 0 ? `▲ ${d}g more than yesterday` : d < 0 ? `▼ ${-d}g less than yesterday` : 'same as yesterday'),
-      firstDay: 'First recorded day!', quiet: 'A quiet day. Nothing shipped yet.', skip: 'click to skip the animation',
-      awBusiest: 'Busiest day', awStreak: (n) => `${n}-day streak`, awHour: (hh) => `Busiest hour ${hh}:00`, awTasks: (n) => `${n} tasks finished`,
-      hello: ['Good morning', 'Good afternoon', 'Good evening', 'Good night'], yesterday: 'Yesterday', yesterdayQuiet: 'The office was quiet yesterday. A new day, a clean page 🌻',
-      yesterdayLine: (g, t, s) => `${g}g · ${t} mailbox tasks finished · ${s} sessions`, waiting: 'Waiting today',
+      tasks: 'Mailbox tasks finished', earlier: (n) => `Earlier days not yet paid (${n} days)`,
+      total: 'Paid this morning', totalReplay: "Yesterday's income", vsPrev: (d) => (d > 0 ? `▲ ${d}g more than the day before` : d < 0 ? `▼ ${-d}g less than the day before` : 'same as the day before'),
+      firstDay: 'First recorded day!', quiet: 'Yesterday was quiet, nothing shipped. A new day, a clean page 🌻', skip: 'click to skip the animation',
+      kas: 'Office cash', paidAlready: 'already paid this morning', noLedger: 'Cash is only recorded from the Mac that runs the office.',
+      awBusiest: 'Busiest day', awStreak: (n) => `${n}-day streak`, awTasks: (n) => `${n} tasks finished`,
+      hello: ['Good morning', 'Good afternoon', 'Good evening', 'Good night'], waiting: 'Waiting today',
+      todayTally: (g) => `Earned so far today: ${g} · paid tomorrow morning`,
       plans: (n) => `📝 ${n} plan(s) waiting for your approval`, denials: (n) => `⛔ ${n} step(s) refused automatically (open the letter)`, unread: (n) => `📮 ${n} unread letter(s)`,
       todos: (n) => `💡 ${n} open idea(s)/TODO in the Bookshelf`, events: (n) => `📅 ${n} event(s) today`, allClear: 'Nothing is waiting. Relax for a bit ☕',
-      allDay: 'all day', daysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      allDay: 'all day',
     },
   });
   const locale = ns.lang === 'id' ? 'id-ID' : 'en-US';
+  const fmtG = (n) => `${Math.round(n).toLocaleString(locale)}g`;
 
   // What each kind of work is worth, in gold.
   const PRICE = { edit: 12, search: 3, command: 8, web: 6, agent: 25 };
   const TASK_PRICE = 100;
   const ICON = { edit: '🌾', search: '🍄', command: '⛏️', web: '🎣', agent: '⚔️' };
+  const MAX_CATCHUP_DAYS = 14;
 
   const pad = (n) => String(n).padStart(2, '0');
   const dayKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const noon = (key) => new Date(`${key}T12:00:00`);
 
   const css = `
   .asa-day { font-size: 15px; }
   .asa-day-date { opacity: 0.7; font-size: 13px; margin-bottom: 8px; }
   .asa-day-rows { display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
-  .asa-day-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto 78px; gap: 6px; align-items: baseline; padding: 5px 4px; border-bottom: 1px dashed #d9c49a;
+  .asa-day-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto 84px; gap: 6px; align-items: baseline; padding: 5px 4px; border-bottom: 1px dashed #d9c49a;
     opacity: 0; transform: translateY(6px); transition: opacity 0.25s, transform 0.25s; }
   .asa-day-row.on { opacity: 1; transform: none; }
   .asa-day-row small { opacity: 0.65; white-space: nowrap; }
@@ -75,13 +85,17 @@
   .asa-day-awards { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 28px; }
   .asa-day-award { padding: 3px 9px; background: #f2c94c; color: #3a2117; border: 2px solid #b8935c; font-size: 13px; animation: asa-day-pop 0.35s ease-out; }
   @keyframes asa-day-pop { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+  .asa-day-kas { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; padding: 6px 10px; background: #f4e6c4; border: 2px dashed #b8935c; opacity: 0; transition: opacity 0.3s; }
+  .asa-day-kas.on { opacity: 1; }
+  .asa-day-kas b { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .asa-day-tally { font-size: 12.5px; opacity: 0.7; margin-top: 8px; }
   .asa-day-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 8px; }
   .asa-day-hint { font-size: 12px; opacity: 0.55; }
   .asa-day-list { list-style: none; margin: 6px 0 0; padding: 0; }
   .asa-day-list li { padding: 5px 0; border-bottom: 1px dashed #d9c49a; }
   .asa-day-list li button { font: inherit; background: none; border: 0; padding: 0; color: inherit; text-align: left; cursor: pointer; text-decoration: underline dotted; }
   .asa-day h3 { font-weight: 600; font-size: 14px; margin: 14px 0 2px; color: #973a2f; }
-  @media (prefers-reduced-motion: reduce) { .asa-day-row, .asa-day-total { transition: none; } .asa-day-award, .asa-day-total.glow, .asa-day-total.glow b { animation: none; } .asa-day-coins { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .asa-day-row, .asa-day-total, .asa-day-kas { transition: none; } .asa-day-award, .asa-day-total.glow, .asa-day-total.glow b { animation: none; } .asa-day-coins { display: none; } }
   `;
   const ensureCss = () => { if (!document.getElementById('asa-day-css')) document.head.appendChild(h('style', { id: 'asa-day-css' }, css)); };
 
@@ -89,10 +103,11 @@
   const doneOn = (key) => (ns.data?.mail ?? []).filter((l) => !l.report && l.status === 'done' && l.finishedAt && dayKey(new Date(l.finishedAt)) === key).length;
   function summary(key) {
     const d = ns.data?.stats?.days?.[key] ?? null;
-    const rows = Object.keys(PRICE).map((k) => ({ key: k, icon: ICON[k], label: S.cats[k], count: d?.[k] ?? 0, price: PRICE[k] }));
-    rows.push({ key: 'tasks', icon: '🧾', label: S.tasks, count: doneOn(key), price: TASK_PRICE });
-    const total = rows.reduce((sum, r) => sum + r.count * r.price, 0);
-    return { key, d, rows, total, tools: d?.tools ?? 0, sessions: d?.sessions ?? 0, tasks: doneOn(key) };
+    const rows = Object.keys(PRICE).map((k) => ({ key: k, icon: ICON[k], label: S.cats[k], count: d?.[k] ?? 0, price: PRICE[k], amount: (d?.[k] ?? 0) * PRICE[k] }));
+    const tasks = doneOn(key);
+    rows.push({ key: 'tasks', icon: '🧾', label: S.tasks, count: tasks, price: TASK_PRICE, amount: tasks * TASK_PRICE });
+    const total = rows.reduce((sum, r) => sum + r.amount, 0);
+    return { key, d, rows, total, tools: d?.tools ?? 0, sessions: d?.sessions ?? 0, tasks };
   }
   const incomeOn = (key) => summary(key).total;
 
@@ -101,158 +116,187 @@
     const stats = ns.data?.stats;
     const others = Object.entries(stats?.days ?? {}).filter(([k, v]) => k !== sum.key && v.tools > 0);
     if (sum.tools > 0 && others.length >= 3 && sum.tools > Math.max(...others.map(([, v]) => v.tools))) out.push(`🏆 ${S.awBusiest}`);
-    if ((stats?.streak ?? 0) >= 3 && sum.key === dayKey()) out.push(`🔥 ${S.awStreak(stats.streak)}`);
-    if (sum.key === dayKey() && stats?.hours) {
-      const max = Math.max(...stats.hours);
-      if (max > 0) out.push(`⏰ ${S.awHour(pad(stats.hours.indexOf(max)))}`);
-    }
+    if ((stats?.streak ?? 0) >= 3 && sum.total > 0) out.push(`🔥 ${S.awStreak(stats.streak)}`);
     if (sum.tasks > 0) out.push(`🧾 ${S.awTasks(sum.tasks)}`);
     return out;
   }
 
-  // ── Akhir Hari ──
-  const endSeen = () => ns.store.get('dayEndSeen');
-  function openEnd(key = dayKey()) {
-    ensureCss();
-    ns.store.set('dayEndSeen', dayKey());
-    const sum = summary(key);
-    const prev = incomeOn(dayKey(addDays(new Date(`${key}T12:00:00`), -1)));
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const timers = [];
-    let rowsEl = null;
-    ns.panel.open({
-      theme: 'cozy',
-      title: `🌙 ${S.endTitle}`,
-      onClose: () => timers.forEach(clearTimeout),
-      render(body, panel) {
-        const date = new Date(`${key}T12:00:00`).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
-        const rows = sum.rows.map((r) => h('div', { class: `asa-day-row${r.count ? '' : ' zero'}` }, h('span', {}, r.icon), h('span', {}, r.label),
-          h('small', {}, `${r.count} × ${r.price}g`), h('b', {}, `${r.count * r.price}g`)));
-        rowsEl = h('div', { class: 'asa-day-rows', title: S.skip }, rows);
-        const totalNum = h('b', {}, '0g');
-        const total = h('div', { class: 'asa-day-total' }, h('span', {}, S.total), totalNum);
-        const delta = h('div', { class: 'asa-day-delta' });
-        const awards = h('div', { class: 'asa-day-awards' });
-        const quiet = sum.total === 0 ? h('p', { class: 'asa-muted' }, `🌻 ${S.quiet}`) : null;
-        const next = h('button', { type: 'button', class: 'asa-btn primary', onclick: () => panel.close() }, S.next);
-        body.append(h('div', { class: 'asa-day' }, h('div', { class: 'asa-day-date' }, date), rowsEl, quiet, total, delta, awards,
-          h('div', { class: 'asa-day-actions' }, h('span', { class: 'asa-day-hint' }, reduced || sum.total === 0 ? '' : S.skip), next)));
+  /** Days (before today) whose work hasn't been paid yet, oldest first, besides yesterday. Only with a cash book. */
+  function earlierUnpaid(paidThrough, yesterday) {
+    if (!paidThrough) return [];
+    const floor = dayKey(addDays(new Date(), -MAX_CATCHUP_DAYS));
+    return Object.keys(ns.data?.stats?.days ?? {}).filter((k) => k > paidThrough && k > floor && k < yesterday).sort();
+  }
 
-        const coins = h('div', { class: 'asa-day-coins' });
-        panel.el.append(coins);
-        /** Coins tumbling down the panel: a handful per row, a shower for the total. */
-        const rain = (n) => {
-          if (reduced) return;
-          const height = panel.el.clientHeight || 520;
-          for (let k = 0; k < n; k++) {
-            const coin = h('i', { class: 'asa-coin' });
-            coin.style.left = `${4 + Math.random() * 92}%`;
-            coin.style.setProperty('--dur', `${(0.9 + Math.random() * 1.0).toFixed(2)}s`);
-            coin.style.setProperty('--delay', `${(Math.random() * 0.45).toFixed(2)}s`);
-            coin.style.setProperty('--drift', `${Math.round(Math.random() * 60 - 30)}px`);
-            coin.style.setProperty('--fall', `${height + 24}px`);
-            coin.addEventListener('animationend', (e) => { if (e.animationName === 'asa-coin-fall') coin.remove(); });
-            coins.append(coin);
-          }
-        };
-        const finish = () => {
-          rows.forEach((r) => r.classList.add('on'));
-          total.classList.add('on');
-          totalNum.textContent = `${sum.total}g`;
-          if (sum.total > 0) total.classList.add('glow');
-          if (sum.total > 0) {
-            const diff = sum.total - prev;
-            delta.textContent = prev > 0 || diff !== 0 ? S.vsYesterday(diff) : S.firstDay;
-            delta.className = `asa-day-delta ${diff > 0 ? 'up' : diff < 0 ? 'down' : ''}`;
-          }
-          awards.replaceChildren(...awardsFor(sum).map((a) => h('span', { class: 'asa-day-award' }, a)));
-        };
-        if (reduced || sum.total === 0) return finish();
-        let i = 0;
-        const step = () => {
-          if (i < rows.length) {
-            rows[i].classList.add('on');
-            if (sum.rows[i].count) { ns.notify?.sfx?.('coin'); rain(Math.min(7, 2 + Math.floor(sum.rows[i].count * sum.rows[i].price / 120))); }
-            i += 1;
-            timers.push(setTimeout(step, sum.rows[i - 1].count ? 420 : 120));
-          } else {
-            total.classList.add('on', 'glow');
-            rain(Math.min(46, 18 + Math.floor(sum.total / 60)));
+  const seen = () => ns.store.get('dayIncomeSeen');
+  let opening = false;
+
+  /** The morning card: yesterday's income (paid once into the Kas), what waits today. `auto` = the first open of the day. */
+  async function open({ auto = false } = {}) {
+    if (opening) return;
+    opening = true;
+    try {
+      ensureCss();
+      ns.store.set('dayIncomeSeen', dayKey());
+      const today = new Date();
+      const yKey = dayKey(addDays(today, -1));
+      const ysum = summary(yKey);
+      let ledger = null;
+      try { ledger = await ns.localApi('GET', '/api/ledger'); } catch { /* a phone: no cash book */ }
+      const paidAlready = !!ledger && !!ledger.paidThrough && ledger.paidThrough >= yKey;
+      const earlier = ledger && !paidAlready ? earlierUnpaid(ledger.paidThrough, yKey) : [];
+      const earlierSum = earlier.reduce((n, k) => n + incomeOn(k), 0);
+      const rows = ysum.rows.slice();
+      if (earlierSum > 0) rows.push({ key: 'earlier', icon: '📦', label: S.earlier(earlier.length), count: 0, price: 0, amount: earlierSum, plain: true });
+      const total = rows.reduce((n, r) => n + r.amount, 0);
+      const prev = incomeOn(dayKey(addDays(today, -2)));
+
+      // Pay it out (once). If it fails, the card still shows the numbers.
+      let kasBefore = ledger?.kas ?? null;
+      let kasAfter = ledger?.kas ?? null;
+      if (ledger && !paidAlready) {
+        try {
+          const res = await ns.localApi('POST', '/api/ledger/collect', { through: yKey, amount: total });
+          kasAfter = res.kas;
+          kasBefore = res.paid ? res.kas - total : res.kas;
+        } catch { /* keep the old numbers */ }
+      }
+
+      // What waits today
+      const mail = (ns.data?.mail ?? []).filter((l) => !l.report);
+      const plans = mail.filter((l) => l.status === 'awaiting');
+      const denials = mail.reduce((n, l) => n + (l.denials ?? []).filter((d) => d.state === 'open').length, 0);
+      const unread = mail.filter((l) => !l.read && l.status !== 'running' && l.status !== 'queued').length;
+      const hour = today.getHours();
+      const hello = S.hello[hour < 11 ? 0 : hour < 15 ? 1 : hour < 18 ? 2 : 3];
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const events = (ns.data?.calendar?.events ?? []).filter((e) => new Date(e.start) < addDays(startOfToday, 1) && new Date(e.end) > startOfToday)
+        .sort((a, b) => new Date(a.start) - new Date(b.start));
+      let todos = null;
+      try { todos = (await ns.localApi('GET', '/api/vault')).notes.find((n) => n.path === 'Ide-TODO.md')?.open ?? null; } catch { /* no vault access (a phone) */ }
+      const todayTotal = incomeOn(dayKey(today));
+
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const timers = [];
+      let panel = null;
+      const link = (text, fn) => h('li', {}, h('button', { type: 'button', onclick: () => { panel?.close(); fn(); } }, text));
+      const lines = [];
+      if (plans.length) lines.push(link(S.plans(plans.length), () => ns.mailbox?.openLetter(plans[0].id)));
+      if (denials) lines.push(link(S.denials(denials), () => ns.mailbox?.open()));
+      if (unread) lines.push(link(S.unread(unread), () => ns.mailbox?.open()));
+      if (todos) lines.push(link(S.todos(todos), () => ns.shelf?.open()));
+      if (events.length) {
+        const first = events.slice(0, 3).map((e) => `${e.allDay ? S.allDay : new Date(e.start).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} ${e.title}`).join(' · ');
+        lines.push(h('li', {}, S.events(events.length), h('br'), h('small', { class: 'asa-muted' }, first)));
+      }
+
+      panel = ns.panel.open({
+        theme: 'cozy',
+        title: auto ? `☀️ ${hello}, Komisaris` : `💰 ${S.replayTitle}`,
+        onClose: () => timers.forEach(clearTimeout),
+        render(body, p) {
+          const date = noon(yKey).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+          const rowEls = rows.map((r) => h('div', { class: `asa-day-row${r.amount || r.plain ? '' : ' zero'}` }, h('span', {}, r.icon), h('span', {}, r.label),
+            h('small', {}, r.plain ? '' : `${r.count} × ${r.price}g`), h('b', {}, fmtG(r.amount))));
+          const rowsEl = h('div', { class: 'asa-day-rows', title: S.skip }, rowEls);
+          const totalNum = h('b', {}, '0g');
+          const totalEl = h('div', { class: 'asa-day-total' }, h('span', {}, paidAlready || !ledger ? S.totalReplay : S.total), totalNum);
+          const delta = h('div', { class: 'asa-day-delta' });
+          const awards = h('div', { class: 'asa-day-awards' });
+          const kasNum = h('b', {}, kasBefore == null ? '' : fmtG(kasBefore));
+          const kasEl = ledger ? h('div', { class: 'asa-day-kas' }, h('span', {}, `💰 ${S.kas}`), kasNum) : h('p', { class: 'asa-muted' }, S.noLedger);
+          const quiet = total === 0 ? h('p', { class: 'asa-muted' }, `🌻 ${S.quiet}`) : null;
+          const next = h('button', { type: 'button', class: 'asa-btn primary', onclick: () => p.close() }, S.start);
+          const mailBtn = h('button', { type: 'button', class: 'asa-btn', onclick: () => { p.close(); ns.mailbox?.open(); } }, S.openMail);
+          body.append(h('div', { class: 'asa-day' },
+            h('div', { class: 'asa-day-date' }, `${S.yesterdayOn} · ${date}`),
+            total === 0 ? null : rowsEl, quiet, total === 0 ? null : totalEl, delta, awards, kasEl,
+            h('div', { class: 'asa-day-tally' }, S.todayTally(fmtG(todayTotal))),
+            h('h3', {}, S.waiting), lines.length ? h('ul', { class: 'asa-day-list' }, lines) : h('p', {}, S.allClear),
+            h('div', { class: 'asa-day-actions' }, h('span', { class: 'asa-day-hint' }, reduced || total === 0 ? '' : S.skip), h('span', {}, mailBtn, ' ', next))));
+
+          const coins = h('div', { class: 'asa-day-coins' });
+          p.el.append(coins);
+          /** Coins tumbling down the card: a handful per row, a shower for the total. */
+          const rain = (n) => {
+            if (reduced) return;
+            const height = p.el.clientHeight || 520;
+            for (let k = 0; k < n; k++) {
+              const coin = h('i', { class: 'asa-coin' });
+              coin.style.left = `${4 + Math.random() * 92}%`;
+              coin.style.setProperty('--dur', `${(0.9 + Math.random() * 1.0).toFixed(2)}s`);
+              coin.style.setProperty('--delay', `${(Math.random() * 0.45).toFixed(2)}s`);
+              coin.style.setProperty('--drift', `${Math.round(Math.random() * 60 - 30)}px`);
+              coin.style.setProperty('--fall', `${height + 24}px`);
+              coin.addEventListener('animationend', (e) => { if (e.animationName === 'asa-coin-fall') coin.remove(); });
+              coins.append(coin);
+            }
+          };
+          const countUp = (el, from, to, ms, done) => {
             const t0 = performance.now();
             const tick = (now) => {
-              const t = Math.min(1, (now - t0) / 900);
-              totalNum.textContent = `${Math.round(sum.total * (1 - (1 - t) ** 3))}g`;
-              if (t < 1) requestAnimationFrame(tick);
-              else { ns.notify?.sfx?.('plan'); finish(); }
+              const t = Math.min(1, (now - t0) / ms);
+              el.textContent = fmtG(from + (to - from) * (1 - (1 - t) ** 3));
+              if (t < 1) requestAnimationFrame(tick); else done?.();
             };
             requestAnimationFrame(tick);
-          }
-        };
-        step();
-        rowsEl.onclick = () => { timers.forEach(clearTimeout); i = rows.length; finish(); };
-      },
-    });
-  }
-
-  // ── Selamat pagi ──
-  const briefSeen = () => ns.store.get('dayBriefSeen');
-  async function openMorning() {
-    ensureCss();
-    ns.store.set('dayBriefSeen', dayKey());
-    const today = new Date();
-    const y = summary(dayKey(addDays(today, -1)));
-    const mail = (ns.data?.mail ?? []).filter((l) => !l.report);
-    const plans = mail.filter((l) => l.status === 'awaiting');
-    const denials = mail.reduce((n, l) => n + (l.denials ?? []).filter((d) => d.state === 'open').length, 0);
-    const unread = mail.filter((l) => !l.read && l.status !== 'running' && l.status !== 'queued').length;
-    const hour = today.getHours();
-    const hello = S.hello[hour < 11 ? 0 : hour < 15 ? 1 : hour < 18 ? 2 : 3];
-    const events = (ns.data?.calendar?.events ?? []).filter((e) => {
-      const s = new Date(e.start); const en = new Date(e.end);
-      const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      return s < addDays(start, 1) && en > start;
-    }).sort((a, b) => new Date(a.start) - new Date(b.start));
-    let todos = null;
-    try { todos = (await ns.localApi('GET', '/api/vault')).notes.find((n) => n.path === 'Ide-TODO.md')?.open ?? null; } catch { /* no vault access (a phone) */ }
-    const lines = [];
-    const link = (text, fn) => h('li', {}, h('button', { type: 'button', onclick: () => { panel?.close(); fn(); } }, text));
-    let panel = null;
-    if (plans.length) lines.push(link(S.plans(plans.length), () => ns.mailbox?.openLetter(plans[0].id)));
-    if (denials) lines.push(link(S.denials(denials), () => ns.mailbox?.open()));
-    if (unread) lines.push(link(S.unread(unread), () => ns.mailbox?.open()));
-    if (todos) lines.push(link(S.todos(todos), () => ns.shelf?.open()));
-    if (events.length) {
-      const first = events.slice(0, 3).map((e) => `${e.allDay ? S.allDay : new Date(e.start).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} ${e.title}`).join(' · ');
-      lines.push(h('li', {}, S.events(events.length), h('br'), h('small', { class: 'asa-muted' }, first)));
+          };
+          const showKas = () => {
+            if (!ledger) return;
+            kasEl.classList.add('on');
+            if (kasBefore != null && kasAfter != null && kasAfter !== kasBefore && !reduced) countUp(kasNum, kasBefore, kasAfter, 800);
+            else kasNum.textContent = fmtG(kasAfter ?? kasBefore ?? 0);
+          };
+          const finish = () => {
+            rowEls.forEach((r) => r.classList.add('on'));
+            totalEl.classList.add('on');
+            totalNum.textContent = fmtG(total);
+            if (total > 0) {
+              totalEl.classList.add('glow');
+              const diff = ysum.total - prev;
+              delta.textContent = prev > 0 || diff !== 0 ? S.vsPrev(diff) : S.firstDay;
+              delta.className = `asa-day-delta ${diff > 0 ? 'up' : diff < 0 ? 'down' : ''}`;
+            }
+            awards.replaceChildren(...awardsFor(ysum).map((a) => h('span', { class: 'asa-day-award' }, a)));
+            showKas();
+          };
+          if (reduced || total === 0) { finish(); return; }
+          let i = 0;
+          const step = () => {
+            if (i < rowEls.length) {
+              rowEls[i].classList.add('on');
+              const r = rows[i];
+              if (r.amount) { ns.notify?.sfx?.('coin'); rain(Math.min(7, 2 + Math.floor(r.amount / 120))); }
+              i += 1;
+              timers.push(setTimeout(step, r.amount ? 420 : 120));
+            } else {
+              totalEl.classList.add('on', 'glow');
+              rain(Math.min(46, 18 + Math.floor(total / 60)));
+              countUp(totalNum, 0, total, 900, () => { ns.notify?.sfx?.('plan'); finish(); });
+            }
+          };
+          step();
+          rowsEl.onclick = () => { timers.forEach(clearTimeout); i = rows.length; finish(); };
+        },
+      });
+      if (!panel) return;
+      ns.notify?.sfx?.(total > 0 ? 'drop' : 'plan');
+    } finally {
+      opening = false;
     }
-    panel = ns.panel.open({
-      theme: 'cozy',
-      title: `☀️ ${hello}, Komisaris`,
-      render(body, p) {
-        body.append(h('div', { class: 'asa-day' },
-          h('h3', { style: { marginTop: '0' } }, S.yesterday),
-          h('p', {}, y.total > 0 ? S.yesterdayLine(y.total, y.tasks, y.sessions) : S.yesterdayQuiet),
-          h('h3', {}, S.waiting),
-          lines.length ? h('ul', { class: 'asa-day-list' }, lines) : h('p', {}, S.allClear),
-          h('div', { class: 'asa-day-actions' }, h('button', { type: 'button', class: 'asa-btn', onclick: () => { p.close(); ns.mailbox?.open(); } }, S.openMail),
-            h('button', { type: 'button', class: 'asa-btn primary', onclick: () => p.close() }, S.start))));
-      },
-    });
-    ns.notify?.sfx?.('plan');
   }
 
-  /** True while the end of today is worth a look: after 18:00, something was done, and it wasn't opened today. */
-  const pending = () => new Date().getHours() >= 18 && endSeen() !== dayKey() && (ns.data?.stats?.days?.[dayKey()]?.tools ?? 0) > 0;
+  /** True while this morning's payout hasn't been looked at (something was earned yesterday and the card wasn't opened today). */
+  const pending = () => seen() !== dayKey() && !!ns.data?.stats && incomeOn(dayKey(addDays(new Date(), -1))) > 0;
 
-  // The first time the office is opened on a morning (once the data feed has arrived and no panel is in the way).
+  // The first time the office is opened on a new day (once the data feed has arrived and no panel is in the way).
   if (ns.setting('brief', ['on', 'off'], 'on') === 'on') {
     const timer = setInterval(() => {
       if (!ns.data?.stats || !ns.view?.office) return;
       clearInterval(timer);
-      const hour = new Date().getHours();
-      if (hour >= 5 && hour < 12 && briefSeen() !== dayKey() && !ns.panel.isOpen) setTimeout(() => { if (!ns.panel.isOpen) openMorning(); }, 1800);
+      if (seen() !== dayKey() && !ns.panel.isOpen) setTimeout(() => { if (!ns.panel.isOpen) open({ auto: true }); }, 1800);
     }, 1000);
   }
 
-  ns.dayEnd = { open: openEnd, morning: openMorning, pending, summary };
+  ns.dayEnd = { open: () => open({ auto: false }), morning: () => open({ auto: true }), pending, summary };
 })();

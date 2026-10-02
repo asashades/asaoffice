@@ -302,14 +302,21 @@
     const token = new URLSearchParams(location.search).get('token');
     const port = ns.data?.taskServer?.port;
     if (!port || !token) throw new Error('noApi');
-    const res = await fetch(`http://127.0.0.1:${port}${route}`, {
-      method,
-      headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(json.error || String(res.status));
-    return json;
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 8000); // never leave a card waiting on a stuck request
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}${route}`, {
+        method,
+        headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: ctl.signal,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || String(res.status));
+      return json;
+    } finally {
+      clearTimeout(timer);
+    }
   };
 
   // Keep ns.data fresh for things drawn every frame (calendar badge, Holo-board screen).

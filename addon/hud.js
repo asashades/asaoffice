@@ -27,7 +27,7 @@
       atDesk: 'Di meja direktur', noProject: 'Sesi Claude Code', chatWith: (n) => `Ngobrol sama ${n}`,
       planReady: 'Rencana siap', approveBtn: '✅ Setujui', rejectBtn: '❌ Tolak', openBtn: 'Buka', morePlans: (n) => `+${n} rencana lagi di kotak surat`,
       perm: 'Izin', emptyPerm: 'Belum ada langkah yang ditolak otomatis.', permSource: 'Langkah yang ditolak otomatis karena di luar izin tugas. Klik buat buka suratnya.', stOpen: 'menunggu', stAllowed: 'diizinkan sekali',
-      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', openEnd: 'Akhir Hari', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
+      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', openEnd: 'Pendapatan kemarin', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
     },
     en: {
       title: 'Asa Office', live: 'Connected', dead: 'Data offline', nodata: 'No data', sessions: 'Sessions working', helpers: 'Helpers', today: 'Sub-agents today',
@@ -43,7 +43,7 @@
       atDesk: "At the director's desk", noProject: 'Claude Code session', chatWith: (n) => `Chatting with ${n}`,
       planReady: 'Plan ready', approveBtn: '✅ Approve', rejectBtn: '❌ Reject', openBtn: 'Open', morePlans: (n) => `+${n} more plans in the mailbox`,
       perm: 'Permissions', emptyPerm: 'Nothing has been refused automatically.', permSource: 'Steps refused automatically because they were outside the task’s permissions. Click to open the letter.', stOpen: 'waiting', stAllowed: 'allowed once',
-      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', openEnd: 'End of Day', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
+      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', openEnd: "Yesterday's income", idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
     },
   });
 

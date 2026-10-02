@@ -26,6 +26,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import * as vault from './vault.mjs';
+import { collect as collectIncome, loadLedger } from './ledger.mjs';
 import { loadNames, setName } from './names.mjs';
 
 const MAX_RUNNING = 3;
@@ -417,6 +418,13 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           claude: !!findClaude(),
           running: running.size,
         }, origin);
+      }
+      // The cash book: yesterday's income is paid out once, the next morning (see ledger.mjs).
+      if (url.pathname === '/api/ledger' && req.method === 'GET') return send(res, 200, loadLedger(), origin);
+      if (url.pathname === '/api/ledger/collect' && req.method === 'POST') {
+        const b = await readBody(req);
+        const r = collectIncome(b.through, b.amount);
+        return r ? send(res, 200, { ...r.ledger, paid: r.paid }, origin) : send(res, 400, { error: 'collect' }, origin);
       }
       // Renaming a villager (staff by agent id, ordinary villagers by face). Shades can't be renamed.
       if (url.pathname === '/api/names' && req.method === 'POST') {
