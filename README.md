@@ -263,7 +263,7 @@ calendar names are in that file; the stats are counts only, with no paths, promp
   ceiling-light pools in its own colour (cool tube in the toilet, amber in the lounge) that switch on one by one over
   dusk with a faint breathing, are on only while someone is inside, and go out about two minutes after the last person
   leaves; an empty room is darker than a lit one, light spills through the doorways (the front door lights the path
-  outside), and a villager who is working gets a small yellow desk lamp with a bright spot on their desk. `&roomLights=off` turns the
+  outside), and a villager who is working gets a small yellow desk lamp with a bright spot on their desk. Doorways take the light of the lit room beside them and the walls round a lit room catch a little of it, so there is no dark gap between two bright rooms. `&roomLights=off` turns the
   room and desk lights off (remembered); `__asaoffice.dayNight.rooms()` shows each room's light level.
 
 Existing offices need the task board placed once, like the Holo-board: `npm run layout`, or **Layout → Task Board**.
