@@ -648,6 +648,13 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       if (url.pathname === '/api/vault/idea' && req.method === 'POST') {
         return vault.addIdea((await readBody(req)).text) ? send(res, 200, { ok: true }, origin) : send(res, 400, { error: 'text' }, origin);
       }
+      // Clear the whole permission log: every open refused call, on every letter, is dismissed.
+      if (req.method === 'POST' && url.pathname === '/api/denials/clear') {
+        let count = 0;
+        for (const l of letters) for (const x of l.denials ?? []) if (x.state === 'open') { x.state = 'dismissed'; count++; }
+        save();
+        return send(res, 200, { count }, origin);
+      }
       // The Downloads folder: ask about it, or ask for a tidy-up. Claude only reads; moves wait for approval (see tidy.mjs).
       if (req.method === 'POST' && url.pathname === '/api/tidy') {
         const body = await readBody(req);
@@ -772,7 +779,14 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       }
       if (req.method === 'POST' && m?.[2] === 'allow') {
         // Open up one refused call for a single follow-up run: the rule comes from the recorded denial.
-        const wanted = String((await readBody(req)).id);
+        const body = await readBody(req);
+        const wanted = String(body.id);
+        if (body.dismiss === true) { // "Abaikan": just clear it from the list (one refused call, or all of this letter's)
+          let count = 0;
+          for (const x of letter.denials ?? []) if (x.state === 'open' && (wanted === 'all' || x.id === wanted)) { x.state = 'dismissed'; count++; }
+          save();
+          return send(res, 200, { letter, count }, origin);
+        }
         const d = (letter.denials ?? []).find((x) => x.id === wanted && x.state === 'open');
         if (!d || !d.rule) return send(res, 400, { error: 'denial' }, origin);
         if (running.has(letter.id) || letter.status === 'queued') return send(res, 409, { error: 'running' }, origin);
