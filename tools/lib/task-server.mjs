@@ -60,6 +60,14 @@ const TOOLS = {
 // piece by piece (both verified with the real CLI), so a chain of these passes and a chain with `rm` in it doesn't.
 export const READONLY_BASH = ['ls', 'cat', 'head', 'tail', 'wc', 'file', 'stat', 'pwd', 'diff', 'cut', 'echo', 'unzip -l'].map((c) => `Bash(${c}:*)`);
 const MODES = ['plan', 'auto', 'report'];
+// How a task's own permission prompts are handled, like Claude Code's modes. Everything but 'strict' lets the CLI ask the office (stream-json +
+// `--permission-prompt-tool stdio`, the way Claude Code's own app does it) and the question shows up in the letter for the Commissioner to answer.
+//   manual → asks for anything not on the allow-list · acceptEdits → file edits go through, the rest asks · auto → Claude's own judge decides, asks when unsure
+//   bypass → nothing asks (has to be switched on first) · strict → the old behaviour: refuse what isn't on the list (the plan/report phases, Downloads and schedules always are)
+export const PERMS = ['manual', 'acceptEdits', 'auto', 'bypass', 'strict'];
+const PERM_CLI = { manual: 'manual', acceptEdits: 'acceptEdits', auto: 'auto', bypass: 'bypassPermissions' };
+const ASK_WAIT_MS = 10 * 60_000; // an unanswered question is refused after this long
+const MAX_ASKS = 20;
 // The model a task runs on: an alias Claude Code knows, or a full model id (the one a session was last answered with). Anything else = the default.
 const MODEL_ALIASES = ['opus', 'sonnet', 'haiku'];
 const cleanModel = (m) => (MODEL_ALIASES.includes(m) || (typeof m === 'string' && /^claude-[a-z0-9][a-z0-9.-]{2,60}$/.test(m)) ? m : null);
@@ -218,6 +226,16 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   for (const l of letters) if (l.status === 'running' || l.status === 'queued') Object.assign(l, { status: 'error', error: 'Kantor dimatikan waktu tugas ini masih jalan.' });
 
   const running = new Map(); // letter id -> child process
+  const pending = new Map(); // `${letter id}:${ask id}` -> { child, requestId, input, always, timer }: questions the CLI is waiting on
+  // Office settings (only "allow bypass" so far): kept next to the mailbox.
+  const settingsFile = path.join(os.homedir(), '.pixel-agents', 'asaoffice-settings.json');
+  let settings = { allowBypass: false };
+  try { settings = { ...settings, ...JSON.parse(fs.readFileSync(settingsFile, 'utf8')) }; } catch { /* defaults */ }
+  const saveSettings = () => {
+    fs.mkdirSync(path.dirname(settingsFile), { recursive: true });
+    fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
+  };
+  const cleanPerm = (p) => (PERMS.includes(p) ? p : null);
   const save = () => {
     let active = 0;
     let archived = 0;
@@ -323,6 +341,75 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     return t;
   }
 
+  // ── Permission questions from a running task (the CLI asks, the letter shows the question, the Commissioner answers) ──
+  /** What the question is about, in full: the whole command, the file, the address. */
+  function askText(tool, input) {
+    const i = input ?? {};
+    if (tool === 'Bash') return String(i.command ?? '').trim().slice(0, 2000);
+    const one = i.file_path ?? i.path ?? i.notebook_path ?? i.url ?? i.query ?? i.description ?? i.pattern;
+    return String(one ?? JSON.stringify(i)).slice(0, 600);
+  }
+  function addAsk(letter, child, msg) {
+    const req = msg.request ?? {};
+    const tool = String(req.tool_name ?? '');
+    const input = req.input && typeof req.input === 'object' ? req.input : {};
+    const text = askText(tool, input);
+    const id = crypto.randomUUID().slice(0, 6);
+    // "Izinkan terus": the CLI's own suggestions (a rule, a folder), kept for this session only (never written into the project's settings).
+    // Never offered for a command with sudo, curl, push… in it: those are allowed one time or not at all.
+    const always = tool === 'Bash' && NEVER_EXACT.test(text) ? [] : (Array.isArray(req.permission_suggestions) ? req.permission_suggestions : [])
+      .filter((x) => x && (x.type === 'addRules' || x.type === 'addDirectories')).map((x) => ({ ...x, destination: 'session' }));
+    const entry = { id, tool, text, at: new Date().toISOString(), state: 'open', always: always.length > 0 };
+    if (tool === 'Bash') entry.cmd = text;
+    const timer = setTimeout(() => answerAsk(letter, id, 'expire'), ASK_WAIT_MS);
+    pending.set(`${letter.id}:${id}`, { child, requestId: msg.request_id, input, always, timer });
+    (letter.asks ??= []).push(entry);
+    if (letter.asks.length > MAX_ASKS) letter.asks = letter.asks.slice(-MAX_ASKS);
+    letter.progress = `🔐 Menunggu izinmu: ${tool}${text ? ` ${text.replace(/\s+/g, ' ').slice(0, 50)}` : ''}`;
+    letter.read = false;
+    save();
+  }
+  /** Answer one question: 'allow', 'always' (allow + remember for this session), 'deny', or 'expire' (nobody answered). Returns false when it's gone. */
+  function answerAsk(letter, id, decision) {
+    const key = `${letter.id}:${id}`;
+    const p = pending.get(key);
+    const entry = (letter.asks ?? []).find((x) => x.id === id && x.state === 'open');
+    if (!p || !entry) return false;
+    clearTimeout(p.timer);
+    pending.delete(key);
+    const allow = decision === 'allow' || decision === 'always';
+    const body = allow
+      ? { behavior: 'allow', updatedInput: p.input, ...(decision === 'always' && p.always.length ? { updatedPermissions: p.always } : {}) }
+      : { behavior: 'deny', message: decision === 'expire' ? 'Komisaris tidak menjawab pertanyaan izin ini. Jangan ulangi; lanjutkan dengan yang lain atau tanyakan dulu.' : 'Komisaris menolak langkah ini. Jangan ulangi atau memutar lewat cara lain; tanyakan apa yang harus diganti.' };
+    try { p.child.stdin.write(`${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: p.requestId, response: body } })}\n`); } catch { /* the task is gone */ }
+    entry.state = decision === 'expire' ? 'expired' : allow ? 'allowed' : 'denied';
+    if (decision === 'always') { // a new `claude` process answers each reply, so what was allowed is kept with the letter and handed to the next run
+      for (const x of p.always) {
+        if (x.type === 'addRules') for (const r of x.rules ?? []) { const rule = r.ruleContent ? `${r.toolName}(${r.ruleContent})` : String(r.toolName); if (!(letter.allowed ??= []).includes(rule)) letter.allowed.push(rule); }
+        else if (x.type === 'addDirectories') for (const d of x.directories ?? []) if (typeof d === 'string' && !(letter.allowDirs ??= []).includes(d)) letter.allowDirs.push(d);
+      }
+      letter.allowed = letter.allowed?.slice(-30);
+      letter.allowDirs = letter.allowDirs?.slice(-10);
+    }
+    const label = `${entry.tool}${entry.text ? `: ${entry.text.replace(/\s+/g, ' ').slice(0, 120)}` : ''}`;
+    letter.thread.push({ from: 'you', kind: 'allow', at: new Date().toISOString(), text: decision === 'expire' ? `⌛ Tidak dijawab, ditolak: ${label}` : allow ? `🔓 Diizinkan${decision === 'always' ? ' (terus di obrolan ini)' : ''}: ${label}` : `⛔ Ditolak: ${label}` });
+    delete letter.progress;
+    if (![...pending.keys()].some((k) => k.startsWith(`${letter.id}:`))) p.child.asaRearm?.();
+    letter.read = true;
+    save();
+    return true;
+  }
+  /** The task ended or the CLI took a question back: whatever is still open can't be answered any more. */
+  function dropAsks(letter, only = null) {
+    for (const [key, p] of pending) {
+      if (!key.startsWith(`${letter.id}:`) || (only && p.requestId !== only)) continue;
+      clearTimeout(p.timer);
+      pending.delete(key);
+      const e = (letter.asks ?? []).find((x) => key === `${letter.id}:${x.id}`);
+      if (e?.state === 'open') e.state = 'expired';
+    }
+  }
+
   function run(letter, text, { resume, extraTools = [] }) {
     const claude = findClaude();
     if (!claude) {
@@ -343,6 +430,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     const dlOnly = !!tidyScan || !!letter.readOnlyDir; // the Downloads folder: reading only, whatever the staff member's own access
     const tools = dlOnly ? ['Read', 'Grep', 'Glob', 'LS'] : allowedTools(access);
     tools.push(...extraTools, ...READONLY_BASH);
+    if (!dlOnly && phase === 'work') tools.push(...(letter.allowed ?? [])); // "Izinkan terus" answers from earlier in this chat
     tools.push(`Bash(node ${xlsxReader}:*)`); // the built-in spreadsheet reader: read-only, so it is open in every mode (Downloads too)
     if (phase === 'work' && member?.director && letter.style === 'delegate') tools.push(...DELEGATE_TOOLS);
     let system = tidyScan ? tidy.systemPrompt(tidyScan) : PHASE_PROMPT[phase];
@@ -359,10 +447,19 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (nick.length) system += `\n\nNama panggilan tim di kantor Komisaris: ${nick.map((m) => `${m.agent} sekarang dipanggil ${loadNames().staff[m.agent]}`).join('; ')}. Pakai nama panggilan itu kalau menyebut mereka.`;
     const notes = dlOnly ? '' : vault.contextNotes();
     if (notes) system += `\n\n${notes}`;
-    // The prompt goes in on stdin, so text that starts with "-" can never be read as a CLI option.
-    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'dontAsk',
-      '--allowedTools', ...tools, '--append-system-prompt', system];
+    // Permission handling: the work phase asks the Commissioner (like Claude Code); plan/report phases, Downloads and 'strict' tasks refuse instead.
+    const wantPerm = cleanPerm(letter.perm) ?? 'manual';
+    const perm = wantPerm === 'bypass' && !settings.allowBypass ? 'manual' : wantPerm;
+    const interactive = phase === 'work' && !dlOnly && perm !== 'strict';
+    if (interactive) system += '\nKalau satu langkah tidak diizinkan Komisaris, jangan coba memutar lewat cara lain; lanjutkan dengan yang lain atau tanyakan apa yang harus diganti.';
+    // The prompt goes in on stdin (as one JSON line when the CLI may ask questions back, plain text otherwise), so text that starts with "-" can never be read as a CLI option.
+    const args = interactive
+      ? ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--permission-mode', PERM_CLI[perm], '--permission-prompts', 'host', '--permission-prompt-tool', 'stdio',
+        '--allowedTools', ...tools, '--append-system-prompt', system]
+      : ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'dontAsk',
+        '--allowedTools', ...tools, '--append-system-prompt', system];
     if (letter.thread.some((m) => m.images?.length)) args.push('--add-dir', uploadsDir);
+    if (interactive) for (const d of letter.allowDirs ?? []) args.push('--add-dir', d);
     if (letter.model) args.push('--model', letter.model);
     if (resume) args.push('--resume', letter.sessionId);
     else args.push('--session-id', letter.sessionId);
@@ -370,7 +467,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
 
     const child = spawn(claude, args, { cwd: letter.cwd, env: childEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
     child.stdin.on('error', () => {}); // claude may exit before reading it all
-    child.stdin.end(text);
+    if (interactive) child.stdin.write(`${JSON.stringify({ type: 'user', message: { role: 'user', content: text } })}\n`); // stays open: the answers go back through it
+    else child.stdin.end(text);
     running.set(letter.id, child);
     letter.status = 'running';
     letter.error = null;
@@ -390,6 +488,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         buf = buf.slice(nl + 1);
         let msg;
         try { msg = JSON.parse(line); } catch { continue; }
+        if (msg.type === 'control_request' && msg.request?.subtype === 'can_use_tool') { addAsk(letter, child, msg); continue; }
+        if (msg.type === 'control_cancel_request') { dropAsks(letter, msg.request_id); save(); continue; }
         if (msg.type === 'system' && msg.subtype === 'init' && typeof msg.model === 'string') letter.usedModel = msg.model.slice(0, 80);
         if (msg.type === 'assistant') {
           const blocks = msg.message?.content ?? [];
@@ -403,6 +503,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           }
         } else if (msg.type === 'result') {
           result = msg;
+          if (interactive) child.stdin.end(); // the answer is complete: let claude exit
           // Calls refused because they weren't on the allow-list: kept so the Commissioner can open them up once.
           for (const d of Array.isArray(msg.permission_denials) ? msg.permission_denials : []) {
             const entry = { id: crypto.randomUUID().slice(0, 6), tool: String(d.tool_name ?? ''), text: denialText(d.tool_name, d.tool_input), at: new Date().toISOString(), state: 'open' };
@@ -420,10 +521,14 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       }
     });
     child.stderr.on('data', (c) => { stderr = (stderr + c).slice(-2000); });
-    const timer = setTimeout(() => { letter.timedOut = true; child.kill('SIGTERM'); }, TASK_TIMEOUT_MS);
+    let timer;
+    const arm = () => { clearTimeout(timer); timer = setTimeout(() => { letter.timedOut = true; child.kill('SIGTERM'); }, TASK_TIMEOUT_MS); };
+    child.asaRearm = arm; // answering a question restarts the clock: the time you spent deciding isn't the task's
+    arm();
     child.on('error', (err) => { stderr += err.message; });
     child.on('close', (code, signal) => {
       clearTimeout(timer);
+      dropAsks(letter);
       running.delete(letter.id);
       let answer = String(result?.result ?? lastText ?? '').trim();
       let tidyPlan = null;
@@ -530,7 +635,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (!safeEqual(req.headers.authorization ?? '', `Bearer ${token}`)) return send(res, 401, { error: 'token' }, origin);
 
     const url = new URL(req.url, 'http://x');
-    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject|rename|deliver|allow|undo|archive|unarchive))?$/.exec(url.pathname);
+    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject|rename|deliver|allow|ask|undo|archive|unarchive))?$/.exec(url.pathname);
     try {
       if (req.method === 'GET' && url.pathname === '/api/options') {
         const r = roster();
@@ -541,7 +646,14 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           downloads: !!tidy.downloadsDir(),
           claude: !!findClaude(),
           running: running.size,
+          perms: { bypass: settings.allowBypass },
         }, origin);
+      }
+      // Switching "bypass permissions" on or off (off until the Commissioner turns it on, like Claude Code's own setting).
+      if (req.method === 'POST' && url.pathname === '/api/settings') {
+        const body = await readBody(req);
+        if (typeof body.allowBypass === 'boolean') { settings.allowBypass = body.allowBypass; saveSettings(); }
+        return send(res, 200, { perms: { bypass: settings.allowBypass } }, origin);
       }
       // Scheduled tasks
       if (url.pathname === '/api/schedules' && req.method === 'GET') return send(res, 200, { schedules: schedView() }, origin);
@@ -737,12 +849,13 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (resumeId && (agent || !known || known.cwd !== dir.cwd)) return send(res, 400, { error: 'session' }, origin);
         if (resumeId && letters.some((l) => l.sessionId === resumeId && (running.has(l.id) || l.status === 'queued'))) return send(res, 409, { error: 'running' }, origin);
         const mode = MODES.includes(body.mode) ? body.mode : member?.director ? 'plan' : 'auto';
+        if (body.perm === 'bypass' && !settings.allowBypass) return send(res, 400, { error: 'bypass' }, origin);
         const style = member?.director && body.style === 'delegate' ? 'delegate' : 'solo';
         const letter = {
           id: crypto.randomUUID().slice(0, 8), agent, name: member?.name ?? null, cwd: dir.cwd, project: dir.name,
           sessionId: resumeId ?? crypto.randomUUID(), status: 'running', read: true, createdAt: new Date().toISOString(),
           title: resumeId ? (known.title || titleOf(prompt)) : titleOf(prompt), mode, style, phase: mode === 'plan' ? 'plan' : 'work',
-          commit: body.commit === true && mode !== 'report', model: cleanModel(body.model),
+          commit: body.commit === true && mode !== 'report', model: cleanModel(body.model), perm: cleanPerm(body.perm) ?? 'manual',
           thread: [{ from: 'you', text: prompt, at: new Date().toISOString(), ...(images.length ? { images } : {}) }],
         };
         letters.unshift(letter);
@@ -763,6 +876,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (running.has(letter.id) || letter.status === 'queued') return send(res, 409, { error: 'running' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
         if (directorBusy(letter.agent)) return send(res, 429, { error: 'director busy' }, origin);
+        if (replyBody.perm === 'bypass' && !settings.allowBypass) return send(res, 400, { error: 'bypass' }, origin);
+        if (cleanPerm(replyBody.perm)) letter.perm = replyBody.perm; // the mode can be changed between replies, like Shift+Tab in Claude Code
         if (letter.kind !== 'tidy' && !letter.readOnlyDir && !allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
         // A reply to a plan that's waiting for you is a revision: it stays a plan until you approve it.
         const revise = letter.status === 'awaiting';
@@ -818,6 +933,13 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (m[2] === 'archive') Object.assign(letter, { archived: true, archivedAt: new Date().toISOString(), read: true });
         else { delete letter.archived; delete letter.archivedAt; }
         save();
+        return send(res, 200, { letter }, origin);
+      }
+      if (req.method === 'POST' && m?.[2] === 'ask') {
+        // The Commissioner's answer to a permission question of a running task.
+        const body = await readBody(req);
+        if (!['allow', 'always', 'deny'].includes(body.decision)) return send(res, 400, { error: 'decision' }, origin);
+        if (!answerAsk(letter, String(body.id), body.decision)) return send(res, 409, { error: 'gone' }, origin);
         return send(res, 200, { letter }, origin);
       }
       if (req.method === 'POST' && m?.[2] === 'allow') {
