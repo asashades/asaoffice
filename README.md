@@ -317,7 +317,7 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   deleted or overwritten (a clashing name becomes "name (2)"); symlinks, hidden files, partial downloads, files from the last 3 minutes and `.app` bundles are
   skipped; every entry is re-checked against the real folder. Each batch of moves is listed in the letter with **↩️ Kembalikan semua**. Keep chatting in the same
   letter: ask a question, then ask for a plan, and earlier batches stay undoable. The first run makes macOS ask whether Terminal (or Asa Office) may access
-  Downloads: allow it.
+  Downloads: allow it. A new Downloads letter is held like any new task (undo window, then Shades carries it from the mailbox); replies in the same letter start right away.
 - **Model picker (🧠).** New chat has a **🧠 Default / Opus / Sonnet / Haiku** chip (Downloads too), sent as `claude --model <alias>`; "Default" leaves the flag out, so Claude Code's own
   setting decides. The choice is kept on the letter (replies reuse it) and the letter header shows the model actually used (read from the stream's `init` message, e.g. "🧠 Haiku 4.5").
   Continuing an outside session (💬) defaults to the model it was last answered with (`claude-stats.mjs` records it per session; passed as the full id), with the same chip to change it.

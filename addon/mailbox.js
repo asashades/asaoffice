@@ -1157,14 +1157,27 @@
   /** A question or tidy-up request about Downloads: Claude reads, and any moves it proposes wait for your approval. */
   async function sendDownloads(text, landed, model = '') {
     try {
-      const res = await api('POST', '/api/tidy', { prompt: text === S.lookAtImages ? '' : text, model: model || undefined });
+      const { letter } = await api('POST', '/api/tidy', { prompt: text === S.lookAtImages ? '' : text, model: model || undefined, hold: true });
       await landed;
       dropLetter();
+      // Same as any new task: a few seconds to change your mind, then Shades carries the letter from the mailbox.
+      if (panel && (await undoWindow()) === 'undo') {
+        try { await api('DELETE', `/api/tasks/${letter.id}`); } catch { /* the hold expires by itself */ }
+        await ns.refreshData();
+        return;
+      }
       setDraft('', 'new');
       clearAtt();
+      const deliver = async () => {
+        try { await api('POST', `/api/tasks/${letter.id}/deliver`); } catch { /* the server starts it by itself after 30 s */ }
+        for (const ms of [0, 2500, 5000]) setTimeout(() => ns.refreshData(), ms);
+      };
+      const walking = ns.director?.courier?.({ agent: null, name: '', deliver });
+      if (!walking) await deliver();
       await ns.refreshData();
-      sel = res.letter.id;
-      select(res.letter.id);
+      sel = letter.id;
+      if (walking && panel) setTimeout(() => ns.panel.close(), 500);
+      else select(letter.id);
     } catch (err) {
       await landed;
       notice = err.message === 'downloads' ? S.tidyNoFolder : errorText(err);
