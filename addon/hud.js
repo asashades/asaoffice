@@ -122,11 +122,11 @@
   .hud-more { font-size: 12px; opacity: 0.75; padding: 0 4px; }
   @keyframes hud-plan-in { from { transform: translateY(-6px); opacity: 0; } to { transform: none; opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .hud-plan { animation: none; } }
-  .hud-side { position: fixed; top: 74px; right: 12px; width: 300px; max-height: calc(100vh - 74px - 128px); display: flex; flex-direction: column; overflow: hidden; }
+  .hud-side { position: fixed; top: 74px; right: 12px; width: 320px; max-height: calc(100vh - 74px - 128px); display: flex; flex-direction: column; overflow: hidden; }
   .hud-tabs { display: flex; align-items: stretch; border-bottom: 2px solid #c9a877; }
-  .hud-tabs button { flex: 1; background: none; border: 0; border-bottom: 3px solid transparent; padding: 7px 4px; font-size: 13px; cursor: pointer; opacity: 0.7; white-space: nowrap; }
+  .hud-tabs button { flex: 1 1 auto; min-width: 0; background: none; border: 0; border-bottom: 3px solid transparent; padding: 7px 2px; font-size: 12px; cursor: pointer; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hud-tabs button.on { opacity: 1; border-bottom-color: #973a2f; }
-  .hud-tabs .n { display: inline-block; min-width: 16px; margin-left: 3px; padding: 0 4px; background: #e6d3a6; font-size: 11px; line-height: 15px; }
+  .hud-tabs .n { display: inline-block; min-width: 16px; margin-left: 2px; padding: 0 3px; background: #e6d3a6; font-size: 11px; line-height: 15px; }
   .hud-tabs .min { flex: none; width: 34px; border-left: 2px solid #c9a877; cursor: pointer; }
   .hud-side.min .hud-scroll { display: none; }
   .hud-side.min .hud-tabs { border-bottom: 0; }
@@ -171,7 +171,7 @@
   .hud-card .st { margin-left: auto; flex: none; }
   .hud-card .task { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hud-card .act { font-size: 12px; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  @media (max-width: 1180px) { .hud-side { width: 270px; } }
+  @media (max-width: 1180px) { .hud-side { width: 310px; } }
   @media (max-width: 820px) {
     .hud-top { flex-wrap: wrap; left: 60px; right: 8px; gap: 6px; }
     .hud-hero { flex: 1 1 100%; width: auto; height: 108px; }
