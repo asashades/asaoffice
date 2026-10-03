@@ -311,13 +311,17 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   cards and starts minimised. `?hud=off` turns the HUD off (remembered; `?hud=on` brings it back).
 
 - **Downloads (📥 in New chat, or the 🧹 button).** One mode for the folder: ask anything about `~/Downloads` ("cari invoice bulan lalu", "ringkas PDF terbaru")
-  or ask for a tidy-up ("rapikan file PDF"). Claude only reads (Read/Grep/Glob/LS, no shell, no web). A plain question just gets an answer; a tidy-up request gets a
+  or ask for a tidy-up ("rapikan file PDF"). Claude only reads (Read/Grep/Glob/LS, no web, no shell except the read-only spreadsheet reader below). A plain question just gets an answer; a tidy-up request gets a
   **plan**: every move listed with a tick to untick, and nothing moves until you approve. **The office does the moving itself** (`tools/lib/tidy.mjs`): files
   go to a folder that already exists inside Downloads (two levels deep) when one clearly fits, otherwise to `Arsip` (the only folder the office creates); nothing is
   deleted or overwritten (a clashing name becomes "name (2)"); symlinks, hidden files, partial downloads, files from the last 3 minutes and `.app` bundles are
   skipped; every entry is re-checked against the real folder. Each batch of moves is listed in the letter with **↩️ Kembalikan semua**. Keep chatting in the same
   letter: ask a question, then ask for a plan, and earlier batches stay undoable. The first run makes macOS ask whether Terminal (or Asa Office) may access
   Downloads: allow it. A new Downloads letter is held like any new task (undo window, then Shades carries it from the mailbox); replies in the same letter start right away.
+- **Spreadsheet reader (`.xlsx`).** Claude can't open an Excel file with Read, so every task gets a built-in, read-only, dependency-free reader (`tools/xlsx-read.mjs`, `tools/lib/xlsx.mjs`):
+  `node tools/xlsx-read.mjs <file.xlsx> [--list] [--sheet <name|number>] [--max-rows <n>]` prints each sheet as `row<TAB>cell<TAB>cell…` (dates and times shown as dates and
+  times, formulas as the value Excel last saved, 200 rows per sheet unless asked). Only `.xlsx` / `.xlsm`; old `.xls` is not supported. It's the one shell command allowed in Downloads
+  (the command only reads, and the office tells Claude to use it instead of Python). You can run it yourself in Terminal too.
 - **Model picker (🧠).** New chat has a **🧠 Default / Opus / Sonnet / Haiku** chip (Downloads too), sent as `claude --model <alias>`; "Default" leaves the flag out, so Claude Code's own
   setting decides. The choice is kept on the letter (replies reuse it) and the letter header shows the model actually used (read from the stream's `init` message, e.g. "🧠 Haiku 4.5").
   Continuing an outside session (💬) defaults to the model it was last answered with (`claude-stats.mjs` records it per session; passed as the full id), with the same chip to change it.
