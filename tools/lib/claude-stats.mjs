@@ -111,7 +111,9 @@ export class ClaudeStats {
     const today = localDay(new Date());
     if (sess) {
       sess.lastAt = Math.max(sess.lastAt, ts.getTime());
-      if (rec.cwd && !rec.isSidechain) {
+      // The folder the session was started in (the first one we saw, from peek). Later records carry wherever the shell has since `cd`'d to
+      // (a scratchpad, a subfolder): continuing the session has to happen where it started, or Claude Code can't find it.
+      if (rec.cwd && !rec.isSidechain && !sess.cwd) {
         sess.project = path.basename(rec.cwd);
         sess.cwd = rec.cwd;
       }
