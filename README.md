@@ -442,6 +442,8 @@ What a task may do depends on who does it (`staff/roster.json` → `access`). Ev
 | `git` | `git status / diff / log / show` |
 | `test` | common test runners (`npm test`, `npm run test/lint/check`, `vitest`, `jest`, `pnpm/yarn test`, `pytest`, `go test`, `cargo test`), plus `git` |
 
+**Answers are Markdown.** Plans, reports and answers in the mailbox are rendered with `addon/markdown.js` (bold, italics, lists, code, tables, headings, links), so `**sari**` shows as **sari**. Remote images are turned into links so an answer can't make the page fetch a URL by itself; your own messages stay plain text.
+
 **Refused steps and "Allow once".** When a task tries something outside its permissions (a `git commit` without the checkbox, an edit
 the staff member can't make...), `claude -p` refuses it and reports it; the letter lists these under the answer
 (⛔ N steps refused automatically) and the HUD's **Izin** tab keeps the recent ones. Each can be opened up **once** with
