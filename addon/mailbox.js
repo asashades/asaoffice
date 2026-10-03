@@ -182,6 +182,10 @@
   .asa-b.you { align-self: flex-end; max-width: 85%; background: #e6f0d8; border-color: #9ab87a; }
   .asa-b.plan { border-color: #4a8ac8; box-shadow: inset 3px 0 0 #4a8ac8; }
   .asa-b .asa-b-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 46vh; overflow: auto; }
+  .asa-b .asa-b-text.asa-md { white-space: normal; font-size: inherit; line-height: inherit; }
+  .asa-b .asa-md > :first-child { margin-top: 0; } .asa-b .asa-md > :last-child { margin-bottom: 0; }
+  .asa-b .asa-md h1, .asa-b .asa-md h2, .asa-b .asa-md h3 { font-size: 1.1em; }
+  .asa-b .asa-md pre code { font-size: 12px; }
   .asa-b small { display: block; opacity: 0.6; font-size: 11px; margin-top: 4px; }
   .asa-b em { display: block; font-style: normal; margin-bottom: 4px; }
   .asa-b.typing { display: flex; gap: 8px; align-items: center; }
@@ -885,6 +889,13 @@
       }));
   }
 
+  /** An answer's text as Markdown (bold, lists, code, tables…). Remote images become links so an answer can't make the page fetch a URL by itself. */
+  function mdText(text) {
+    const el = h('div', { class: 'asa-b-text' });
+    if (!ns.markdown) { el.textContent = text; return el; }
+    try { ns.markdown.render(el, String(text ?? '').replace(/!\[([^\]]*)\]\((https?:[^)\s]*)\)/gi, '[$1]($2)')); } catch { el.textContent = text; }
+    return el;
+  }
   function fillThread(l) {
     const box = ui.thread;
     const out = [];
@@ -893,7 +904,7 @@
       out.push(h('div', { class: 'asa-brow' }, smallFace({ agent: options?.staff?.find((x) => x.director)?.agent ?? null }), h('div', { class: 'asa-b agent' }, h('div', { class: 'asa-b-text' }, S.greeting(first)))));
       out.push(h('div', { class: 'asa-suggest' }, S.suggestions.map((t) => h('button', { type: 'button', class: 'asa-chip', onclick: () => { setDraft(t); fillComposer(null); ui.comp.querySelector('textarea')?.focus(); } }, t))));
     } else if (l.report) {
-      out.push(h('div', { class: 'asa-b agent' }, h('div', { class: 'asa-b-text' }, l.text)));
+      out.push(h('div', { class: 'asa-b agent' }, mdText(l.text)));
     } else {
       const thread = l.thread ?? [];
       const lastAgent = thread.map((m, i) => (m.from === 'agent' ? i : -1)).filter((i) => i >= 0).pop();
@@ -906,7 +917,7 @@
         const plan = m.kind === 'plan';
         const label = plan ? S.planLabel : isDirector(l.agent) && m.kind ? S.reportLabel : null;
         out.push(h('div', { class: 'asa-brow' }, smallFace(l),
-          h('div', { class: `asa-b agent${plan ? ' plan' : ''}` }, label ? h('em', {}, label) : null, h('div', { class: 'asa-b-text' }, m.text), imageStrip(m.text, l.cwd), h('small', {}, `${who(l)} · ${timeOf(m.at)}`))));
+          h('div', { class: `asa-b agent${plan ? ' plan' : ''}` }, label ? h('em', {}, label) : null, mdText(m.text), imageStrip(m.text, l.cwd), h('small', {}, `${who(l)} · ${timeOf(m.at)}`))));
         if (plan && l.status === 'awaiting' && i === lastAgent) {
           if (l.kind === 'tidy') out.push(tidyBlock(l));
           const yes = h('button', { type: 'button', class: 'asa-btn primary' }, S.approve);
