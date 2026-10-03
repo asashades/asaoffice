@@ -2,7 +2,8 @@
 // dusk goes purple and nights are blue-dark, with a starry sky and moon in the windows and warm light
 // pooling around the lanterns, the flickering fireplace and the screens of villagers who are working.
 // Room lights: from dusk each room's ceiling light switches on while someone is in it (and goes out a couple of minutes after
-// the last one left), and a villager working at a desk gets a desk-lamp pool on it. ?roomLights=off turns those off.
+// the last one left), the doorways between rooms take the light of the lit room beside them, the walls round a lit room catch a little of it, and a villager
+// working at a desk gets a desk-lamp pool on it. ?roomLights=off turns those off.
 // Drawn over pixel-agents' frame but under the add-ons that come after it (bubbles, badges, Holo-board).
 //   ?dayNight=off|on (remembered)   console: __asaoffice.dayNight.preview(21.5) / .preview(null)
 (() => {
@@ -29,6 +30,13 @@
     { a: 'work', b: 'meeting', x: 16.5, y: 6.5, dx: 1, dy: 0 }, { a: 'meeting', b: 'director', x: 24.5, y: 7, dx: 1, dy: 0 },
     { a: 'work', b: 'breakout', x: 15, y: 10.5, dx: 0, dy: 1 }, { a: 'toilet', b: 'pantry', x: 9.5, y: 14, dx: 1, dy: 0 },
     { a: 'breakout', b: 'lounge', x: 23.5, y: 14, dx: 1, dy: 0 }, { a: 'breakout', b: 'outside', x: 16.5, y: 17, dx: 0, dy: 1 },
+  ];
+  // The doorway tiles between rooms (floor tiles that belong to no room): they take the light of whichever room beside them is lit,
+  // so a passage is never a dark gap between two bright rooms.
+  const DOORWAYS = [
+    { a: 'work', b: 'meeting', c0: 16, r0: 5, c1: 16, r1: 7 }, { a: 'meeting', b: 'director', c0: 24, r0: 6, c1: 24, r1: 7 },
+    { a: 'work', b: 'breakout', c0: 14, r0: 9, c1: 15, r1: 10 }, { a: 'toilet', b: 'pantry', c0: 9, r0: 13, c1: 9, r1: 14 },
+    { a: 'breakout', b: 'lounge', c0: 23, r0: 13, c1: 23, r1: 14 }, { a: 'breakout', b: 'outside', c0: 15, r0: 16, c1: 17, r1: 17 },
   ];
   const HOLD_MS = 120_000; // a room stays lit this long after the last person left
   const FADE_IN_MS = 1200;
@@ -190,6 +198,21 @@
           lightPool(ctx, offX + px(lx), offY + px(ly), px(Math.max(sx, sy) * 0.85), LIGHT_RGB[room.id], 1.25 * on * breath);
         }
         ctx.restore();
+        // The walls round the room catch some of that light too (the tall wall faces: two rows above and below, one tile at the sides),
+        // so a lit room doesn't end in a black outline.
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(offX + px((room.c0 - 1) * 16), offY + px((room.r0 - 2) * 16), px((room.c1 - room.c0 + 3) * 16), px((room.r1 - room.r0 + 5) * 16));
+        ctx.rect(offX + px(room.c0 * 16), offY + px(room.r0 * 16), px((room.c1 - room.c0 + 1) * 16), px((room.r1 - room.r0 + 1) * 16));
+        ctx.clip('evenodd');
+        for (let k = 0; k < cols * rows; k++) {
+          const on = Math.min(1, Math.max(0, (levels.get(room.id) - ((k * 0.37 + ri * 0.21) % 1) * 0.4) / (1 - ((k * 0.37 + ri * 0.21) % 1) * 0.4))) * ceil;
+          if (on < 0.02) continue;
+          const lx = room.c0 * 16 + sx * ((k % cols) + 0.5);
+          const ly = room.r0 * 16 + sy * (Math.floor(k / cols) + 0.5);
+          lightPool(ctx, offX + px(lx), offY + px(ly), px(Math.max(sx, sy) * 1.5), LIGHT_RGB[room.id], 0.55 * on);
+        }
+        ctx.restore();
       });
       // Light spilling through the doorways into whatever is next door (the front door lights the path outside).
       for (const d of DOORS) {
@@ -204,6 +227,19 @@
           lightPool(ctx, cx, cy, 1, LIGHT_RGB[from], 0.7 * lvl, d.dx ? long : wide, d.dx ? wide : long);
           ctx.restore();
         }
+      }
+      // Doorways: lit by the brighter of the two rooms they join (the front door only by the breakout room), in that room's colour.
+      for (const d of DOORWAYS) {
+        const la = (levels.get(d.a) ?? 0) * ceil;
+        const lb = d.b === 'outside' ? 0 : (levels.get(d.b) ?? 0) * ceil;
+        const lvl = Math.max(la, lb);
+        if (lvl < 0.02) continue;
+        const rgb = LIGHT_RGB[la >= lb ? d.a : d.b];
+        const w = (d.c1 - d.c0 + 1) * 16, hgt = (d.r1 - d.r0 + 1) * 16;
+        ctx.save();
+        clipTo(d);
+        lightPool(ctx, offX + px(d.c0 * 16 + w / 2), offY + px(d.r0 * 16 + hgt / 2), px(Math.max(w, hgt) * 1.1 + 14), rgb, 0.7 * lvl);
+        ctx.restore();
       }
       ctx.globalCompositeOperation = 'source-atop';
     }

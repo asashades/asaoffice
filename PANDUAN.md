@@ -174,7 +174,7 @@ Kantornya sekarang memanjang (33×24 petak, denah lanskap) dan ada halamannya:
   lampu langit-langit dengan warna sendiri (toilet putih dingin, lounge oranye), menyala satu-satu pelan-pelan pas
   senja, **cuma nyala kalau ada orang di dalamnya**, dan padam sekitar dua menit setelah orang terakhir keluar.
   Ruangan kosong lebih gelap dari yang terang, cahayanya bocor lewat pintu (pintu depan menerangi jalan setapak), dan
-  villager yang lagi ngetik dapat **lampu meja** kuning kecil di mejanya. Mau matiin lampu ruangan aja? Tambahin `&roomLights=off`.
+  villager yang lagi ngetik dapat **lampu meja** kuning kecil di mejanya. Pintu dan lorong antar ruangan ikut kena cahaya dari ruangan yang menyala di sebelahnya, dan dinding di sekeliling ruangan yang menyala kebagian sedikit terang, jadi nggak ada celah gelap di antara dua ruangan terang. Mau matiin lampu ruangan aja? Tambahin `&roomLights=off`.
 
 Papan tugas belum ada di kantor kamu? Jalanin `npm run layout`, atau klik **Layout**, cari **Task Board**, tempel di dinding.
 
