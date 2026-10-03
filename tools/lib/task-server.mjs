@@ -662,7 +662,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           thread: [{ from: 'you', text: prompt, at: new Date().toISOString() }],
         };
         letters.unshift(letter);
-        run(letter, prompt, { resume: false });
+        if (body.hold === true) { // like any new task: waits while Shades carries the letter (or the undo window), see deliver()
+          letter.status = 'queued';
+          holds.set(letter.id, setTimeout(() => deliver(letter), HOLD_MS));
+          save();
+        } else run(letter, prompt, { resume: false });
         return send(res, 200, { letter }, origin);
       }
       if (req.method === 'POST' && url.pathname === '/api/tasks') {
