@@ -780,7 +780,15 @@
     ui.main.replaceChildren(ui.head, ui.thread, ui.comp);
     if (!sel) return ui.main.append(h('p', { class: 'asa-muted', style: { padding: '16px' } }, S.pickChat));
     refreshMain(true);
-    if (sel === 'new') ensureOptions().then(() => { if (sel === 'new') refreshMain(); });
+    if (sel === 'new') {
+      // The folder list comes from Claude Code's transcripts: look again each time New chat is shown (a session started since the panel opened).
+      const had = options;
+      api('GET', '/api/options').then((o) => {
+        const changed = !had || JSON.stringify(o.projects) !== JSON.stringify(had.projects);
+        options = o;
+        if (sel === 'new' && changed) { ui.keys.comp = null; refreshMain(); }
+      }).catch(() => { options ??= { error: true }; if (sel === 'new' && !had) refreshMain(); });
+    }
     else if (!narrow()) ui.comp.querySelector('textarea')?.focus();
   }
 
