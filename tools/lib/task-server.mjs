@@ -359,7 +359,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     // Never offered for a command with sudo, curl, push… in it: those are allowed one time or not at all.
     const always = tool === 'Bash' && NEVER_EXACT.test(text) ? [] : (Array.isArray(req.permission_suggestions) ? req.permission_suggestions : [])
       .filter((x) => x && (x.type === 'addRules' || x.type === 'addDirectories')).map((x) => ({ ...x, destination: 'session' }));
-    const entry = { id, tool, text, at: new Date().toISOString(), state: 'open', always: always.length > 0 };
+    const entry = { id, tool, text, at: new Date().toISOString(), state: 'open', always: always.length > 0, toolUseId: String(req.tool_use_id ?? '') };
     if (tool === 'Bash') entry.cmd = text;
     const timer = setTimeout(() => answerAsk(letter, id, 'expire'), ASK_WAIT_MS);
     pending.set(`${letter.id}:${id}`, { child, requestId: msg.request_id, input, always, timer });
@@ -507,6 +507,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           // Calls refused because they weren't on the allow-list: kept so the Commissioner can open them up once.
           for (const d of Array.isArray(msg.permission_denials) ? msg.permission_denials : []) {
             const entry = { id: crypto.randomUUID().slice(0, 6), tool: String(d.tool_name ?? ''), text: denialText(d.tool_name, d.tool_input), at: new Date().toISOString(), state: 'open' };
+            if (d.tool_use_id && (letter.asks ?? []).some((a) => a.toolUseId === d.tool_use_id)) continue; // already answered here: not a refusal to offer again
             if (!entry.tool || (letter.denials ?? []).some((x) => x.state === 'open' && x.tool === entry.tool && x.text === entry.text)) continue;
             entry.ro = !!(letter.readOnlyDir || letter.kind === 'tidy'); // the Downloads folder is read-only, whatever the command
             entry.rule = entry.ro ? null : allowRule(entry);
