@@ -11,6 +11,8 @@
 //   - Courier: a task sent from the mailbox is a letter. Shades gets up, takes it from the mailbox on the wall and
 //     hands it over (to the meeting table for his own tasks, or to the workroom for a staff member's), and
 //     only then does the task start (the task server holds it until ns.director.courier calls back, or 30 s pass).
+//   - Rally: a long prompt typed in Claude Code itself (inbound.js notices it is still being worked on after ~45 s) gets the same
+//     meeting with Shades' own self, and the staff then sit at desks working for as long as that session keeps going.
 // Which session is his comes from the office data feed (taskAgents); the mailbox also tells us a moment before
 // (ns.director.expect) so the swap happens as the session appears instead of a few seconds later.
 (() => {
@@ -90,6 +92,7 @@
   let rest = { until: performance.now() + (60 + Math.random() * 120) * 1000, away: false }; // desk ↔ stroll rhythm
   let readUntil = 0;
   let courier = null; // { phase, since, deadline, agent, name, deliver, tile, seat, fx }
+  let rally = null; // { until, live }: staff keep working at their desks while a Claude Code session's long task goes on
 
   // ── Seats ──
   const seatsOf = (office, test) => {
@@ -378,9 +381,25 @@
     office.setAgentTool(ch.id, msg.toolName);
     directing = { name: staff.name, at: performance.now() };
   });
+  const RALLY_MAX_MS = 10 * 60_000;
+  /** A long task typed in Claude Code: Shades (the office's own) calls a meeting about it; false when he can't (a mailbox task, a meeting, a delivery, no staff installed). */
+  function startRally({ prompt = '', live }) {
+    const office = ns.view?.office;
+    const npc = office?.characters.get(NPC_ID);
+    if (!office || !npc || npc.matrixEffect || npc.asaCarry || claimed != null || meeting || courier) return false;
+    if (!startMeeting(office, npc, prompt)) return false;
+    rally = { until: performance.now() + RALLY_MAX_MS, live: typeof live === 'function' ? live : () => false };
+    return true;
+  }
   function tendStaff(office) {
     const now = performance.now();
+    if (rally) {
+      let going = false;
+      try { going = now < rally.until && !!rally.live(); } catch { /* the caller is gone */ }
+      if (!going) rally = null;
+    }
     for (const [agent, a] of acting) {
+      if (rally && claimed == null) a.lastWork = now; // still on it: keep typing, don't leave
       const ch = office.characters.get(a.id);
       if (!ch || ch.matrixEffect === 'despawn') { acting.delete(agent); continue; }
       if (meeting?.ids.has(a.id)) continue;
@@ -559,6 +578,8 @@
       const folder = String(cwd ?? '').split(/[\\/]/).filter(Boolean).pop() ?? null;
       expecting = { until: performance.now() + 25_000, folder, prompt, meeting: withMeeting };
     },
+    /** A long task is going on in Claude Code: `{ prompt, live() }`; `live` says whether it still is. Returns whether the meeting started. */
+    rally: (spec) => startRally(spec ?? {}),
     id: () => claimed ?? NPC_ID,
     working: () => claimed != null,
   };
