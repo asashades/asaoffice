@@ -205,6 +205,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   const roster = () => {
     try { return JSON.parse(fs.readFileSync(path.join(root, 'staff', 'roster.json'), 'utf8')); } catch { return { staff: [], general: { access: ['read'] } }; }
   };
+  const xlsxReader = path.join(root, 'tools', 'xlsx-read.mjs');
   const installed = (agent) => fs.existsSync(path.join(os.homedir(), '.claude', 'agents', `${agent}.md`));
 
   let letters = [];
@@ -339,6 +340,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     const dlOnly = !!tidyScan || !!letter.readOnlyDir; // the Downloads folder: reading only, whatever the staff member's own access
     const tools = dlOnly ? ['Read', 'Grep', 'Glob', 'LS'] : allowedTools(access);
     tools.push(...extraTools);
+    tools.push(`Bash(node ${xlsxReader}:*)`); // the built-in spreadsheet reader: read-only, so it is open in every mode (Downloads too)
     if (phase === 'work' && member?.director && letter.style === 'delegate') tools.push(...DELEGATE_TOOLS);
     let system = tidyScan ? tidy.systemPrompt(tidyScan) : PHASE_PROMPT[phase];
     if (letter.readOnlyDir) system += `\n${DOWNLOADS_PROMPT}`;
@@ -347,6 +349,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       tools.push(...COMMIT_TOOLS);
       system += '\nKomisaris mengizinkan git add dan git commit untuk tugas ini. JANGAN git push, jangan ubah branch, dan jangan git reset/rebase.';
     }
+    system += `\nUntuk membaca file Excel (.xlsx/.xlsm) pakai pembaca bawaan, jangan Python: node ${xlsxReader} "<file>" [--list] [--sheet <nama|nomor>] [--max-rows <n>]. `
+      + 'Keluarannya satu baris per baris Excel (nomor baris, lalu sel dipisah tab), hanya baca. Jalankan sebagai perintah tunggal tanpa pipe.';
     if (member?.director) system += `\n${STYLE_PROMPT[letter.style === 'delegate' ? 'delegate' : 'solo']}`;
     const nick = roster().staff.filter((m) => !m.director && loadNames().staff[m.agent]);
     if (nick.length) system += `\n\nNama panggilan tim di kantor Komisaris: ${nick.map((m) => `${m.agent} sekarang dipanggil ${loadNames().staff[m.agent]}`).join('; ')}. Pakai nama panggilan itu kalau menyebut mereka.`;
