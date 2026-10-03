@@ -74,6 +74,37 @@ function denialText(tool, input) {
   if (tool === 'Bash') return String(i.command ?? '').replace(/\s+/g, ' ').slice(0, 160);
   return String(i.file_path ?? i.path ?? i.url ?? i.query ?? i.notebook_path ?? '').slice(0, 160);
 }
+// What "Izinkan persis perintah ini" never opens, even when the Commissioner reads the whole command: privilege, shells, network, pushes, recursive deletes.
+const NEVER_EXACT = /(^|[\s'"(])(sudo|doas|ssh|scp|eval|exec|sh|bash|zsh|mkfs|dd|shutdown|reboot|halt|curl|wget)([\s'")]|$)|\bgit\s+push\b|\brm\s+(-\w*[rR]\w*|--recursive)\b/;
+/**
+ * The exact-command rules for a shell command line: { run, rules } or null when it can't be opened safely. Claude Code checks `a && b | c` piece
+ * by piece, so there is one rule per sub-command, each matching that sub-command exactly. A leading `cd <folder> &&` is left out of `run` (Claude Code
+ * asks about `cd` combined with other commands, and the task runs in its own folder anyway). Refused: redirects, background jobs, substitutions,
+ * wildcards, backslashes, line breaks, quotes left open, and NEVER_EXACT words.
+ */
+export function exactRules(command) {
+  let cmd = String(command ?? '').trim();
+  if (!cmd || cmd.length > 600 || /[\n\r\\*`]|\$[({]/.test(cmd) || NEVER_EXACT.test(cmd)) return null;
+  cmd = cmd.replace(/^cd\s+[^;&|<>]+?\s*(?:&&|;)\s*/, '');
+  const parts = [];
+  let cur = '';
+  let quote = null;
+  for (let i = 0; i < cmd.length; i++) {
+    const c = cmd[i];
+    if (quote) { cur += c; if (c === quote) quote = null; continue; }
+    if (c === '"' || c === "'") { quote = c; cur += c; continue; }
+    if (c === '>' || c === '<') return null;
+    if (c === '&') { if (cmd[i + 1] !== '&') return null; parts.push(cur); cur = ''; i++; continue; }
+    if (c === '|') { if (cmd[i + 1] === '|') i++; parts.push(cur); cur = ''; continue; }
+    if (c === ';') { parts.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  if (quote) return null;
+  parts.push(cur);
+  const subs = [...new Set(parts.map((x) => x.trim()))];
+  if (subs.length > 6 || subs.some((x) => !x)) return null;
+  return { run: cmd, rules: subs.map((x) => `Bash(${x})`) };
+}
 /** The allow rule for one denial, or null when it must not be opened from the office. */
 function allowRule(d) {
   if (!ALLOW_TOOLS.has(d.tool)) return null;
@@ -369,7 +400,12 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           for (const d of Array.isArray(msg.permission_denials) ? msg.permission_denials : []) {
             const entry = { id: crypto.randomUUID().slice(0, 6), tool: String(d.tool_name ?? ''), text: denialText(d.tool_name, d.tool_input), at: new Date().toISOString(), state: 'open' };
             if (!entry.tool || (letter.denials ?? []).some((x) => x.state === 'open' && x.tool === entry.tool && x.text === entry.text)) continue;
-            entry.rule = letter.readOnlyDir || letter.kind === 'tidy' ? null : allowRule(entry);
+            entry.ro = !!(letter.readOnlyDir || letter.kind === 'tidy'); // the Downloads folder is read-only, whatever the command
+            entry.rule = entry.ro ? null : allowRule(entry);
+            if (!entry.ro && !entry.rule && d.tool_name === 'Bash') { // "Izinkan persis": the exact command, shown in full before it is opened
+              const exact = exactRules(d.tool_input?.command);
+              if (exact) Object.assign(entry, { exact: exact.rules, run: exact.run, cmd: String(d.tool_input.command).trim() });
+            }
             (letter.denials ??= []).push(entry);
           }
           if (letter.denials?.length > MAX_DENIALS) letter.denials = letter.denials.slice(-MAX_DENIALS);
@@ -788,16 +824,20 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           return send(res, 200, { letter, count }, origin);
         }
         const d = (letter.denials ?? []).find((x) => x.id === wanted && x.state === 'open');
-        if (!d || !d.rule) return send(res, 400, { error: 'denial' }, origin);
+        const exact = body.exact === true;
+        if (!d || (exact ? !d.exact?.length : !d.rule)) return send(res, 400, { error: 'denial' }, origin);
         if (running.has(letter.id) || letter.status === 'queued') return send(res, 409, { error: 'running' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
         if (directorBusy(letter.agent)) return send(res, 429, { error: 'director busy' }, origin);
         if (!allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
         d.state = 'allowed';
         const at = new Date().toISOString();
-        letter.thread.push({ from: 'you', text: `🔓 Diizinkan sekali: ${d.rule}`, at, kind: 'allow' });
+        letter.thread.push({ from: 'you', text: `🔓 Diizinkan sekali${exact ? ' (persis)' : ''}: ${exact ? d.run : d.rule}`, at, kind: 'allow' });
         letter.read = true;
-        run(letter, `Komisaris mengizinkan ${d.rule} untuk lanjutan ini. Silakan ulangi langkah yang tadi ditolak (${d.tool}: ${d.text}) lalu lanjutkan tugasnya. Jangan git push.`, { resume: true, extraTools: [d.rule] });
+        const prompt = exact
+          ? `Komisaris mengizinkan perintah ini PERSIS seperti tertulis, sekali untuk lanjutan ini:\n${d.run}\nJalankan persis itu sebagai SATU panggilan Bash (jangan diubah sedikit pun, jangan ditambah cd), lalu lanjutkan tugasnya. Jangan git push.`
+          : `Komisaris mengizinkan ${d.rule} untuk lanjutan ini. Silakan ulangi langkah yang tadi ditolak (${d.tool}: ${d.text}) lalu lanjutkan tugasnya. Jangan git push.`;
+        run(letter, prompt, { resume: true, extraTools: exact ? d.exact : [d.rule] });
         return send(res, 200, { letter }, origin);
       }
       if (req.method === 'POST' && m?.[2] === 'rename') {

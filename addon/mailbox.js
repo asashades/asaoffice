@@ -49,7 +49,7 @@
       newChat: '＋ Chat baru', newChatSub: 'Tulis tugasnya, pilih cara kerjanya di bawah', tabChats: '💬 Chat', tabSessions: '🗂 Sesi',
       commitChip: '🔀 Boleh commit', commitTip: 'Boleh git add dan git commit (tanpa push) selama tugas ini', commitShort: 'boleh commit',
       attach: 'Lampirkan gambar', attachTip: 'Lampirkan gambar (atau tempel / seret ke sini)', attachFail: 'Gambar gak bisa dilampirkan (png, jpg, gif, webp; maks 8 MB, 4 gambar).', lookAtImages: 'Tolong lihat gambar terlampir.', remove: 'Hapus',
-      denied: (n) => `⛔ ${n} langkah ditolak otomatis (di luar izin tugas ini)`, allowOnce: 'Izinkan sekali', cantAllow: 'terlalu berisiko dari sini, jalankan sendiri di Terminal', copyCmd: 'Salin', copied: 'Tersalin ✓', dismiss: 'Abaikan', dismissAll: 'Abaikan semua',
+      denied: (n) => `⛔ ${n} langkah ditolak otomatis (di luar izin tugas ini)`, allowOnce: 'Izinkan sekali', cantAllow: 'terlalu berisiko dari sini, jalankan sendiri di Terminal', copyCmd: 'Salin', copied: 'Tersalin ✓', allowExact: 'Izinkan persis…', exactTitle: 'Perintah lengkap yang dibuka, sekali, persis seperti ini:', exactRun: 'Yang dijalankan (tanpa cd):', exactYes: 'Ya, izinkan sekali', exactNo: 'Batal', cantAllowRo: 'Downloads baca-saja, jalankan sendiri di Terminal', dismiss: 'Abaikan', dismissAll: 'Abaikan semua',
       schedBtn: '⏰ Jadwal', schedTip: 'Tugas yang jalan sendiri pada jam tertentu',
       tidyBtn: '🧹', tidyTip: 'Tanya atau rapikan folder Downloads (file baru dipindah setelah kamu setujui)', dlName: 'Downloads', tidyDraft: 'Rapikan file lepas di Downloads', dlPh: 'Tanya soal Downloads atau minta dirapikan, mis. "cari invoice bulan lalu" atau "rapikan file PDF"', tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.',
       tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
@@ -107,7 +107,7 @@
       newChat: '＋ New chat', newChatSub: 'Write the task, pick how to work below', tabChats: '💬 Chats', tabSessions: '🗂 Sessions',
       commitChip: '🔀 May commit', commitTip: 'Allow git add and git commit (never push) for this task', commitShort: 'may commit',
       attach: 'Attach an image', attachTip: 'Attach an image (or paste / drag it here)', attachFail: 'Could not attach the image (png, jpg, gif, webp; max 8 MB, 4 images).', lookAtImages: 'Please look at the attached images.', remove: 'Remove',
-      denied: (n) => `⛔ ${n} step(s) refused automatically (outside this task's permissions)`, allowOnce: 'Allow once', cantAllow: 'too risky from here, run it yourself in Terminal', copyCmd: 'Copy', copied: 'Copied ✓', dismiss: 'Dismiss', dismissAll: 'Dismiss all',
+      denied: (n) => `⛔ ${n} step(s) refused automatically (outside this task's permissions)`, allowOnce: 'Allow once', cantAllow: 'too risky from here, run it yourself in Terminal', copyCmd: 'Copy', copied: 'Copied ✓', allowExact: 'Allow exactly…', exactTitle: 'The full command being opened, once, exactly as written:', exactRun: 'What will run (without the cd):', exactYes: 'Yes, allow once', exactNo: 'Cancel', cantAllowRo: 'Downloads is read-only, run it yourself in Terminal', dismiss: 'Dismiss', dismissAll: 'Dismiss all',
       schedBtn: '⏰ Schedules', schedTip: 'Tasks that run by themselves at a set time',
       tidyBtn: '🧹', tidyTip: 'Ask about or tidy the Downloads folder (files only move after you approve)', dlName: 'Downloads', tidyDraft: 'Tidy the loose files in Downloads', dlPh: 'Ask about Downloads or ask for a tidy-up, e.g. "find last month\'s invoice" or "tidy the PDFs"', tidyNoFolder: 'The Downloads folder was not found on this Mac.',
       tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
@@ -258,6 +258,8 @@
   .asa-comp.drop { outline: 3px dashed #4a86d8; outline-offset: 2px; }
   .asa-deny { border: 2px solid #c8503c; background: #ffe9e0; padding: 8px 10px; font-size: 13.5px; }
   .asa-deny b { display: block; font-weight: 600; margin-bottom: 4px; }
+  .asa-deny-exact { margin-top: 4px; padding: 4px 6px; background: #fff6dc; border: 1px dashed #c8503c; }
+  .asa-deny-exact pre { margin: 4px 0; padding: 6px; background: #fffbe9; white-space: pre-wrap; word-break: break-all; font-size: 12.5px; }
   .asa-deny-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
   .asa-deny-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
   .asa-deny-row code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: #fff6dc; padding: 1px 5px; }
@@ -805,7 +807,7 @@
       fillHead(l);
     }
     // Thread
-    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.cost, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join()]);
+    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.cost, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join(), [...exactOpen].join()]);
     if (force || ui.keys.thread !== threadKey) {
       ui.keys.thread = threadKey;
       const box = ui.thread;
@@ -851,24 +853,35 @@
   }
 
   /** Calls the task tried that were refused automatically, each with a one-time "Izinkan sekali" when that's safe to offer. */
+  const exactOpen = new Set(); // denial ids whose full command is being shown for confirmation
   function denialBlock(l) {
     const open = (l?.denials ?? []).filter((d) => d.state === 'open');
     if (!open.length || busy(l)) return null;
     const copy = (d, btn) => {
       const done = () => { btn.textContent = S.copied; setTimeout(() => { btn.textContent = S.copyCmd; }, 1800); };
-      (navigator.clipboard?.writeText(d.text) ?? Promise.reject()).then(done).catch(() => {});
+      (navigator.clipboard?.writeText(d.cmd ?? d.text).then(done) ?? Promise.reject()).catch(() => {});
     };
     return h('div', { class: 'asa-deny' },
       h('div', { class: 'asa-deny-head' }, h('b', {}, S.denied(open.length)),
         open.length > 1 ? h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('POST', `/api/tasks/${l.id}/allow`, { id: 'all', dismiss: true })) }, S.dismissAll) : null),
       open.map((d) => {
-        const copyBtn = h('button', { type: 'button', class: 'asa-btn', title: d.text }, S.copyCmd);
+        const copyBtn = h('button', { type: 'button', class: 'asa-btn', title: d.cmd ?? d.text }, S.copyCmd);
         copyBtn.onclick = () => copy(d, copyBtn);
-        return h('div', { class: 'asa-deny-row' }, h('code', { title: d.text }, `${d.tool}${d.text ? `: ${d.text}` : ''}`),
+        const dismiss = h('button', { type: 'button', class: 'asa-btn', title: S.dismiss, 'aria-label': S.dismiss, onclick: () => { exactOpen.delete(d.id); act(() => api('POST', `/api/tasks/${l.id}/allow`, { id: d.id, dismiss: true })); } }, '✖');
+        const row = h('div', { class: 'asa-deny-row' }, h('code', { title: d.cmd ?? d.text }, `${d.tool}${d.text ? `: ${d.text}` : ''}`),
           d.rule
             ? h('button', { type: 'button', class: 'asa-btn', title: d.rule, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/allow`, { id: d.id })) }, S.allowOnce)
-            : [h('small', {}, S.cantAllow), d.tool === 'Bash' ? copyBtn : null],
-          h('button', { type: 'button', class: 'asa-btn', title: S.dismiss, 'aria-label': S.dismiss, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/allow`, { id: d.id, dismiss: true })) }, '✖'));
+            : d.exact?.length
+              ? h('button', { type: 'button', class: 'asa-btn', onclick: () => { exactOpen.add(d.id); refreshMain(); } }, S.allowExact)
+              : [h('small', {}, d.ro ? S.cantAllowRo : S.cantAllow), d.tool === 'Bash' ? copyBtn : null],
+          dismiss);
+        if (!exactOpen.has(d.id) || !d.exact?.length) return row;
+        return h('div', { class: 'asa-deny-exact' }, row,
+          h('div', { class: 'asa-muted' }, S.exactTitle), h('pre', {}, d.cmd),
+          d.run !== d.cmd ? h('div', { class: 'asa-muted' }, `${S.exactRun} `, h('code', {}, d.run)) : null,
+          h('div', { class: 'asa-deny-row' },
+            h('button', { type: 'button', class: 'asa-btn primary', onclick: () => { exactOpen.delete(d.id); act(() => api('POST', `/api/tasks/${l.id}/allow`, { id: d.id, exact: true })); } }, S.exactYes),
+            h('button', { type: 'button', class: 'asa-btn', onclick: () => { exactOpen.delete(d.id); refreshMain(); } }, S.exactNo)));
       }));
   }
 
