@@ -443,7 +443,8 @@ the staff member can't make...), `claude -p` refuses it and reports it; the lett
 (⛔ N steps refused automatically) and the HUD's **Izin** tab keeps the recent ones. Each can be opened up **once** with
 **Izinkan sekali**: the office derives the rule from what was refused (for example `Bash(git commit:*)`), runs one follow-up
 for that letter with it, and tells Claude not to push. Risky commands (`push`, `rm`, `sudo`, pipes, redirects, `curl`,
-shell invocations...) are never offered; run those yourself in Terminal.
+shell invocations...) are never offered; run those yourself in Terminal. For those the letter shows **Copy** (the command, ready to paste in Terminal)
+and **✖ Dismiss** (drop it from the list), plus **Dismiss all**; the HUD's Permissions tab labels them "run it yourself" and has a **Dismiss all** button that clears the whole log (the tab's counter follows).
 
 **May commit (per task):** the new-chat form has a **🔀 May commit** checkbox, off by default. When ticked, that task may also run `git add` and `git commit` while it does the work (not in the plan phase or report-only mode). `git push` is never allowed, so pushing stays with you.
 

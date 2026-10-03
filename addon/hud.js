@@ -26,7 +26,7 @@
       todoSource: (n) => `Sumber: TodoWrite · ${n} sesi terbaru`, main: 'Sesi utama', director: 'Direktur', actingFor: 'Bantu Shades',
       atDesk: 'Di meja direktur', noProject: 'Sesi Claude Code', chatWith: (n) => `Ngobrol sama ${n}`,
       planReady: 'Rencana siap', approveBtn: '✅ Setujui', rejectBtn: '❌ Tolak', openBtn: 'Buka', morePlans: (n) => `+${n} rencana lagi di kotak surat`,
-      perm: 'Izin', emptyPerm: 'Belum ada langkah yang ditolak otomatis.', permSource: 'Langkah yang ditolak otomatis karena di luar izin tugas. Klik buat buka suratnya.', stOpen: 'menunggu', stAllowed: 'diizinkan sekali',
+      perm: 'Izin', emptyPerm: 'Belum ada langkah yang ditolak otomatis.', permSource: 'Langkah yang ditolak otomatis karena di luar izin tugas. Klik buat buka suratnya.', stOpen: 'menunggu', stTerminal: 'jalankan sendiri', stAllowed: 'diizinkan sekali', clearPerm: 'Abaikan semua',
       seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', openEnd: 'Pendapatan kemarin', kasTip: 'Kas kantor · klik buat ke Toko', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
     },
     en: {
@@ -42,7 +42,7 @@
       todoSource: (n) => `Source: TodoWrite · ${n} latest sessions`, main: 'Main session', director: 'Director', actingFor: 'Helping Shades',
       atDesk: "At the director's desk", noProject: 'Claude Code session', chatWith: (n) => `Chatting with ${n}`,
       planReady: 'Plan ready', approveBtn: '✅ Approve', rejectBtn: '❌ Reject', openBtn: 'Open', morePlans: (n) => `+${n} more plans in the mailbox`,
-      perm: 'Permissions', emptyPerm: 'Nothing has been refused automatically.', permSource: 'Steps refused automatically because they were outside the task’s permissions. Click to open the letter.', stOpen: 'waiting', stAllowed: 'allowed once',
+      perm: 'Permissions', emptyPerm: 'Nothing has been refused automatically.', permSource: 'Steps refused automatically because they were outside the task’s permissions. Click to open the letter.', stOpen: 'waiting', stTerminal: 'run it yourself', stAllowed: 'allowed once', clearPerm: 'Dismiss all',
       seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', openEnd: "Yesterday's income", kasTip: 'Office cash · click to open the shop', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
     },
   });
@@ -134,6 +134,7 @@
   .hud-scroll { overflow-y: auto; flex: 0 1 auto; scrollbar-width: thin; scrollbar-color: #b8935c transparent; }
   .hud-pane { display: none; padding: 6px 0 10px; } .hud-pane.on { display: block; }
   .hud-src { padding: 4px 12px 6px; font-size: 11px; opacity: 0.7; }
+  .hud-clear { font: inherit; font-size: 11px; margin-left: 8px; padding: 1px 6px; cursor: pointer; color: inherit; background: #fff6dc; border: 1px solid currentColor; }
   .hud-empty { padding: 16px 12px; text-align: center; font-size: 12.5px; opacity: 0.7; }
   .hud-feed { list-style: none; margin: 0; padding: 0; }
   .hud-feed li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding: 5px 12px; border-top: 1px dashed #dcc79a; }
@@ -290,6 +291,10 @@
       if (planBtn.dataset.plan === 'approve') { planBtn.disabled = true; ns.mailbox?.approve(l, planBtn); }
       else if (planBtn.dataset.plan === 'reject') { planBtn.disabled = true; ns.mailbox?.reject(l); }
       else ns.mailbox?.openLetter(l.id);
+      return;
+    }
+    if (e.target.closest('[data-clear-perm]')) {
+      ns.mailbox?.clearDenials();
       return;
     }
     const permRow = e.target.closest('[data-letter]');
@@ -465,11 +470,11 @@
     setHtml($('hud-pending'), pendingHtml, 'pending');
 
     // Permissions: what the tasks tried that was refused automatically
-    const denials = (ns.data?.mail ?? []).filter((l) => !l.archived).flatMap((l) => (l.denials ?? []).map((d) => ({ ...d, letter: l }))).sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 15);
+    const denials = (ns.data?.mail ?? []).filter((l) => !l.archived).flatMap((l) => (l.denials ?? []).filter((d) => d.state !== 'dismissed').map((d) => ({ ...d, letter: l }))).sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 15);
     const openDenials = denials.filter((d) => d.state === 'open').length;
-    const permHtml = `<div class="hud-src">${esc(S.permSource)}</div>` + (denials.length ? denials.map((d) => {
+    const permHtml = `<div class="hud-src">${esc(S.permSource)}${openDenials ? ` <button type="button" class="hud-clear" data-clear-perm>${esc(S.clearPerm)}</button>` : ''}</div>` + (denials.length ? denials.map((d) => {
       const css2 = d.state === 'open' ? STATE.izin.css : STATE.selesai.css;
-      return `<div class="hud-run" data-letter="${esc(d.letter.id)}" style="cursor:pointer"><i style="background:${css2}"></i><span class="t" title="${esc(d.text)}">${esc(`${d.tool}${d.text ? `: ${d.text}` : ''}`)}</span><span class="hud-chip" style="color:${css2}">${esc(d.state === 'open' ? S.stOpen : S.stAllowed)}</span><span class="w">${esc([d.letter.title, clock(fmtMin, Date.parse(d.at))].filter(Boolean).join(' · '))}</span></div>`;
+      return `<div class="hud-run" data-letter="${esc(d.letter.id)}" style="cursor:pointer"><i style="background:${css2}"></i><span class="t" title="${esc(d.text)}">${esc(`${d.tool}${d.text ? `: ${d.text}` : ''}`)}</span><span class="hud-chip" style="color:${css2}">${esc(d.state === 'open' ? (d.rule ? S.stOpen : S.stTerminal) : S.stAllowed)}</span><span class="w">${esc([d.letter.title, clock(fmtMin, Date.parse(d.at))].filter(Boolean).join(' · '))}</span></div>`;
     }).join('') : `<div class="hud-empty">${esc(S.emptyPerm)}</div>`);
     setHtml($('hud-perm'), permHtml, 'perm');
     $('hud-n-perm').textContent = String(openDenials);
