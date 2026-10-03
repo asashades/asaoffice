@@ -1308,6 +1308,8 @@
   ns.mailbox = {
     clearDenials: async () => { try { await api('POST', '/api/denials/clear'); } catch { /* the task server is off */ } await ns.refreshData(); },
     open, compose: (text) => open({ name: 'compose', text }), unread,
+    /** For inbound.js: a paper plane from any element to the mailbox on the wall, and the thud when it lands. */
+    flyPlane, dropLetter,
     /** From the HUD: approve or reject a waiting plan, or open the letter. */
     approve: (l, btn) => (l.kind === 'tidy' ? open({ name: 'letter', id: l.id }) : approve(l, btn)), // moving files is approved with the list in view
     reject: (l) => act(() => api('POST', `/api/tasks/${l.id}/reject`)),

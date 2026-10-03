@@ -79,6 +79,9 @@ export class ClaudeStats {
   }
 
   handleLine(line, cutoffMs) {
+    if (line.includes('"type":"user"') && !line.includes('"type":"tool_result"') && !line.includes('"isMeta":true') && !line.includes('"isSidechain":true')) {
+      return this.handleAsk(line);
+    }
     if (line.includes('"type":"custom-title"') || line.includes('"type":"ai-title"') || line.includes('"type":"last-prompt"')) {
       return this.handleTitle(line);
     }
@@ -175,6 +178,19 @@ export class ClaudeStats {
     }
   }
 
+  /** A prompt typed in a main session: kept as the session's latest `ask` so the office can show it arriving (injected `<…>` text is skipped). */
+  handleAsk(line) {
+    let rec;
+    try { rec = JSON.parse(line); } catch { return; }
+    if (rec.type !== 'user' || !rec.sessionId || !rec.timestamp) return;
+    const c = rec.message?.content;
+    const text = (typeof c === 'string' ? c : (Array.isArray(c) ? c : []).filter((b) => b?.type === 'text').map((b) => b.text).join(' ')).replace(/\s+/g, ' ').trim();
+    const at = new Date(rec.timestamp).getTime();
+    if (!text || text.startsWith('<') || !Number.isFinite(at)) return;
+    const s = this.session(rec.sessionId);
+    if (!s.ask || at >= s.ask.at) s.ask = { text: text.length > 140 ? `${text.slice(0, 139)}…` : text, at };
+  }
+
   handleTitle(line) {
     let rec;
     try { rec = JSON.parse(line); } catch { return; }
@@ -216,7 +232,7 @@ export class ClaudeStats {
       .slice(0, limit)
       .map(([id, s]) => ({
         id, title: s.title || s.aiTitle || s.first || null, prompt: s.prompt || s.first || null, project: s.project ?? null, cwd: s.cwd ?? null,
-        at: new Date(Math.max(s.lastAt, s.fileAt)).toISOString(), model: s.model ?? null,
+        at: new Date(Math.max(s.lastAt, s.fileAt)).toISOString(), model: s.model ?? null, ask: s.ask ?? null,
       }));
   }
 
