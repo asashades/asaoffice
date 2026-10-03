@@ -311,7 +311,7 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   cards and starts minimised. `?hud=off` turns the HUD off (remembered; `?hud=on` brings it back).
 
 - **Downloads (📥 in New chat, or the 🧹 button).** One mode for the folder: ask anything about `~/Downloads` ("cari invoice bulan lalu", "ringkas PDF terbaru")
-  or ask for a tidy-up ("rapikan file PDF"). Claude only reads (Read/Grep/Glob/LS, no web, no shell except the read-only spreadsheet reader below). A plain question just gets an answer; a tidy-up request gets a
+  or ask for a tidy-up ("rapikan file PDF"). Claude only reads (Read/Grep/Glob/LS, no web, and no shell except the read-only commands and spreadsheet reader below). A plain question just gets an answer; a tidy-up request gets a
   **plan**: every move listed with a tick to untick, and nothing moves until you approve. **The office does the moving itself** (`tools/lib/tidy.mjs`): files
   go to a folder that already exists inside Downloads (two levels deep) when one clearly fits, otherwise to `Arsip` (the only folder the office creates); nothing is
   deleted or overwritten (a clashing name becomes "name (2)"); symlinks, hidden files, partial downloads, files from the last 3 minutes and `.app` bundles are
@@ -320,8 +320,8 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   Downloads: allow it. A new Downloads letter is held like any new task (undo window, then Shades carries it from the mailbox); replies in the same letter start right away.
 - **Spreadsheet reader (`.xlsx`).** Claude can't open an Excel file with Read, so every task gets a built-in, read-only, dependency-free reader (`tools/xlsx-read.mjs`, `tools/lib/xlsx.mjs`):
   `node tools/xlsx-read.mjs <file.xlsx> [--list] [--sheet <name|number>] [--max-rows <n>]` prints each sheet as `row<TAB>cell<TAB>cell…` (dates and times shown as dates and
-  times, formulas as the value Excel last saved, 200 rows per sheet unless asked). Only `.xlsx` / `.xlsm`; old `.xls` is not supported. It's the one shell command allowed in Downloads
-  (the command only reads, and the office tells Claude to use it instead of Python). You can run it yourself in Terminal too.
+  times, formulas as the value Excel last saved, 200 rows per sheet unless asked). Only `.xlsx` / `.xlsm`; old `.xls` is not supported. It's allowed in Downloads
+  too (the command only reads, and the office tells Claude to use it instead of Python). You can run it yourself in Terminal too.
 - **Model picker (🧠).** New chat has a **🧠 Default / Opus / Sonnet / Haiku** chip (Downloads too), sent as `claude --model <alias>`; "Default" leaves the flag out, so Claude Code's own
   setting decides. The choice is kept on the letter (replies reuse it) and the letter header shows the model actually used (read from the stream's `init` message, e.g. "🧠 Haiku 4.5").
   Continuing an outside session (💬) defaults to the model it was last answered with (`claude-stats.mjs` records it per session; passed as the full id), with the same chip to change it.
@@ -446,6 +446,8 @@ What a task may do depends on who does it (`staff/roster.json` → `access`). Ev
 
 **Inbound mail from Claude Code.** A prompt you type in any Claude Code session on this Mac (Terminal, desktop app, IDE) shows up as a "✉️ Pesan masuk" popup (project and the start of the prompt), folds into a paper plane and flies to the mailbox on the wall (same plane and thud as sending from the mailbox). `tools/lib/claude-stats.mjs` keeps each session's latest prompt (`ask`) and `addon/inbound.js` polls the data file every 4 s. Tasks sent from the mailbox itself are skipped (they have the courier), prompts older than 90 s are not animated, and at most 3 are queued. `&claudeMail=off` turns it off (remembered). Console: `__asaoffice.inbound.test('project', 'text')`.
 A prompt whose session is still busy ~45 s later (activity in the last 15 s) counts as a long task: `addon/inbound.js` calls `ns.director.rally({ prompt, live })` and Shades (the office's own) holds the usual meeting at the meeting table, then the staff work at their desks until the session has been quiet for 40 s (10 min at most). Quick tasks never get a meeting. It is skipped while a mailbox task has Shades or a meeting is on. `&claudeMeeting=off` keeps the plane but skips the meeting. Console: `__asaoffice.director.rally({ prompt: '…', live: () => true })`.
+
+**Read-only shell commands are always open.** Every task (Downloads and the plan/report phases included) may run `ls`, `cat`, `head`, `tail`, `wc`, `file`, `stat`, `pwd`, `diff`, `cut`, `echo` and `unzip -l` (`READONLY_BASH` in `tools/lib/task-server.mjs`), so they no longer show up as refused steps. Claude Code itself still refuses a redirect (`cat a > b`) and checks `a | b` and `a; b` piece by piece, so a chain of these passes and a chain with `rm` in it doesn't (checked against the real CLI; system folders such as `/etc` are still refused by Claude Code).
 
 **Refused steps and "Allow once".** When a task tries something outside its permissions (a `git commit` without the checkbox, an edit
 the staff member can't make...), `claude -p` refuses it and reports it; the letter lists these under the answer
