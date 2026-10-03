@@ -26,7 +26,7 @@
       todoSource: (n) => `Sumber: TodoWrite · ${n} sesi terbaru`, main: 'Sesi utama', director: 'Direktur', actingFor: 'Bantu Shades',
       atDesk: 'Di meja direktur', noProject: 'Sesi Claude Code', chatWith: (n) => `Ngobrol sama ${n}`,
       planReady: 'Rencana siap', approveBtn: '✅ Setujui', rejectBtn: '❌ Tolak', openBtn: 'Buka', morePlans: (n) => `+${n} rencana lagi di kotak surat`,
-      perm: 'Izin', emptyPerm: 'Belum ada langkah yang ditolak otomatis.', permSource: 'Langkah yang ditolak otomatis karena di luar izin tugas. Klik buat buka suratnya.', stOpen: 'menunggu', stTerminal: 'jalankan sendiri', stAllowed: 'diizinkan sekali', clearPerm: 'Abaikan semua',
+      perm: 'Izin', emptyPerm: 'Belum ada langkah yang ditolak otomatis.', permSource: 'Langkah yang ditolak otomatis karena di luar izin tugas. Klik buat buka suratnya.', stOpen: 'menunggu', stTerminal: 'jalankan sendiri', stRo: 'Downloads baca-saja', stAllowed: 'diizinkan sekali', clearPerm: 'Abaikan semua',
       seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', openEnd: 'Pendapatan kemarin', kasTip: 'Kas kantor · klik buat ke Toko', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
     },
     en: {
@@ -42,7 +42,7 @@
       todoSource: (n) => `Source: TodoWrite · ${n} latest sessions`, main: 'Main session', director: 'Director', actingFor: 'Helping Shades',
       atDesk: "At the director's desk", noProject: 'Claude Code session', chatWith: (n) => `Chatting with ${n}`,
       planReady: 'Plan ready', approveBtn: '✅ Approve', rejectBtn: '❌ Reject', openBtn: 'Open', morePlans: (n) => `+${n} more plans in the mailbox`,
-      perm: 'Permissions', emptyPerm: 'Nothing has been refused automatically.', permSource: 'Steps refused automatically because they were outside the task’s permissions. Click to open the letter.', stOpen: 'waiting', stTerminal: 'run it yourself', stAllowed: 'allowed once', clearPerm: 'Dismiss all',
+      perm: 'Permissions', emptyPerm: 'Nothing has been refused automatically.', permSource: 'Steps refused automatically because they were outside the task’s permissions. Click to open the letter.', stOpen: 'waiting', stTerminal: 'run it yourself', stRo: 'Downloads read-only', stAllowed: 'allowed once', clearPerm: 'Dismiss all',
       seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', openEnd: "Yesterday's income", kasTip: 'Office cash · click to open the shop', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
     },
   });
@@ -474,7 +474,7 @@
     const openDenials = denials.filter((d) => d.state === 'open').length;
     const permHtml = `<div class="hud-src">${esc(S.permSource)}${openDenials ? ` <button type="button" class="hud-clear" data-clear-perm>${esc(S.clearPerm)}</button>` : ''}</div>` + (denials.length ? denials.map((d) => {
       const css2 = d.state === 'open' ? STATE.izin.css : STATE.selesai.css;
-      return `<div class="hud-run" data-letter="${esc(d.letter.id)}" style="cursor:pointer"><i style="background:${css2}"></i><span class="t" title="${esc(d.text)}">${esc(`${d.tool}${d.text ? `: ${d.text}` : ''}`)}</span><span class="hud-chip" style="color:${css2}">${esc(d.state === 'open' ? (d.rule ? S.stOpen : S.stTerminal) : S.stAllowed)}</span><span class="w">${esc([d.letter.title, clock(fmtMin, Date.parse(d.at))].filter(Boolean).join(' · '))}</span></div>`;
+      return `<div class="hud-run" data-letter="${esc(d.letter.id)}" style="cursor:pointer"><i style="background:${css2}"></i><span class="t" title="${esc(d.text)}">${esc(`${d.tool}${d.text ? `: ${d.text}` : ''}`)}</span><span class="hud-chip" style="color:${css2}">${esc(d.state === 'open' ? (d.rule || d.exact?.length ? S.stOpen : d.ro ? S.stRo : S.stTerminal) : S.stAllowed)}</span><span class="w">${esc([d.letter.title, clock(fmtMin, Date.parse(d.at))].filter(Boolean).join(' · '))}</span></div>`;
     }).join('') : `<div class="hud-empty">${esc(S.emptyPerm)}</div>`);
     setHtml($('hud-perm'), permHtml, 'perm');
     $('hud-n-perm').textContent = String(openDenials);
