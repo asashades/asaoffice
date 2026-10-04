@@ -11,6 +11,8 @@
 //   - Courier: a task sent from the mailbox is a letter. Shades gets up, takes it from the mailbox on the wall and
 //     hands it over (to the meeting table for his own tasks, or to the workroom for a staff member's), and
 //     only then does the task start (the task server holds it until ns.director.courier calls back, or 30 s pass).
+//   - Real meeting: a letter in "🗣 Rapat dulu" mode (task-server.mjs) is discussed by real agents; Shades and the people he calls sit at the table
+//     and the speech bubbles show what the letter says they said, as it is said.
 //   - Rally: a long prompt typed in Claude Code itself (inbound.js notices it is still being worked on after ~45 s) gets the same
 //     meeting with Shades' own self, and the staff then sit at desks working for as long as that session keeps going.
 // Which session is his comes from the office data feed (taskAgents); the mailbox also tells us a moment before
@@ -307,6 +309,58 @@
     meeting = { start: performance.now() + 1500, lines, ids, shadesId: shades.id };
     return true;
   }
+  // ── A real meeting (task-server.mjs runMeeting): the same table and chairs, but what is said is what the letter says ──
+  const clip = (t, n = 96) => { const x = String(t ?? '').replace(/\s+/g, ' ').trim(); return x.length > n ? `${x.slice(0, n - 1)}…` : x; };
+  function startLiveMeeting(office, shades, letter) {
+    const atTable = ns.findFurniture('COZY_MEETING_TABLE').length > 0;
+    let seats = atTable ? meetingSeats(office) : freeSeats(office, (t) => t.startsWith('COZY_SOFA'));
+    let shadesSeat = null;
+    if (atTable) {
+      const heads = [...seats].sort((a, b) => office.seats.get(b).seatCol - office.seats.get(a).seatCol);
+      shadesSeat = heads[0] ?? seats[0] ?? null;
+      seats = seats.filter((id) => id !== shadesSeat);
+    } else shadesSeat = seats.shift() ?? null;
+    if (shadesSeat) moveTo(office, shades, shadesSeat);
+    meeting = { start: performance.now(), lines: [], ids: new Set([shades.id]), shadesId: shades.id, live: letter.id, seats, cast: new Set(), seen: -1, shownAt: 0 };
+  }
+  /** The people the letter says were called to the meeting take a chair as they are named. */
+  function castLive(office, letter) {
+    for (const p of letter.meeting?.participants ?? []) {
+      if (meeting.cast.has(p.agent) || meeting.cast.size >= MAX_ACTING) continue;
+      const staff = installedStaff().find((m) => m.agent === p.agent);
+      if (!staff) continue;
+      meeting.cast.add(p.agent);
+      const ch = castStaff(office, staff, meeting.seats.shift());
+      if (!ch) continue;
+      meeting.ids.add(ch.id);
+      office.setAgentActive(ch.id, true);
+      acting.get(staff.agent).lastWork = performance.now() + 20_000;
+    }
+  }
+  function tendLive(office) {
+    if (meeting || courier || claimed != null) return;
+    const letter = (ns.data?.mail ?? []).find((l) => l.meeting?.state === 'running' && l.status === 'running');
+    const npc = office.characters.get(NPC_ID);
+    if (!letter || !npc || npc.matrixEffect || npc.asaCarry) return;
+    startLiveMeeting(office, npc, letter);
+  }
+  function drawLiveMeeting(ctx, office, offX, offY, zoom) {
+    const letter = (ns.data?.mail ?? []).find((l) => l.id === meeting.live);
+    if (!letter || letter.meeting?.state !== 'running') return endMeeting(office);
+    castLive(office, letter);
+    const now = performance.now();
+    const said = (letter.thread ?? []).filter((m) => m.kind === 'meeting');
+    if (said.length !== meeting.seen) { meeting.seen = said.length; meeting.shownAt = now; }
+    const last = said.at(-1);
+    const charOf = (agent) => office.characters.get(agent === DIRECTOR ? meeting.shadesId : acting.get(agent)?.id);
+    let ch = null;
+    let text = '';
+    if (last && now - meeting.shownAt < 8000) { ch = charOf(last.agent); text = clip(last.text); }
+    else if (letter.meeting.speaker) { ch = charOf(letter.meeting.speaker); text = '…'; }
+    if (!ch || !text) return;
+    const lift = ch.state === 'type' ? 10 : 0;
+    ns.drawSpeech?.(ctx, offX + ch.x * zoom, offY + (ch.y + lift - 28) * zoom, zoom, { text, t: now / 1000 + ch.id });
+  }
   function endMeeting(office, leaving = null) {
     const m = meeting;
     meeting = null;
@@ -322,6 +376,7 @@
     }
   }
   function drawMeeting(ctx, office, offX, offY, zoom) {
+    if (meeting.live) return drawLiveMeeting(ctx, office, offX, offY, zoom);
     const now = performance.now();
     const i = Math.floor((now - meeting.start) / MEETING_LINE_MS);
     if (i >= meeting.lines.length) return endMeeting(office);
@@ -589,6 +644,7 @@
     track(office);
     ensureShades(office);
     tendCourier(office);
+    tendLive(office);
     tendStaff(office);
     if ((meeting || courier || office.characters.get(NPC_ID)?.asaCarry) && !editMode) {
       const ctx = canvas.getContext('2d');

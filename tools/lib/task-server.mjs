@@ -33,6 +33,7 @@ import { loadNames, setName } from './names.mjs';
 import * as tidy from './tidy.mjs';
 import { createNotifier } from './macnotify.mjs';
 import * as wtlib from './worktree.mjs';
+import * as mt from './meeting.mjs';
 import { cleanSchedule, dueAction, loadSchedules, MAX_SCHEDULES, newSchedule, nextDue, saveSchedules } from './schedules.mjs';
 
 const MAX_RUNNING = 3;
@@ -61,7 +62,7 @@ const TOOLS = {
 // Shell commands that only look: open in every task, Downloads included. Claude Code still refuses a redirect (`cat a > b`) and checks `a | b` / `a; b`
 // piece by piece (both verified with the real CLI), so a chain of these passes and a chain with `rm` in it doesn't.
 export const READONLY_BASH = ['ls', 'cat', 'head', 'tail', 'wc', 'file', 'stat', 'pwd', 'diff', 'cut', 'echo', 'unzip -l'].map((c) => `Bash(${c}:*)`);
-const MODES = ['plan', 'auto', 'report'];
+const MODES = ['plan', 'auto', 'report', 'meeting'];
 // How a task's own permission prompts are handled, like Claude Code's modes. Everything but 'strict' lets the CLI ask the office (stream-json +
 // `--permission-prompt-tool stdio`, the way Claude Code's own app does it) and the question shows up in the letter for the Commissioner to answer.
 //   manual → asks for anything not on the allow-list · acceptEdits → file edits go through, the rest asks · auto → Claude's own judge decides, asks when unsure
@@ -329,7 +330,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       Object.assign(letter, { status: 'error', error: 'Lagi ada 3 tugas jalan. Coba kirim lagi nanti.', read: false });
       return save();
     }
-    run(letter, promptWith(letter.thread[0].text, letter.thread[0].images), { resume: false });
+    if (letter.mode === 'meeting') runMeeting(letter, promptWith(letter.thread[0].text, letter.thread[0].images));
+    else run(letter, promptWith(letter.thread[0].text, letter.thread[0].images), { resume: false });
   }
 
   const allowedDirs = () => {
@@ -461,6 +463,116 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       const e = (letter.asks ?? []).find((x) => key === `${letter.id}:${x.id}`);
       if (e?.state === 'open') e.state = 'expired';
     }
+  }
+
+  // ── A real team meeting ("🗣 Rapat dulu", Shades only; meeting.mjs): Shades opens and picks who to call, they answer as themselves, then Shades writes the plan ──
+  /** One short, read-only `claude -p --agent <member>` call for the meeting: resolves { text } or rejects. `ctl` can cancel it. */
+  function meetingCall(letter, ctl, member, prompt, extraSystem = '') {
+    return new Promise((resolve, reject) => {
+      const claude = findClaude();
+      if (!claude) return reject(new Error('claude'));
+      const budget = budgetFor(letter.id);
+      if (budget != null && budget < MIN_BUDGET) return reject(new Error('budget'));
+      const cap = Math.min(budget ?? mt.TURN_BUDGET_USD, mt.TURN_BUDGET_USD);
+      const entry = roster().staff.find((m) => m.agent === member.agent);
+      const access = (entry?.access ?? ['read']).filter((a) => READ_ONLY.has(a)).concat('git');
+      const tools = [...allowedTools(access), ...READONLY_BASH];
+      const args = ['-p', '--output-format', 'json', '--permission-mode', 'dontAsk', '--no-session-persistence', '--agent', member.agent,
+        '--allowedTools', ...tools, '--append-system-prompt', `${mt.MEETING_SYSTEM}${extraSystem}`, '--max-budget-usd', cap.toFixed(2)];
+      if (letter.model) args.push('--model', letter.model);
+      const child = spawn(claude, args, { cwd: letter.wt?.state === 'open' ? letter.wt.dir : letter.cwd, env: childEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
+      ctl.child = child;
+      reserved.set(letter.id, cap);
+      child.stdin.on('error', () => {});
+      child.stdin.end(prompt);
+      let out = '';
+      let err = '';
+      child.stdout.on('data', (c) => { out += c; });
+      child.stderr.on('data', (c) => { err = (err + c).slice(-1000); });
+      const timer = setTimeout(() => child.kill('SIGTERM'), 4 * 60_000);
+      child.on('error', (e) => { clearTimeout(timer); reject(e); });
+      child.on('close', (code) => {
+        clearTimeout(timer);
+        ctl.child = null;
+        reserved.delete(letter.id);
+        let j = null;
+        try { j = JSON.parse(out); } catch { /* not JSON */ }
+        const cost = Number(j?.total_cost_usd) || 0;
+        recordSpend(cost);
+        letter.cost = (letter.cost ?? 0) + cost;
+        if (ctl.cancelled) return reject(new Error('cancelled'));
+        if (!j || j.is_error || code !== 0) return reject(new Error(j?.subtype === 'error_max_budget_usd' ? 'budget' : (err.trim().split('\n').pop() || String(j?.result ?? `claude exit ${code}`)).slice(0, 300)));
+        resolve({ text: String(j.result ?? '').trim() });
+      });
+    });
+  }
+  async function runMeeting(letter, text) {
+    const r = roster();
+    const director = r.staff.find((m) => m.agent === letter.agent && m.director);
+    const staff = r.staff.filter((m) => !m.director && installed(m.agent)).map((m) => ({ ...m, name: loadNames().staff[m.agent] || m.name, role: typeof m.role === 'object' ? m.role.id ?? m.role.en : m.role }));
+    const task = letter.thread[0]?.text ?? text;
+    if (!director || !staff.length) { // nobody to call: it is an ordinary plan
+      letter.mode = 'plan';
+      return run(letter, text, { resume: false });
+    }
+    const dName = loadNames().staff[director.agent] || director.name;
+    const ctl = { cancelled: false, child: null, kill() { this.cancelled = true; try { this.child?.kill('SIGTERM'); } catch { /* gone */ } } };
+    running.set(letter.id, ctl);
+    Object.assign(letter, { status: 'running', error: null, meeting: { state: 'running', participants: [], speaker: director.agent, round: 0 } });
+    delete letter.progress;
+    save();
+    const say = (member, body, round) => {
+      letter.thread.push({ from: 'agent', kind: 'meeting', agent: member.agent, name: member.name, round, text: String(body).slice(0, 2500), at: new Date().toISOString() });
+      save();
+    };
+    const step = (member, round, why) => { letter.meeting.speaker = member.agent; letter.meeting.round = round; letter.progress = `🗣 Rapat: ${why}`; save(); };
+    const fail = (err) => {
+      running.delete(letter.id);
+      reserved.delete(letter.id);
+      const m = letter.meeting ?? {};
+      m.state = ctl.cancelled ? 'stopped' : 'error';
+      m.speaker = null;
+      letter.meeting = m;
+      delete letter.progress;
+      if (ctl.cancelled) Object.assign(letter, { status: 'stopped' });
+      else Object.assign(letter, { status: 'error', error: err.message === 'budget' ? 'Batas biaya tercapai di tengah rapat, jadi rapat dihentikan. Naikkan batasnya di 💰 lalu kirim ulang.' : `Rapat gagal: ${err.message}`.slice(0, 400) });
+      Object.assign(letter, { read: false, finishedAt: new Date().toISOString() });
+      delete letter.stopped;
+      save();
+      log(`[asaoffice] meeting ${letter.id} ${letter.status}`);
+    };
+    try {
+      step(director, 0, `${dName} membuka rapat`);
+      let picks = null;
+      let open = '';
+      try {
+        const opening = mt.parseOpening((await meetingCall(letter, ctl, director, mt.openingPrompt({ task, staff }))).text, staff);
+        if (opening) { picks = opening.picks; open = opening.open; }
+      } catch (err) { if (ctl.cancelled || err.message === 'budget') throw err; /* unreadable opening: pick by keywords */ }
+      if (!picks) picks = mt.fallbackPicks(task, staff);
+      const people = picks.map((p) => ({ ...staff.find((m) => m.agent === p.agent), ask: p.ask }));
+      letter.meeting.participants = people.map((m) => ({ agent: m.agent, name: m.name }));
+      say({ agent: director.agent, name: dName }, open || `Tim, ada tugas dari Komisaris. Aku mau dengar pendapat ${people.map((m) => m.name).join(', ')} sebelum bikin rencana.`, 0);
+      const turns = [];
+      for (let round = 1; round <= mt.ROUNDS; round++) {
+        if (round === 2 && (budgetFor(letter.id) ?? 99) < mt.MIN_BUDGET_FOR_ROUND_2) break; // not enough left for a second round
+        for (const m of people) {
+          if (ctl.cancelled) throw new Error('cancelled');
+          step(m, round, `${m.name} berpikir…`);
+          const { text: said } = await meetingCall(letter, ctl, m, mt.turnPrompt({ task, member: m, ask: m.ask, turns, round }));
+          if (!said) continue;
+          turns.push({ name: m.name, role: m.role, text: said });
+          say(m, said, round);
+        }
+      }
+      if (ctl.cancelled) throw new Error('cancelled');
+      Object.assign(letter.meeting, { state: 'done', speaker: null });
+      delete letter.progress;
+      // Shades writes the plan as an ordinary plan session: it waits for approval, and approving carries on in that same session.
+      turns.unshift({ name: dName, role: 'direktur', text: open });
+      reserved.delete(letter.id);
+      run(letter, mt.synthesisPrompt({ task, turns }), { resume: false });
+    } catch (err) { fail(err); }
   }
 
   function run(letter, text, { resume, extraTools = [] }) {
@@ -944,6 +1056,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (resumeId && letters.some((l) => l.sessionId === resumeId && (running.has(l.id) || l.status === 'queued'))) return send(res, 409, { error: 'running' }, origin);
         const mode = MODES.includes(body.mode) ? body.mode : member?.director ? 'plan' : 'auto';
         if (body.perm === 'bypass' && !settings.allowBypass) return send(res, 400, { error: 'bypass' }, origin);
+        if (mode === 'meeting' && (!member?.director || resumeId)) return send(res, 400, { error: 'meeting' }, origin);
         const style = member?.director && body.style === 'delegate' ? 'delegate' : 'solo';
         const letterId = crypto.randomUUID().slice(0, 8);
         // "Cabang terpisah": the task works on its own branch in its own folder (worktree.mjs), made now so a plan and the work after it share it.
@@ -954,7 +1067,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const letter = {
           id: letterId, agent, name: member?.name ?? null, cwd: dir.cwd, project: dir.name, ...(wt ? { wt } : {}),
           sessionId: resumeId ?? crypto.randomUUID(), status: 'running', read: true, createdAt: new Date().toISOString(),
-          title: resumeId ? (known.title || titleOf(prompt)) : titleOf(prompt), mode, style, phase: mode === 'plan' ? 'plan' : 'work',
+          title: resumeId ? (known.title || titleOf(prompt)) : titleOf(prompt), mode, style, phase: mode === 'plan' || mode === 'meeting' ? 'plan' : 'work',
           commit: body.commit === true && mode !== 'report', model: cleanModel(body.model), perm: cleanPerm(body.perm) ?? 'manual',
           thread: [{ from: 'you', text: prompt, at: new Date().toISOString(), ...(images.length ? { images } : {}) }],
         };
@@ -963,7 +1076,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           letter.status = 'queued';
           holds.set(letter.id, setTimeout(() => deliver(letter), HOLD_MS));
           save();
-        } else run(letter, promptWith(prompt, images), { resume: !!resumeId });
+        } else if (mode === 'meeting') runMeeting(letter, promptWith(prompt, images));
+        else run(letter, promptWith(prompt, images), { resume: !!resumeId });
         return send(res, 200, { letter }, origin);
       }
       const letter = m ? letters.find((l) => l.id === m[1]) : null;

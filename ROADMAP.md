@@ -29,13 +29,15 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Notifikasi macOS dari server (izin, rencana siap, selesai, gagal) dan ROADMAP.md | #51 |
 | ✅ | Tugas kotak surat di git worktree sendiri (Cabang terpisah: lihat perubahan, gabung, PR, buang) | #52 |
 | ✅ | Batas biaya per tugas dan per hari (💰), berhenti otomatis dan notifikasi 80% | #53 |
+| ✅ | Rapat sungguhan (🗣 Rapat dulu): Shades memanggil staf, dua putaran tanya jawab antar agent, rencana final; ditampilkan di surat dan di meja rapat | #54 |
 
 ## Rencana (urutan prioritas)
 
-Butir 1 (notifikasi macOS) sudah selesai (#51); nomor lainnya dibiarkan agar rujukannya tetap sama. Butir 2 (cabang terpisah, #52) dan 3 (batas biaya, #53) juga selesai. Berikutnya: butir 4.
+Butir 1 (notifikasi macOS) sudah selesai (#51); nomor lainnya dibiarkan agar rujukannya tetap sama. Butir 2 (cabang terpisah, #52) dan 3 (batas biaya, #53) juga selesai. Rapat sungguhan (#54) juga selesai. Berikutnya: butir 4, atau butir 11 (jiwa agent).
 
 | | # | Butir | Catatan |
 |---|---|---|---|
+| ⬜ | 11 | **"Jiwa" per agent**: berkas kepribadian dan gaya bicara, plus memori kecil yang bertambah setelah tiap tugas (bisa dibaca dan diedit) | Lapis 1 dari ide agent dengan jiwa. Rapat sungguhan (lapis 2) sudah jadi, jadi mereka tinggal diberi karakter dan ingatan. |
 | ⬜ | 4 | **Pembaca PDF dan Word bawaan** (baca-saja) | Seperti pembaca Excel; bahan kuliah di Downloads banyak PDF dan docx. |
 | ⬜ | 5 | **Templat tugas** (satu tombol) dan jadwal dengan model pilihan | |
 | ⬜ | 6 | **Cari lintas semua sesi dan surat** | Termasuk transkrip Claude Code, bukan hanya judul surat. |
