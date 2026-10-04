@@ -58,6 +58,11 @@
       permShort: { manual: 'tanya dulu', acceptEdits: 'terima edit', auto: 'auto', bypass: 'bypass izin', strict: 'ketat' },
       permBypassAsk: 'Aktifkan mode Bypass izin? Claude akan menjalankan apa saja tanpa bertanya (hapus file, git, perintah apa pun) selama tugas itu jalan. Pakai hanya di folder yang aman.', permBypassYes: 'Aktifkan', permBypassNo: 'Batal',
       askTitle: 'Claude minta izin', askAllow: 'Izinkan', askAlways: 'Izinkan terus di obrolan ini', askDeny: 'Tolak', askGone: 'Pertanyaan ini sudah tidak aktif (tugasnya selesai atau dihentikan).', askWaitShort: '🔐 menunggu izinmu',
+      isoChips: { off: '📂 Langsung di folder', on: '🌿 Cabang terpisah' },
+      isoTip: 'Langsung di folder: Claude bekerja di folder proyekmu. Cabang terpisah: Claude bekerja di cabang git sendiri (folder salinan dari commit terakhir), jadi nggak bentrok dengan yang lagi kamu kerjakan; hasilnya kamu gabung, jadikan PR, atau buang. Perubahan yang belum di-commit tidak ikut.',
+      wtTitle: (b) => `🌿 Hasil di cabang ${b}`, wtNone: 'Belum ada perubahan.', wtFiles: (n, a, d, c) => `${n} file · +${a} −${d}${c ? ` · ${c} commit` : ''}`,
+      wtView: 'Lihat perubahan', wtHide: 'Tutup perubahan', wtMerge: (into) => `Gabung${into ? ` ke ${into}` : ''}`, wtPr: 'Buka PR', wtPrSure: 'Yakin? Ini mendorong cabang ke GitHub. Klik lagi', wtDiscard: 'Buang', wtDiscardSure: 'Yakin? Hasilnya hilang. Klik lagi',
+      wtErr: { git: 'Folder ini bukan repo git, jadi tidak bisa memakai cabang terpisah.', worktree: 'Gagal membuat cabang terpisah.', conflict: 'Ada konflik saat menggabung. Tidak ada yang berubah: balas surat ini supaya Claude menyelesaikannya, atau gabungkan sendiri di Terminal.', merge: 'Git menolak menggabung (mungkin ada perubahan yang belum di-commit di folder aslinya). Tidak ada yang berubah.', detached: 'Folder aslinya tidak sedang di sebuah branch, jadi tidak bisa digabung.', gone: 'Folder cabang itu sudah tidak ada.' },
       modelDefault: '🧠 Model default', modelTip: 'Model Claude yang dipakai (default = pengaturan Claude Code di Mac)', sesModelOrig: (n) => `🧠 Sesi asli (${n})`, sesModelDefault: '🧠 Default',
       archiveAllSessions: (n) => `🗄 Arsipkan ${n} sesi dari luar kantor`, archiveSure: 'Yakin? Klik lagi', archiveRow: 'Arsipkan', unarchiveRow: 'Keluarkan dari arsip', archiveFailed: 'Gagal mengarsipkan.',
       fArchived: '🗄 Arsip', unarchive: 'Keluarkan dari arsip', deletePerm: '🗑 Hapus permanen', deleteSure: 'Yakin? Klik lagi', emptyArchive: 'Belum ada chat yang diarsipkan. Pakai tombol 🗄 di chat buat menyimpannya di sini.',
@@ -121,6 +126,11 @@
       permShort: { manual: 'ask first', acceptEdits: 'accept edits', auto: 'auto', bypass: 'bypass', strict: 'strict' },
       permBypassAsk: 'Turn on Bypass permissions? Claude will run anything without asking (delete files, git, any command) while that task runs. Only use it in a safe folder.', permBypassYes: 'Turn on', permBypassNo: 'Cancel',
       askTitle: 'Claude asks permission', askAllow: 'Allow', askAlways: 'Always allow in this chat', askDeny: 'Deny', askGone: 'This question is no longer active (the task finished or was stopped).', askWaitShort: '🔐 waiting for you',
+      isoChips: { off: '📂 Directly in the folder', on: '🌿 Separate branch' },
+      isoTip: 'Directly in the folder: Claude works in your project folder. Separate branch: Claude works on its own git branch in a copy of the folder (made from the last commit), so it never collides with what you are doing; you then merge it, open a PR, or throw it away. Uncommitted changes are not included.',
+      wtTitle: (b) => `🌿 Result on branch ${b}`, wtNone: 'No changes yet.', wtFiles: (n, a, d, c) => `${n} files · +${a} −${d}${c ? ` · ${c} commits` : ''}`,
+      wtView: 'View changes', wtHide: 'Hide changes', wtMerge: (into) => `Merge${into ? ` into ${into}` : ''}`, wtPr: 'Open PR', wtPrSure: 'Sure? This pushes the branch to GitHub. Click again', wtDiscard: 'Discard', wtDiscardSure: 'Sure? The result is lost. Click again',
+      wtErr: { git: 'This folder is not a git repo, so a separate branch is not possible.', worktree: 'Could not create the separate branch.', conflict: 'There was a conflict while merging. Nothing changed: reply to this letter so Claude resolves it, or merge it yourself in Terminal.', merge: 'Git refused to merge (maybe uncommitted changes in the original folder). Nothing changed.', detached: 'The original folder is not on a branch, so it cannot be merged.', gone: 'That branch folder no longer exists.' },
       modelDefault: '🧠 Default model', modelTip: 'The Claude model to use (default = your Claude Code setting on this Mac)', sesModelOrig: (n) => `🧠 Original (${n})`, sesModelDefault: '🧠 Default',
       archiveAllSessions: (n) => `🗄 Archive ${n} sessions from outside the office`, archiveSure: 'Sure? Click again', archiveRow: 'Archive', unarchiveRow: 'Take out of the archive', archiveFailed: 'Could not archive.',
       fArchived: '🗄 Archive', unarchive: 'Take out of the archive', deletePerm: '🗑 Delete for good', deleteSure: 'Sure? Click again', emptyArchive: 'No archived chats yet. Use the 🗄 button in a chat to keep it here.',
@@ -273,6 +283,9 @@
   .asa-deny { border: 2px solid #c8503c; background: #ffe9e0; padding: 8px 10px; font-size: 13.5px; }
   .asa-deny b { display: block; font-weight: 600; margin-bottom: 4px; }
   .asa-deny-exact { margin-top: 4px; padding: 4px 6px; background: #fff6dc; border: 1px dashed #c8503c; }
+  .asa-wt { align-self: stretch; padding: 8px 10px; border: 2px solid #4a8a52; background: #eaf6e4; box-shadow: inset 4px 0 0 #4a8a52; display: flex; flex-direction: column; gap: 6px; }
+  .asa-wt pre { margin: 0; padding: 6px; background: #fffbe9; white-space: pre-wrap; word-break: break-all; font-size: 12px; max-height: 38vh; overflow: auto; }
+  .asa-wt .asa-ask-row { display: flex; flex-wrap: wrap; gap: 6px; }
   .asa-ask { align-self: stretch; padding: 8px 10px; border: 2px solid #c8801f; background: #fff3d6; box-shadow: inset 4px 0 0 #c8801f; display: flex; flex-direction: column; gap: 6px; }
   .asa-ask pre { margin: 0; padding: 6px; background: #fffbe9; white-space: pre-wrap; word-break: break-all; font-size: 12.5px; max-height: 30vh; overflow: auto; }
   .asa-ask .asa-ask-row { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -418,7 +431,7 @@
   const statusGroup = (l) => (l.status === 'running' || l.status === 'queued' ? 'running' : l.status === 'awaiting' ? 'awaiting' : 'done');
   const has = (text, q) => String(text ?? '').toLowerCase().includes(q);
   const pickLang = (v) => (v && typeof v === 'object' ? v[ns.lang] ?? v.en : v);
-  const errorText = (err) => ({ busy: S.busy, noApi: S.noApi, 'director busy': S.directorBusy, gone: S.askGone })[err.message] ?? `${S.failed} (${err.message})`;
+  const errorText = (err) => ({ busy: S.busy, noApi: S.noApi, 'director busy': S.directorBusy, gone: S.askGone, ...S.wtErr })[err.message] ?? `${S.failed} (${err.message})`;
   const memberOf = (agent) => (agent ? (options?.staff ?? ns.data?.staff ?? []).find((m) => m.agent === agent) ?? null : null);
   const isDirector = (agent) => !!memberOf(agent)?.director;
   const current = () => (sel && sel !== 'new' ? letters().find((l) => l.id === sel) ?? null : null);
@@ -825,7 +838,7 @@
       fillHead(l);
     }
     // Thread
-    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.cost, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join(), (l?.asks ?? []).map((d) => d.id + d.state).join(), [...exactOpen].join()]);
+    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.cost, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join(), (l?.asks ?? []).map((d) => d.id + d.state).join(), l?.wt?.state, JSON.stringify(l?.wtSummary?.files ?? []).length, wtOpen.has(l?.id), [...exactOpen].join()]);
     if (force || ui.keys.thread !== threadKey) {
       ui.keys.thread = threadKey;
       const box = ui.thread;
@@ -867,7 +880,7 @@
       actions.append(del);
     } else if (!busy(l)) actions.append(h('button', { type: 'button', class: 'asa-btn', title: S.archive, 'aria-label': S.archive, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/archive`), leave) }, '🗄'));
     head.replaceChildren(back, face(l), h('div', { class: 'asa-chat-title' }, titleBox,
-      h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.commit ? S.commitShort : null, l.perm && l.perm !== 'manual' ? S.permShort[l.perm] : null, l.usedModel || l.model ? `🧠 ${modelName(l.usedModel || l.model)}` : null, S[l.status]].filter(Boolean).join(' · '))), actions);
+      h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.commit ? S.commitShort : null, l.perm && l.perm !== 'manual' ? S.permShort[l.perm] : null, l.wt ? `🌿 ${l.wt.branch}` : null, l.usedModel || l.model ? `🧠 ${modelName(l.usedModel || l.model)}` : null, S[l.status]].filter(Boolean).join(' · '))), actions);
   }
 
   /** Calls the task tried that were refused automatically, each with a one-time "Izinkan sekali" when that's safe to offer. */
@@ -950,6 +963,7 @@
           : h('div', { class: 'asa-actions asa-plan-actions' }, h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('POST', `/api/tasks/${l.id}/undo`)) }, S.tidyUndo)));
       }
       for (const a of (l.asks ?? []).filter((x) => x.state === 'open')) out.push(askCard(l, a));
+      if (l.wt?.state === 'open' && !busy(l)) out.push(wtCard(l));
       const deny = denialBlock(l);
       if (deny) out.push(deny);
       if (l.status === 'queued') out.push(h('div', { class: 'asa-sys' }, S.queuedNote(isDirector(l.agent) ? '' : l.name ?? '')));
@@ -984,7 +998,44 @@
     };
     return sel2;
   }
-  /** A permission question from a running task: the whole command, and the buttons to answer it. */
+  const wtOpen = new Set(); // letters whose "view changes" is open
+  const wtDiffs = new Map(); // letter id -> diff text
+  /** The result of a task that worked on its own branch: what changed, and merge / PR / discard. */
+  function wtCard(l) {
+    const w = l.wt;
+    const sm = l.wtSummary;
+    const sure = (btn, label, sureLabel, fn) => {
+      btn.onclick = () => {
+        if (btn.dataset.sure) return fn();
+        btn.dataset.sure = '1';
+        btn.textContent = sureLabel;
+        setTimeout(() => { delete btn.dataset.sure; btn.textContent = label; }, 4500);
+      };
+      return btn;
+    };
+    const post = (action) => act(() => api('POST', `/api/tasks/${l.id}/wt`, { action }));
+    const view = h('button', { type: 'button', class: 'asa-btn' }, wtOpen.has(l.id) ? S.wtHide : S.wtView);
+    view.onclick = async () => {
+      if (wtOpen.has(l.id)) wtOpen.delete(l.id);
+      else {
+        wtOpen.add(l.id);
+        try { wtDiffs.set(l.id, (await api('GET', `/api/tasks/${l.id}/diff`)).diff || S.wtNone); } catch (err) { wtDiffs.set(l.id, errorText(err)); }
+      }
+      refreshMain(true);
+    };
+    const files = sm?.files ?? [];
+    return h('div', { class: 'asa-wt' },
+      h('b', {}, S.wtTitle(w.branch)),
+      h('div', { class: 'asa-muted' }, sm && (files.length || sm.commits) ? S.wtFiles(files.length, sm.insertions, sm.deletions, sm.commits) : S.wtNone),
+      files.length ? h('div', { class: 'asa-muted' }, files.slice(0, 8).map((f) => `${f.path} (+${f.add} −${f.del})`).join(' · ') + (files.length > 8 ? ' …' : '')) : null,
+      wtOpen.has(l.id) ? h('pre', {}, wtDiffs.get(l.id) ?? '…') : null,
+      h('div', { class: 'asa-ask-row' },
+        h('button', { type: 'button', class: 'asa-btn primary', onclick: () => post('merge') }, S.wtMerge(w.baseBranch)),
+        sure(h('button', { type: 'button', class: 'asa-btn' }, S.wtPr), S.wtPr, S.wtPrSure, () => post('pr')),
+        view,
+        sure(h('button', { type: 'button', class: 'asa-btn' }, S.wtDiscard), S.wtDiscard, S.wtDiscardSure, () => post('discard'))));
+  }
+  /** A permission question from a running task:  /** A permission question from a running task: the whole command, and the buttons to answer it. */
   function askCard(l, a) {
     const answer = (decision) => act(() => api('POST', `/api/tasks/${l.id}/ask`, { id: a.id, decision }));
     return h('div', { class: 'asa-ask', role: 'alert' },
@@ -1084,6 +1135,9 @@
       modelSel.value = MODEL_CHOICES.some(([v]) => v === prefs.model) ? prefs.model : '';
       modelSel.onchange = () => { prefs.model = modelSel.value; savePrefs(); };
       const permSel = permSelect(prefs.perm, chips, (v) => { prefs.perm = v; savePrefs(); });
+      const isoSel = h('select', { class: 'asa-chipsel', title: S.isoTip, 'aria-label': S.isoTip }, Object.entries(S.isoChips).map(([v, t]) => h('option', { value: v }, t)));
+      isoSel.value = prefs.iso === 'on' ? 'on' : 'off';
+      isoSel.onchange = () => { prefs.iso = isoSel.value; savePrefs(); };
       const styleSel = h('select', { class: 'asa-chipsel', title: S.style, 'aria-label': S.style }, Object.entries(S.chipStyles).map(([v, t]) => h('option', { value: v }, t)));
       styleSel.value = prefs.style ?? 'solo';
       const commitBox = h('input', { type: 'checkbox', id: 'asa-commit' });
@@ -1099,7 +1153,7 @@
           modeSel.replaceChildren(...Object.entries(S.chipModes).map(([v, t]) => h('option', { value: v }, t)));
           if (!dl) modeSel.value = defaultMode();
         }
-        for (const el of [modeSel, whoSel, commitLab, permSel]) el.style.display = dl ? 'none' : '';
+        for (const el of [modeSel, whoSel, commitLab, permSel, isoSel]) el.style.display = dl ? 'none' : '';
         styleSel.style.display = !dl && member()?.director ? '' : 'none';
         ta.placeholder = dl ? S.dlPh : S.placeholder;
       };
@@ -1125,8 +1179,8 @@
       styleSel.onchange = () => { prefs.style = styleSel.value; savePrefs(); };
       update();
       syncDl();
-      Object.assign(controls, { whoSel, projSel, modeSel, modelSel, permSel, styleSel, commitBox, member, setWho });
-      chips.append(whoSel, projSel, modeSel, modelSel, permSel, styleSel, commitLab);
+      Object.assign(controls, { whoSel, projSel, modeSel, modelSel, permSel, isoSel, styleSel, commitBox, member, setWho });
+      chips.append(whoSel, projSel, modeSel, modelSel, permSel, isoSel, styleSel, commitLab);
     } else {
       chips.append(h('span', { class: 'asa-pill' }, `👤 ${who(l)}`), h('span', { class: 'asa-pill', title: l.cwd }, `📁 ${l.project}`), l.mode ? h('span', { class: 'asa-pill' }, S.chipModes[l.mode]) : null);
       // The permission mode can be changed between replies (it applies to the next run), except in Downloads where it is read-only anyway.
@@ -1180,7 +1234,7 @@
     if (cwd === '@downloads') return sendDownloads(text, landed, c.modelSel.value);
     try {
       const { letter } = await api('POST', '/api/tasks', {
-        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, model: c.modelSel.value || undefined, perm: c.permSel.value, style: director ? c.styleSel.value : undefined, commit: c.commitBox.checked, images, hold: true,
+        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, model: c.modelSel.value || undefined, perm: c.permSel.value, isolate: c.isoSel.value === 'on' || undefined, style: director ? c.styleSel.value : undefined, commit: c.commitBox.checked, images, hold: true,
       });
       await landed;
       dropLetter();
