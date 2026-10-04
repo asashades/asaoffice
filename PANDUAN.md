@@ -165,6 +165,11 @@ Kantornya sekarang memanjang (33×24 petak, denah lanskap) dan ada halamannya:
 - **🔔 Notifikasi**: pas villager butuh izin atau selesai kerja, muncul pesan kecil di atas kantor (klik buat langsung
   milih villager-nya), bunyi "ting", notifikasi Mac kalau jendelanya lagi ketutup, dan HP bergetar. Waktu pertama
   diklik, browser nanya izin notifikasi: klik **Izinkan**. Klik lagi jadi 🔕 buat diem.
+  **Notifikasi Mac dari kantor sendiri:** buat tugas dari kotak surat, server kantor juga memunculkan notifikasi Mac asli
+  (Claude minta izin, rencana siap, tugas selesai atau gagal), jadi tetap sampai walau browser ditutup. Kalau jendela kantor
+  lagi di depan, notifikasi Mac ditahan (cukup pesan kecil dan bunyi di kantor). Klik 🔕 buat mematikannya juga. Klik notifikasinya
+  baru membuka kantor kalau kamu memasang `terminal-notifier` (`brew install terminal-notifier`); tanpa itu, klik membuka Script
+  Editor (batasan macOS), tapi notifikasinya tetap muncul.
 - **Papan tugas** (papan gabus di sebelah kalender): klik buat lihat tiap sesi Claude 24 jam terakhir: judulnya,
   permintaan terakhirmu, proyeknya, berapa tool dan file hari ini, dan villager mana yang lagi ngerjain. Angka hijau
   di papannya = jumlah villager yang lagi kerja.
