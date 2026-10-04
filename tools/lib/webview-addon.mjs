@@ -31,6 +31,7 @@ const SCRIPTS = [
   'markdown.js',
   'shelf.js',
   'schedule.js',
+  'budget.js',
   'garden.js',
   'sky.js',
   'dayend.js',

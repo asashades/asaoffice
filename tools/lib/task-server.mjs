@@ -70,6 +70,10 @@ export const PERMS = ['manual', 'acceptEdits', 'auto', 'bypass', 'strict'];
 const PERM_CLI = { manual: 'manual', acceptEdits: 'acceptEdits', auto: 'auto', bypass: 'bypassPermissions' };
 const ASK_WAIT_MS = 10 * 60_000; // an unanswered question is refused after this long
 const MAX_ASKS = 20;
+export const DEFAULT_BUDGET = { task: 3, day: 15 };
+const MIN_LIMIT = 0.25; // the CLI checks the budget between steps, so a smaller cap would be overshot by the very first one
+const MAX_LIMIT = 1000;
+const MIN_BUDGET = 0.05; // less than this left of today's budget and no new run starts
 const PRESENCE_MS = 12_000; // an office page that reported being in front this recently means no macOS notification
 // The model a task runs on: an alias Claude Code knows, or a full model id (the one a session was last answered with). Anything else = the default.
 const MODEL_ALIASES = ['opus', 'sonnet', 'haiku'];
@@ -232,8 +236,12 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   const pending = new Map(); // `${letter id}:${ask id}` -> { child, requestId, input, always, timer }: questions the CLI is waiting on
   // Office settings (only "allow bypass" so far): kept next to the mailbox.
   const settingsFile = path.join(os.homedir(), '.pixel-agents', 'asaoffice-settings.json');
-  let settings = { allowBypass: false, notifyMac: true };
-  try { settings = { ...settings, ...JSON.parse(fs.readFileSync(settingsFile, 'utf8')) }; } catch { /* defaults */ }
+  // budget (USD): `task` caps each run (every message you send starts one), `day` caps what the office spends per day; null = no limit.
+  let settings = { allowBypass: false, notifyMac: true, budget: { ...DEFAULT_BUDGET } };
+  try {
+    const saved = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+    settings = { ...settings, ...saved, budget: { ...DEFAULT_BUDGET, ...(saved.budget && typeof saved.budget === 'object' ? saved.budget : {}) } };
+  } catch { /* defaults */ }
   const saveSettings = () => {
     fs.mkdirSync(path.dirname(settingsFile), { recursive: true });
     fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
@@ -245,6 +253,41 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   const officeUrl = `http://127.0.0.1:${officePort}/?token=${token}`;
   const pingMac = (n) => { if (settings.notifyMac !== false && Date.now() - lastFocusAt >= PRESENCE_MS) notifier.send({ ...n, url: officeUrl }); };
   const whoOf = (l) => l.name ?? 'Claude';
+  // What the office has spent per day (from each run's reported cost), and what the runs in progress may still use.
+  const spendFile = path.join(os.homedir(), '.pixel-agents', 'asaoffice-spend.json');
+  let spend = {};
+  try { spend = JSON.parse(fs.readFileSync(spendFile, 'utf8')).days ?? {}; } catch { /* nothing spent yet */ }
+  const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const spentToday = () => Number(spend[dayKey()] ?? 0);
+  const reserved = new Map(); // letter id -> the budget its running claude may use
+  let warnedDay = null;
+  function recordSpend(usd) {
+    if (!(usd > 0)) return;
+    const k = dayKey();
+    spend[k] = Math.round((Number(spend[k] ?? 0) + usd) * 1e6) / 1e6;
+    for (const old of Object.keys(spend).sort().slice(0, -60)) delete spend[old];
+    try { fs.mkdirSync(path.dirname(spendFile), { recursive: true }); fs.writeFileSync(spendFile, JSON.stringify({ days: spend }, null, 2)); } catch { /* not worth stopping for */ }
+    const day = settings.budget?.day;
+    if (day && warnedDay !== k && spentToday() >= day * 0.8) {
+      warnedDay = k;
+      pingMac({ key: `budget-${k}`, title: '💰 Biaya hari ini hampir habis', body: `$${spentToday().toFixed(2)} dari batas $${day.toFixed(2)}.`, sound: 'Basso' });
+    }
+  }
+  /** What one more run may spend: the per-run limit, or what is left of today's (less what running tasks may still use). null = no limit. */
+  function budgetFor(letterId) {
+    const t = settings.budget?.task ?? null;
+    const d = settings.budget?.day ?? null;
+    let allow = t;
+    if (d != null) {
+      let others = 0;
+      for (const [id, v] of reserved) if (id !== letterId) others += v;
+      const left = d - spentToday() - others;
+      allow = allow == null ? left : Math.min(allow, left);
+    }
+    return allow;
+  }
+  const budgetOk = () => { const b = budgetFor(null); return b == null || b >= MIN_BUDGET; };
+  const budgetInfo = () => ({ task: settings.budget?.task ?? null, day: settings.budget?.day ?? null, spentToday: Math.round(spentToday() * 100) / 100, left: (() => { const b = budgetFor(null); return b == null ? null : Math.max(0, Math.round(b * 100) / 100); })() });
   const save = () => {
     let active = 0;
     let archived = 0;
@@ -462,6 +505,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     const perm = wantPerm === 'bypass' && !settings.allowBypass ? 'manual' : wantPerm;
     const interactive = phase === 'work' && !dlOnly && perm !== 'strict';
     if (interactive) system += '\nKalau satu langkah tidak diizinkan Komisaris, jangan coba memutar lewat cara lain; lanjutkan dengan yang lain atau tanyakan apa yang harus diganti.';
+    const budget = budgetFor(letter.id);
+    if (budget != null && budget < MIN_BUDGET) {
+      Object.assign(letter, { status: 'error', error: 'Batas biaya hari ini sudah tercapai, jadi tugas ini tidak dijalankan. Naikkan batasnya di 💰 atau coba lagi besok.', read: false, finishedAt: new Date().toISOString() });
+      return save();
+    }
     // The prompt goes in on stdin (as one JSON line when the CLI may ask questions back, plain text otherwise), so text that starts with "-" can never be read as a CLI option.
     const args = interactive
       ? ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--permission-mode', PERM_CLI[perm], '--permission-prompts', 'host', '--permission-prompt-tool', 'stdio',
@@ -470,6 +518,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         '--allowedTools', ...tools, '--append-system-prompt', system];
     if (letter.thread.some((m) => m.images?.length)) args.push('--add-dir', uploadsDir);
     if (interactive) for (const d of letter.allowDirs ?? []) args.push('--add-dir', d);
+    if (budget != null) args.push('--max-budget-usd', budget.toFixed(2));
     if (letter.model) args.push('--model', letter.model);
     if (resume) args.push('--resume', letter.sessionId);
     else args.push('--session-id', letter.sessionId);
@@ -480,6 +529,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (interactive) child.stdin.write(`${JSON.stringify({ type: 'user', message: { role: 'user', content: text } })}\n`); // stays open: the answers go back through it
     else child.stdin.end(text);
     running.set(letter.id, child);
+    reserved.set(letter.id, budget ?? 0);
     letter.status = 'running';
     letter.error = null;
     delete letter.progress;
@@ -541,6 +591,9 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       clearTimeout(timer);
       dropAsks(letter);
       running.delete(letter.id);
+      reserved.delete(letter.id);
+      recordSpend(Number(result?.total_cost_usd) || 0);
+      const budgetHit = result?.subtype === 'error_max_budget_usd';
       let answer = String(result?.result ?? lastText ?? '').trim();
       let tidyPlan = null;
       if (tidyScan && answer) {
@@ -561,7 +614,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         }
       }
       letter.error = failed && !letter.stopped
-        ? (letter.timedOut ? 'Tugasnya kelamaan (lebih dari 30 menit), jadi dihentikan.'
+        ? (budgetHit ? `Batas biaya tercapai (${budget != null ? `$${budget.toFixed(2)}` : ''} untuk satu kali jalan), jadi tugas dihentikan. Naikkan batasnya di 💰 lalu balas surat ini buat lanjut.`
+          : letter.timedOut ? 'Tugasnya kelamaan (lebih dari 30 menit), jadi dihentikan.'
           : letter.shutdown ? 'Kantor dimatikan waktu tugas ini masih jalan.'
           : killed ? 'Tugasnya dihentikan dari luar (claude dimatikan, kantor di-restart, atau Mac tidur). Kirim ulang atau balas surat ini buat lanjut.'
           : (stderr.trim().split('\n').pop() || `claude keluar dengan kode ${code}`)).slice(0, 400)
@@ -590,7 +644,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   const schedView = () => schedules.map((x) => ({ ...x, next: nextDue(x)?.toISOString() ?? null }));
   const agentIds = () => roster().staff.map((m) => m.agent).filter(installed);
   function fireSchedule(sch, stamp) {
-    if (running.size >= MAX_RUNNING || directorBusy(sch.agent)) return false; // try again at the next tick
+    if (running.size >= MAX_RUNNING || directorBusy(sch.agent) || !budgetOk()) return false; // try again at the next tick (also while today's budget is used up)
     if (!allowedDirs().some((p) => p.cwd === sch.cwd)) { sch.lastFor = stamp; return true; } // the folder is gone: drop this time
     const member = sch.agent ? roster().staff.find((m) => m.agent === sch.agent) : null;
     const letter = {
@@ -665,6 +719,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           running: running.size,
           perms: { bypass: settings.allowBypass },
           notifyMac: settings.notifyMac !== false,
+          budget: budgetInfo(),
         }, origin);
       }
       // Switching "bypass permissions" on or off (off until the Commissioner turns it on, like Claude Code's own setting).
@@ -672,7 +727,18 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const body = await readBody(req);
         if (typeof body.allowBypass === 'boolean') { settings.allowBypass = body.allowBypass; saveSettings(); }
         if (typeof body.notifyMac === 'boolean') { settings.notifyMac = body.notifyMac; saveSettings(); }
-        return send(res, 200, { perms: { bypass: settings.allowBypass }, notifyMac: settings.notifyMac !== false }, origin);
+        if (body.budget && typeof body.budget === 'object') {
+          for (const k of ['task', 'day']) {
+            if (!(k in body.budget)) continue;
+            const v = body.budget[k];
+            if (v === null) settings.budget[k] = null;
+            else if (Number.isFinite(Number(v)) && Number(v) >= MIN_LIMIT && Number(v) <= MAX_LIMIT) settings.budget[k] = Math.round(Number(v) * 100) / 100;
+            else return send(res, 400, { error: 'budget value' }, origin);
+          }
+          warnedDay = null;
+          saveSettings();
+        }
+        return send(res, 200, { perms: { bypass: settings.allowBypass }, notifyMac: settings.notifyMac !== false, budget: budgetInfo() }, origin);
       }
       // Heartbeat from an open office page: while one is in front there's no need for a macOS notification.
       if (req.method === 'POST' && url.pathname === '/api/presence') {
@@ -704,6 +770,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         }
         if (req.method === 'POST' && sm[2] === 'run') {
           if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
+        if (!budgetOk()) return send(res, 429, { error: 'budget' }, origin);
           if (directorBusy(sch.agent)) return send(res, 429, { error: 'director busy' }, origin);
           const before = sch.lastFor;
           fireSchedule(sch, before ?? ''); // "run now" doesn't change which time counts as handled
@@ -841,6 +908,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const inv = tidy.scan();
         if (!inv) return send(res, 404, { error: 'downloads' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
+        if (!budgetOk()) return send(res, 429, { error: 'budget' }, origin);
         const prompt = String(body.prompt ?? body.note ?? '').trim().slice(0, MAX_PROMPT) || 'Rapikan folder Downloads-ku.';
         const letter = {
           id: crypto.randomUUID().slice(0, 8), kind: 'tidy', agent: null, name: null, cwd: inv.dir, project: 'Downloads',
@@ -867,6 +935,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const member = agent ? roster().staff.find((s) => s.agent === agent) : null;
         if (agent && (!member || !installed(agent))) return send(res, 400, { error: 'agent' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
+        if (!budgetOk()) return send(res, 429, { error: 'budget' }, origin);
         if (directorBusy(agent)) return send(res, 429, { error: 'director busy' }, origin);
         // Continuing a session that already exists (from the "Sesi" tab): same folder, no staff member, runs right away.
         const resumeId = body.resumeSession ? String(body.resumeSession) : null;
@@ -906,6 +975,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (!text || text.length > MAX_PROMPT) return send(res, 400, { error: 'text' }, origin);
         if (running.has(letter.id) || letter.status === 'queued') return send(res, 409, { error: 'running' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
+        if (!budgetOk()) return send(res, 429, { error: 'budget' }, origin);
         if (directorBusy(letter.agent)) return send(res, 429, { error: 'director busy' }, origin);
         if (replyBody.perm === 'bypass' && !settings.allowBypass) return send(res, 400, { error: 'bypass' }, origin);
         if (cleanPerm(replyBody.perm)) letter.perm = replyBody.perm; // the mode can be changed between replies, like Shift+Tab in Claude Code
@@ -945,6 +1015,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           return send(res, 200, { letter }, origin);
         }
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
+        if (!budgetOk()) return send(res, 429, { error: 'budget' }, origin);
         if (directorBusy(letter.agent)) return send(res, 429, { error: 'director busy' }, origin);
         if (!allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
         letter.thread.push({ from: 'you', text: '✅ Disetujui, silakan jalan.', at, kind: 'approve' });
@@ -1024,6 +1095,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (!d || (exact ? !d.exact?.length : !d.rule)) return send(res, 400, { error: 'denial' }, origin);
         if (running.has(letter.id) || letter.status === 'queued') return send(res, 409, { error: 'running' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
+        if (!budgetOk()) return send(res, 429, { error: 'budget' }, origin);
         if (directorBusy(letter.agent)) return send(res, 429, { error: 'director busy' }, origin);
         if (!allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
         d.state = 'allowed';
