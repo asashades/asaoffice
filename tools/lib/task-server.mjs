@@ -31,6 +31,7 @@ import { setArchived } from './archive.mjs';
 import { buy as shopBuy, shopInfo } from './shop.mjs';
 import { loadNames, setName } from './names.mjs';
 import * as tidy from './tidy.mjs';
+import { createNotifier } from './macnotify.mjs';
 import { cleanSchedule, dueAction, loadSchedules, MAX_SCHEDULES, newSchedule, nextDue, saveSchedules } from './schedules.mjs';
 
 const MAX_RUNNING = 3;
@@ -68,6 +69,7 @@ export const PERMS = ['manual', 'acceptEdits', 'auto', 'bypass', 'strict'];
 const PERM_CLI = { manual: 'manual', acceptEdits: 'acceptEdits', auto: 'auto', bypass: 'bypassPermissions' };
 const ASK_WAIT_MS = 10 * 60_000; // an unanswered question is refused after this long
 const MAX_ASKS = 20;
+const PRESENCE_MS = 12_000; // an office page that reported being in front this recently means no macOS notification
 // The model a task runs on: an alias Claude Code knows, or a full model id (the one a session was last answered with). Anything else = the default.
 const MODEL_ALIASES = ['opus', 'sonnet', 'haiku'];
 const cleanModel = (m) => (MODEL_ALIASES.includes(m) || (typeof m === 'string' && /^claude-[a-z0-9][a-z0-9.-]{2,60}$/.test(m)) ? m : null);
@@ -229,13 +231,19 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   const pending = new Map(); // `${letter id}:${ask id}` -> { child, requestId, input, always, timer }: questions the CLI is waiting on
   // Office settings (only "allow bypass" so far): kept next to the mailbox.
   const settingsFile = path.join(os.homedir(), '.pixel-agents', 'asaoffice-settings.json');
-  let settings = { allowBypass: false };
+  let settings = { allowBypass: false, notifyMac: true };
   try { settings = { ...settings, ...JSON.parse(fs.readFileSync(settingsFile, 'utf8')) }; } catch { /* defaults */ }
   const saveSettings = () => {
     fs.mkdirSync(path.dirname(settingsFile), { recursive: true });
     fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
   };
   const cleanPerm = (p) => (PERMS.includes(p) ? p : null);
+  // macOS notifications (macnotify.mjs): held back while an office page is in front (pages send a heartbeat), switched with the 🔔 button.
+  const notifier = createNotifier();
+  let lastFocusAt = 0;
+  const officeUrl = `http://127.0.0.1:${officePort}/?token=${token}`;
+  const pingMac = (n) => { if (settings.notifyMac !== false && Date.now() - lastFocusAt >= PRESENCE_MS) notifier.send({ ...n, url: officeUrl }); };
+  const whoOf = (l) => l.name ?? 'Claude';
   const save = () => {
     let active = 0;
     let archived = 0;
@@ -368,6 +376,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     letter.progress = `🔐 Menunggu izinmu: ${tool}${text ? ` ${text.replace(/\s+/g, ' ').slice(0, 50)}` : ''}`;
     letter.read = false;
     save();
+    pingMac({ key: `ask-${letter.id}-${id}`, title: `🔐 ${whoOf(letter)} minta izin`, subtitle: letter.project ?? '', body: `${tool}${text ? `: ${text}` : ''}`, sound: 'Glass' });
   }
   /** Answer one question: 'allow', 'always' (allow + remember for this session), 'deny', or 'expire' (nobody answered). Returns false when it's gone. */
   function answerAsk(letter, id, decision) {
@@ -559,12 +568,17 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       letter.cost = (letter.cost ?? 0) + (result?.total_cost_usd ?? 0);
       letter.finishedAt = new Date().toISOString();
       letter.read = false;
+      const wasShutdown = !!letter.shutdown;
       delete letter.stopped;
       delete letter.timedOut;
       delete letter.shutdown;
       delete letter.progress;
       save();
       log(`[asaoffice] task ${letter.id} ${letter.status}`);
+      if (letter.status !== 'stopped' && !wasShutdown) {
+        const what = letter.status === 'awaiting' ? ['📝 Rencana siap', 'Menunggu persetujuanmu.'] : letter.status === 'error' ? ['⚠️ Tugas gagal', letter.error ?? ''] : ['✅ Tugas selesai', answer.slice(0, 160)];
+        pingMac({ key: `done-${letter.id}`, title: `${what[0]} · ${whoOf(letter)}`, subtitle: letter.title ?? letter.project ?? '', body: what[1], sound: letter.status === 'error' ? 'Basso' : 'Hero' });
+      }
     });
   }
 
@@ -648,13 +662,21 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           claude: !!findClaude(),
           running: running.size,
           perms: { bypass: settings.allowBypass },
+          notifyMac: settings.notifyMac !== false,
         }, origin);
       }
       // Switching "bypass permissions" on or off (off until the Commissioner turns it on, like Claude Code's own setting).
       if (req.method === 'POST' && url.pathname === '/api/settings') {
         const body = await readBody(req);
         if (typeof body.allowBypass === 'boolean') { settings.allowBypass = body.allowBypass; saveSettings(); }
-        return send(res, 200, { perms: { bypass: settings.allowBypass } }, origin);
+        if (typeof body.notifyMac === 'boolean') { settings.notifyMac = body.notifyMac; saveSettings(); }
+        return send(res, 200, { perms: { bypass: settings.allowBypass }, notifyMac: settings.notifyMac !== false }, origin);
+      }
+      // Heartbeat from an open office page: while one is in front there's no need for a macOS notification.
+      if (req.method === 'POST' && url.pathname === '/api/presence') {
+        const body = await readBody(req);
+        if (body.focused === true) lastFocusAt = Date.now();
+        return send(res, 200, { native: settings.notifyMac !== false }, origin);
       }
       // Scheduled tasks
       if (url.pathname === '/api/schedules' && req.method === 'GET') return send(res, 200, { schedules: schedView() }, origin);

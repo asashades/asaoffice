@@ -34,6 +34,7 @@
     enabled = !enabled;
     ns.store.set('notify', enabled ? 'on' : 'off');
     paint();
+    ns.localApi?.('POST', '/api/settings', { notifyMac: enabled }).catch(() => {}); // the office's own macOS notifications follow the bell
     if (enabled) {
       unlockAudio();
       if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
@@ -155,6 +156,7 @@
 
   function systemNotify(kind, ch, title) {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (ns.nativeNotify && ns.data?.taskAgents?.[ch.id]) return; // a mailbox task: the office's macOS notification already covers it
     if (!document.hidden && document.hasFocus()) return; // the toast is enough when you're looking
     try {
       const n = new Notification(title, {
@@ -201,6 +203,17 @@
     }
     for (const id of seen.keys()) if (!office.characters.has(id)) seen.delete(id);
   });
+
+  // Tell the office whether this page is in front (it then holds back its macOS notifications), and learn whether those are on.
+  // A bell that was muted before this page opened is passed on once, so the office doesn't notify against your choice.
+  let synced = false;
+  const beat = () => {
+    if (!ns.data?.taskServer?.port) return;
+    if (!synced && !enabled) { synced = true; ns.localApi('POST', '/api/settings', { notifyMac: false }).catch(() => { synced = false; }); }
+    ns.localApi('POST', '/api/presence', { focused: document.hasFocus() && !document.hidden }).then((r) => { ns.nativeNotify = !!r.native; }).catch(() => {});
+  };
+  setInterval(beat, 5000);
+  setTimeout(beat, 2500);
 
   ns.notify = {
     sfx,

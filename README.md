@@ -251,6 +251,12 @@ calendar names are in that file; the stats are counts only, with no paths, promp
   more, you get a toast in the office (click it to select the villager), a short retro chime, a system notification
   if the office window isn't in front, and a vibration on phones that support it. Turning 🔔 on asks the browser for
   notification permission; 🔕 mutes everything. Browsers only play sound after you've clicked the page once.
+  **macOS notifications from the office itself:** for mailbox tasks the office server also shows a native notification (permission
+  question, plan ready, task done or failed; `tools/lib/macnotify.mjs`), so it reaches you with the browser closed. It uses
+  `terminal-notifier` if installed (a click opens the office; `brew install terminal-notifier`), otherwise `osascript display
+  notification` (a click opens Script Editor, a macOS limit). Open office pages send a heartbeat every 5 s (`POST /api/presence`); while
+  one is in front the notification is held back. 🔔/🔕 switches it too (`POST /api/settings {notifyMac}`, on by default), and the page's own
+  browser notification is skipped for mailbox villagers so you don't get two. Real Claude Code sessions outside the mailbox keep the browser notification.
 - **Task board:** click the cork board next to the calendar for a pinned "quest" per Claude session from the last
   24 hours: its title, your last prompt, the project, today's tool calls and edited files, which villagers are on
   that project right now, and its to-do list if the session keeps one (`TodoWrite`). A green badge counts the
