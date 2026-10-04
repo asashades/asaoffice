@@ -510,7 +510,7 @@ follow-up and Claude resumes the same session in its folder (not while it is act
 **📋 Copy Terminal command** button is there too. The mailbox and the bookshelf use plain system type for easy reading
 (the office keeps the pixel font). The data comes from `~/.claude/projects` (`tools/lib/claude-stats.mjs` →
 `sessions` in the data feed). The project list for new tasks comes from the same place, the folders Claude Code worked
-in during the last 45 days (15 at most, plus the office workspace), shown with their path.
+in during the last 45 days (15 at most, plus the office workspace), shown with their path. Throw-away folders (`/tmp`, `/var/folders`, the system temp dir) and the office's own task branches are left out, so a session that ran in a scratch folder doesn't clutter the list.
 
 **Approval modes** (the **Cara kerja** menu when you send a task), like Claude Code's own modes:
 

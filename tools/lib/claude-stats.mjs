@@ -32,6 +32,13 @@ export function localDay(date) {
   return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
 }
 
+/** A throw-away folder (the system temp dirs, /tmp): a session that ran there is not a project the office should offer for new tasks. */
+export function isTempDir(cwd) {
+  if (typeof cwd !== 'string' || !cwd) return false;
+  const bases = ['/tmp', '/private/tmp', '/var/folders', '/private/var/folders', os.tmpdir()];
+  return bases.some((b) => cwd === b || cwd.startsWith(b.endsWith('/') ? b : `${b}/`));
+}
+
 export class ClaudeStats {
   constructor({ root = path.join(os.homedir(), '.claude', 'projects'), days = 45 } = {}) {
     this.root = root;
@@ -241,7 +248,7 @@ export class ClaudeStats {
   projects(limit = 15) {
     const seen = new Map();
     for (const s of [...this.sessions.values()].sort((a, b) => Math.max(b.lastAt, b.fileAt) - Math.max(a.lastAt, a.fileAt))) {
-      if (s.cwd && !seen.has(s.cwd) && !isOfficeWorktree(s.cwd)) seen.set(s.cwd, { name: path.basename(s.cwd), cwd: s.cwd }); // the office's own task branches aren't projects
+      if (s.cwd && !seen.has(s.cwd) && !isOfficeWorktree(s.cwd) && !isTempDir(s.cwd)) seen.set(s.cwd, { name: path.basename(s.cwd), cwd: s.cwd }); // the office's own task branches and throw-away folders aren't projects
     }
     return [...seen.values()].slice(0, limit);
   }
