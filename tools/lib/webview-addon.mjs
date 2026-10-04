@@ -53,6 +53,10 @@ function bundlePath(webview) {
   return path.join(webview, src);
 }
 
+// Every version of our render hook (the marker can carry a version number); stripped before the current one goes in, so there is never more than one.
+const HOOK_RE = /\/\*asaoffice-hook(?::\d+)?\*\/\(\(\)=>\{try\{window\.__asaoffice\?\.afterRender\?\.\([^)]*\)\}catch\{\}\}\)\(\),/g;
+const stripHooks = (js) => js.replace(HOOK_RE, '');
+
 function backupOnce(dist, backup, file) {
   const saved = path.join(backup, path.relative(dist, file));
   if (!fs.existsSync(saved)) {
@@ -65,20 +69,19 @@ function backupOnce(dist, backup, file) {
 export function applyWebviewAddon(root, dist, backup) {
   const webview = path.join(dist, 'webview');
   const bundle = bundlePath(webview);
-  let js = fs.readFileSync(bundle, 'utf8');
-  if (js.includes(JS_MARKER_PREFIX) && !js.includes(JS_MARKER)) {
-    // An older hook version: start again from the original bundle.
-    const saved = path.join(backup, path.relative(dist, bundle));
-    if (!fs.existsSync(saved)) throw new Error('original bundle backup missing; run `npm install` to reset pixel-agents');
-    js = fs.readFileSync(saved, 'utf8');
+  const js = fs.readFileSync(bundle, 'utf8');
+  // Start from the bundle without any of our hooks and put the current one in exactly once. (Earlier versions kept a backup that already had
+  // the old hook in it, so an upgrade ended up with two: the whole office was drawn twice a frame and the night tint was applied twice.)
+  const clean = stripHooks(js);
+  if (clean.split(ANCHOR).length !== 2) {
+    throw new Error('render hook anchor not found (pixel-agents version changed?); office addon not installed');
   }
-  if (!js.includes(JS_MARKER)) {
-    if (js.split(ANCHOR).length !== 2) {
-      throw new Error('render hook anchor not found (pixel-agents version changed?); office addon not installed');
-    }
-    backupOnce(dist, backup, bundle);
-    fs.writeFileSync(bundle, js.replace(ANCHOR, HOOK));
-  }
+  const savedBundle = path.join(backup, path.relative(dist, bundle));
+  fs.mkdirSync(path.dirname(savedBundle), { recursive: true });
+  if (!fs.existsSync(savedBundle) || HOOK_RE.test(fs.readFileSync(savedBundle, 'utf8'))) fs.writeFileSync(savedBundle, clean); // the backup is the original, never a patched copy
+  HOOK_RE.lastIndex = 0;
+  const patched = clean.replace(ANCHOR, HOOK);
+  if (patched !== js) fs.writeFileSync(bundle, patched);
 
   // Always rebuild index.html from the original, so the script list follows SCRIPTS.
   const htmlFile = path.join(webview, 'index.html');

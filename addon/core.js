@@ -63,7 +63,12 @@
   const frameHandlers = [];
   ns.onFrame = (fn) => frameHandlers.push(fn);
   ns.view = null;
+  // The render hook must be installed once; if a stale second copy of it ever runs, this keeps a frame from being drawn twice.
+  let renderedThisTask = false;
   ns.afterRender = (canvas, office, offX, offY, zoom, editMode, panRef) => {
+    if (renderedThisTask) return;
+    renderedThisTask = true;
+    queueMicrotask(() => { renderedThisTask = false; });
     ns.view = { canvas, office, offX, offY, zoom, editMode, panRef };
     attachCanvas(canvas);
     placeToolbar();
