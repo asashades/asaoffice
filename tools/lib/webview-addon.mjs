@@ -37,6 +37,7 @@ const SCRIPTS = [
   'dayend.js',
   'shop.js',
   'hud.js',
+  'icons.js',
 ];
 const HTML_MARKER = '<!-- asaoffice addon -->';
 const JS_MARKER_PREFIX = '/*asaoffice-hook';

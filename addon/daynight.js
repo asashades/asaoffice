@@ -163,7 +163,7 @@
   }
 
   ns.onFrame((canvas, office, offX, offY, zoom, editMode) => {
-    if (!enabled || editMode) return;
+    if (!enabled || editMode || !canvas.width || !canvas.height) return; // (a hidden or not yet sized canvas has nothing to draw on)
     const now = new Date();
     const hour = previewHour ?? now.getHours() + now.getMinutes() / 60;
     const p = phase(hour);

@@ -31,6 +31,7 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Batas biaya per tugas dan per hari (💰), berhenti otomatis dan notifikasi 80% | #53 |
 | ✅ | Rapat sungguhan (🗣 Rapat dulu): Shades memanggil staf, dua putaran tanya jawab antar agent, rencana final; ditampilkan di surat dan di meja rapat | #54 |
 | ✅ | Malam gaya Stardew: peta cahaya yang dikalikan (lantai merah anggur, ruangan kosong ungu, cahaya dari benda), villager di depan gelap, dan perbaikan render hook ganda (penyebab "kabut") | #55 |
+| ✅ | Ikon pixel art berwarna penuh (67 ikon menggantikan emoji di tombol, label, kartu, HUD) dan filter folder sementara di daftar proyek | #56 |
 
 ## Rencana (urutan prioritas)
 
