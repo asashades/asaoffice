@@ -31,7 +31,7 @@
       reportNone: 'Kemarin kantor sepi, gak ada sesi Claude. Selamat istirahat! 🌻', cost: (c) => `biaya ±$${c.toFixed(2)}`,
       awaiting: '📝 Nunggu persetujuan', rejected: '❌ Ditolak', mode: 'Cara kerja',
       modes: { plan: '📝 Rencana dulu — kamu setujui dulu', auto: '⚡ Langsung jalan', report: '👀 Cuma laporan — gak ngubah apa-apa' },
-      modeShort: { plan: 'rencana dulu', auto: 'langsung jalan', report: 'cuma laporan' },
+      modeShort: { plan: 'rencana dulu', meeting: 'rapat dulu', auto: 'langsung jalan', report: 'cuma laporan' },
       style: 'Gaya kerja Shades',
       styles: { solo: '💰 Hemat — Shades kerja sendiri, timnya akting', delegate: '👥 Delegasi beneran — manggil staf satu-satu (lebih boros kuota)' },
       approve: '✅ Setujui', revise: '✏️ Revisi', reject: '❌ Tolak', revisePh: 'Apa yang perlu diubah dari rencananya?',
@@ -54,6 +54,7 @@
       budgetTip: 'Batas biaya per tugas dan per hari', budgetFull: 'Batas biaya hari ini sudah tercapai, jadi tugas baru belum bisa dimulai. Naikkan batasnya di 💰 atau coba lagi besok.',
       tidyBtn: '🧹', tidyTip: 'Tanya atau rapikan folder Downloads (file baru dipindah setelah kamu setujui)', dlName: 'Downloads', tidyDraft: 'Rapikan file lepas di Downloads', dlPh: 'Tanya soal Downloads atau minta dirapikan, mis. "cari invoice bulan lalu" atau "rapikan file PDF"', tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.',
       tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
+      meetRound: (n) => `putaran ${n}`, meetTip: 'Shades memimpin rapat: dia memilih 2-3 staf, masing-masing menjawab sebagai dirinya sendiri (dua putaran), lalu Shades menulis rencananya dari isi rapat. Butuh beberapa menit dan beberapa panggilan Claude.',
       permChips: { manual: '🔐 Tanya dulu', acceptEdits: '✏️ Terima edit', auto: '🤖 Auto', bypass: '⚡ Bypass izin', strict: '🔒 Ketat' },
       permTip: 'Cara izin ditangani saat tugas jalan. Tanya dulu: kamu jawab tiap langkah di luar daftar. Terima edit: ubah file langsung jalan, sisanya tanya. Auto: Claude menilai sendiri, tanya kalau ragu. Bypass: tanpa tanya sama sekali. Ketat: langkah di luar daftar ditolak otomatis (cara lama).',
       permShort: { manual: 'tanya dulu', acceptEdits: 'terima edit', auto: 'auto', bypass: 'bypass izin', strict: 'ketat' },
@@ -73,7 +74,7 @@
       pickChat: 'Pilih chat di kiri, atau mulai yang baru.',
       greeting: (n) => `Halo Komisaris! Mau dikerjain apa hari ini${n ? `, biar ${n} yang pegang` : ''}?`,
       suggestions: ['Cek status proyek ini', 'Jalanin semua test terus laporin yang gagal', 'Review perubahan terakhir'],
-      chipModes: { plan: '📝 Rencana dulu', auto: '⚡ Langsung jalan', report: '👀 Cuma laporan' },
+      chipModes: { plan: '📝 Rencana dulu', meeting: '🗣 Rapat dulu', auto: '⚡ Langsung jalan', report: '👀 Cuma laporan' },
       chipStyles: { solo: '💰 Hemat', delegate: '👥 Delegasi' },
       approvedNote: '✅ Rencana disetujui', rejectedNote: '❌ Rencana ditolak', revisedNote: '✏️ Minta revisi', reviseHint: 'atau tulis revisinya di bawah',
       busyPh: (n) => `${n} lagi kerja… tunggu jawabannya ya`,
@@ -100,7 +101,7 @@
       reportNone: 'The office was quiet yesterday, no Claude sessions. Enjoy the rest! 🌻', cost: (c) => `cost ≈ $${c.toFixed(2)}`,
       awaiting: '📝 Waiting for approval', rejected: '❌ Rejected', mode: 'How to work',
       modes: { plan: '📝 Plan first — you approve it', auto: '⚡ Just do it', report: "👀 Report only — doesn't change anything" },
-      modeShort: { plan: 'plan first', auto: 'just do it', report: 'report only' },
+      modeShort: { plan: 'plan first', meeting: 'meeting first', auto: 'just do it', report: 'report only' },
       style: "Shades' way of working",
       styles: { solo: '💰 Thrifty — Shades works alone, the team acts it out', delegate: '👥 Real delegation — calls staff one at a time (uses more quota)' },
       approve: '✅ Approve', revise: '✏️ Revise', reject: '❌ Reject', revisePh: 'What should change in the plan?',
@@ -123,6 +124,7 @@
       budgetTip: 'Cost limits per task and per day', budgetFull: 'Today\'s cost limit is reached, so no new task can start. Raise it in 💰 or try again tomorrow.',
       tidyBtn: '🧹', tidyTip: 'Ask about or tidy the Downloads folder (files only move after you approve)', dlName: 'Downloads', tidyDraft: 'Tidy the loose files in Downloads', dlPh: 'Ask about Downloads or ask for a tidy-up, e.g. "find last month\'s invoice" or "tidy the PDFs"', tidyNoFolder: 'The Downloads folder was not found on this Mac.',
       tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
+      meetRound: (n) => `round ${n}`, meetTip: 'Shades leads the meeting: he picks 2-3 staff, each answers as themselves (two rounds), then Shades writes the plan from what was said. It takes a few minutes and several Claude calls.',
       permChips: { manual: '🔐 Ask first', acceptEdits: '✏️ Accept edits', auto: '🤖 Auto', bypass: '⚡ Bypass permissions', strict: '🔒 Strict' },
       permTip: 'How permissions are handled while the task runs. Ask first: you answer each step outside the list. Accept edits: file edits go through, the rest asks. Auto: Claude judges, asks when unsure. Bypass: nothing asks. Strict: steps outside the list are refused automatically (the old way).',
       permShort: { manual: 'ask first', acceptEdits: 'accept edits', auto: 'auto', bypass: 'bypass', strict: 'strict' },
@@ -142,7 +144,7 @@
       pickChat: 'Pick a chat on the left, or start a new one.',
       greeting: (n) => `Hello Commissioner! What should we get done today${n ? `, with ${n} on it` : ''}?`,
       suggestions: ['Check this project’s status', 'Run all the tests and report what fails', 'Review the latest changes'],
-      chipModes: { plan: '📝 Plan first', auto: '⚡ Just do it', report: '👀 Report only' },
+      chipModes: { plan: '📝 Plan first', meeting: '🗣 Meeting first', auto: '⚡ Just do it', report: '👀 Report only' },
       chipStyles: { solo: '💰 Thrifty', delegate: '👥 Delegate' },
       approvedNote: '✅ Plan approved', rejectedNote: '❌ Plan rejected', revisedNote: '✏️ Asked for a revision', reviseHint: 'or write the revision below',
       busyPh: (n) => `${n} is working… wait for the answer`,
@@ -202,6 +204,7 @@
   .asa-face.sm { width: 24px; height: 38px; background-size: 168px 144px; background-position: -24px -3px; flex: none; }
   .asa-b { padding: 8px 10px; border: 1px solid #d9c49a; background: #fffbe9; font-size: 13.5px; line-height: 1.4; min-width: 0; }
   .asa-b.you { align-self: flex-end; max-width: 85%; background: #e6f0d8; border-color: #9ab87a; }
+  .asa-b.meeting { border-color: #b88a4a; background: #fdf3da; }
   .asa-b.plan { border-color: #4a8ac8; box-shadow: inset 3px 0 0 #4a8ac8; }
   .asa-b .asa-b-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 46vh; overflow: auto; }
   .asa-b .asa-b-text.asa-md { white-space: normal; font-size: inherit; line-height: inherit; }
@@ -944,6 +947,10 @@
           return out.push(h('div', { class: 'asa-sys' }, m.kind === 'approve' ? S.approvedNote : m.kind === 'reject' ? S.rejectedNote : `${S.revisedNote}: ${m.text}`));
         }
         if (m.from === 'you') return out.push(h('div', { class: 'asa-b you' }, h('div', { class: 'asa-b-text' }, m.text), imageStripFor(m.images), h('small', {}, timeOf(m.at))));
+        if (m.kind === 'meeting') { // a turn of a real team meeting: the speaker's face and name
+          const sp = memberOf(m.agent);
+          return out.push(h('div', { class: 'asa-brow' }, smallFace({ agent: m.agent }), h('div', { class: 'asa-b agent meeting' }, h('em', {}, `🗣 ${m.name ?? sp?.name ?? ''}${m.round ? ` · ${S.meetRound(m.round)}` : ''}`), mdText(m.text), h('small', {}, timeOf(m.at)))));
+        }
         const plan = m.kind === 'plan';
         const label = plan ? S.planLabel : isDirector(l.agent) && m.kind ? S.reportLabel : null;
         out.push(h('div', { class: 'asa-brow' }, smallFace(l),
@@ -1133,7 +1140,7 @@
       const projSel = h('select', { class: 'asa-chipsel', title: S.project, 'aria-label': S.project }, options.projects.map((p) => h('option', { value: p.cwd, title: p.cwd }, `📁 ${p.name}`)));
       if (options.downloads) projSel.append(h('option', { value: '@downloads', title: '~/Downloads' }, `📥 ${S.dlName}`));
       projSel.value = options.projects.some((p) => p.cwd === prefs.cwd) || (options.downloads && prefs.cwd === '@downloads') ? prefs.cwd : options.projects[0].cwd;
-      const modeSel = h('select', { class: 'asa-chipsel', title: S.mode, 'aria-label': S.mode }, Object.entries(S.chipModes).map(([v, t]) => h('option', { value: v }, t)));
+      const modeSel = h('select', { class: 'asa-chipsel', title: S.mode, 'aria-label': S.mode });
       const modelSel = h('select', { class: 'asa-chipsel', title: S.modelTip, 'aria-label': S.modelTip }, h('option', { value: '' }, S.modelDefault), MODEL_CHOICES.map(([v, t]) => h('option', { value: v }, `🧠 ${t}`)));
       modelSel.value = MODEL_CHOICES.some(([v]) => v === prefs.model) ? prefs.model : '';
       modelSel.onchange = () => { prefs.model = modelSel.value; savePrefs(); };
@@ -1147,13 +1154,20 @@
       const commitLab = h('label', { class: 'asa-chipsel', for: 'asa-commit', title: S.commitTip, style: { display: 'inline-flex', gap: '4px', alignItems: 'center' } }, commitBox, S.commitChip);
       const member = () => staff.find((m) => m.agent === whoSel.value) ?? null;
       const defaultMode = () => prefs.modes?.[whoSel.value] ?? (member()?.director ? 'plan' : 'auto');
+      // "Rapat dulu" (a real team meeting) is Shades' alone: the others don't get that option.
+      const fillModes = () => {
+        const cur = modeSel.value;
+        const want = Object.keys(S.chipModes).filter((v) => v !== 'meeting' || member()?.director);
+        modeSel.replaceChildren(...want.map((v) => h('option', { value: v }, S.chipModes[v])));
+        if (want.includes(cur)) modeSel.value = cur;
+      };
       const isDl = () => projSel.value === '@downloads';
       // The Downloads folder is one mode: ask anything, or ask for a tidy-up (the office moves files only after you approve the plan).
       const syncDl = () => {
         const dl = isDl();
         if (modeSel.dataset.dl !== String(dl)) {
           modeSel.dataset.dl = String(dl);
-          modeSel.replaceChildren(...Object.entries(S.chipModes).map(([v, t]) => h('option', { value: v }, t)));
+          fillModes();
           if (!dl) modeSel.value = defaultMode();
         }
         for (const el of [modeSel, whoSel, commitLab, permSel, isoSel]) el.style.display = dl ? 'none' : '';
@@ -1161,6 +1175,7 @@
         ta.placeholder = dl ? S.dlPh : S.placeholder;
       };
       const update = () => {
+        fillModes();
         if (!isDl()) modeSel.value = defaultMode();
         styleSel.style.display = member()?.director ? '' : 'none';
         const access = member()?.access ?? options.general?.access ?? ['read'];
@@ -1178,7 +1193,7 @@
         whoSel.classList.add('asa-flash');
       };
       projSel.onchange = () => { prefs.cwd = projSel.value; savePrefs(); syncDl(); };
-      modeSel.onchange = () => { prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value }; savePrefs(); };
+      modeSel.onchange = () => { prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value }; savePrefs(); modeSel.title = modeSel.value === 'meeting' ? S.meetTip : S.mode; };
       styleSel.onchange = () => { prefs.style = styleSel.value; savePrefs(); };
       update();
       syncDl();
@@ -1251,7 +1266,7 @@
       clearAtt();
       // Shades takes the letter from the mailbox and hands it over; the task starts when he does (or right away).
       const deliver = async () => {
-        if (director) ns.director?.expect({ cwd: letter.cwd, prompt: text, meeting: true });
+        if (director) ns.director?.expect({ cwd: letter.cwd, prompt: text, meeting: letter.mode !== 'meeting' }); // a real meeting is played from the letter itself
         try { await api('POST', `/api/tasks/${letter.id}/deliver`); } catch { /* the server starts it by itself after 30 s */ }
         // The office learns who runs the new session from the data feed: look a few times so the face is right early.
         for (const ms of [0, 2500, 5000]) setTimeout(() => ns.refreshData(), ms);
