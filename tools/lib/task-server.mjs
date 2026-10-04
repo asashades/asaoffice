@@ -32,6 +32,7 @@ import { buy as shopBuy, shopInfo } from './shop.mjs';
 import { loadNames, setName } from './names.mjs';
 import * as tidy from './tidy.mjs';
 import { createNotifier } from './macnotify.mjs';
+import * as wtlib from './worktree.mjs';
 import { cleanSchedule, dueAction, loadSchedules, MAX_SCHEDULES, newSchedule, nextDue, saveSchedules } from './schedules.mjs';
 
 const MAX_RUNNING = 3;
@@ -474,7 +475,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     else args.push('--session-id', letter.sessionId);
     if (letter.agent) args.push('--agent', letter.agent);
 
-    const child = spawn(claude, args, { cwd: letter.cwd, env: childEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
+    const child = spawn(claude, args, { cwd: letter.wt?.state === 'open' ? letter.wt.dir : letter.cwd, env: childEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
     child.stdin.on('error', () => {}); // claude may exit before reading it all
     if (interactive) child.stdin.write(`${JSON.stringify({ type: 'user', message: { role: 'user', content: text } })}\n`); // stays open: the answers go back through it
     else child.stdin.end(text);
@@ -565,6 +566,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           : killed ? 'Tugasnya dihentikan dari luar (claude dimatikan, kantor di-restart, atau Mac tidur). Kirim ulang atau balas surat ini buat lanjut.'
           : (stderr.trim().split('\n').pop() || `claude keluar dengan kode ${code}`)).slice(0, 400)
         : null;
+      if (letter.wt?.state === 'open') { try { letter.wtSummary = wtlib.summary(letter.wt); } catch { /* the folder is gone */ } }
       letter.cost = (letter.cost ?? 0) + (result?.total_cost_usd ?? 0);
       letter.finishedAt = new Date().toISOString();
       letter.read = false;
@@ -650,7 +652,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (!safeEqual(req.headers.authorization ?? '', `Bearer ${token}`)) return send(res, 401, { error: 'token' }, origin);
 
     const url = new URL(req.url, 'http://x');
-    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject|rename|deliver|allow|ask|undo|archive|unarchive))?$/.exec(url.pathname);
+    const m = /^\/api\/tasks\/([\w-]+)(?:\/(reply|read|stop|approve|reject|rename|deliver|allow|ask|wt|diff|undo|archive|unarchive))?$/.exec(url.pathname);
     try {
       if (req.method === 'GET' && url.pathname === '/api/options') {
         const r = roster();
@@ -874,8 +876,14 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const mode = MODES.includes(body.mode) ? body.mode : member?.director ? 'plan' : 'auto';
         if (body.perm === 'bypass' && !settings.allowBypass) return send(res, 400, { error: 'bypass' }, origin);
         const style = member?.director && body.style === 'delegate' ? 'delegate' : 'solo';
+        const letterId = crypto.randomUUID().slice(0, 8);
+        // "Cabang terpisah": the task works on its own branch in its own folder (worktree.mjs), made now so a plan and the work after it share it.
+        let wt = null;
+        if (body.isolate === true && !resumeId) {
+          try { wt = wtlib.create({ cwd: dir.cwd, id: letterId, title: titleOf(prompt) }); } catch (err) { return send(res, 400, { error: err.message === 'git' ? 'git' : 'worktree' }, origin); }
+        }
         const letter = {
-          id: crypto.randomUUID().slice(0, 8), agent, name: member?.name ?? null, cwd: dir.cwd, project: dir.name,
+          id: letterId, agent, name: member?.name ?? null, cwd: dir.cwd, project: dir.name, ...(wt ? { wt } : {}),
           sessionId: resumeId ?? crypto.randomUUID(), status: 'running', read: true, createdAt: new Date().toISOString(),
           title: resumeId ? (known.title || titleOf(prompt)) : titleOf(prompt), mode, style, phase: mode === 'plan' ? 'plan' : 'work',
           commit: body.commit === true && mode !== 'report', model: cleanModel(body.model), perm: cleanPerm(body.perm) ?? 'manual',
@@ -906,7 +914,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const revise = letter.status === 'awaiting';
         letter.thread.push({ from: 'you', text, at: new Date().toISOString(), kind: revise ? 'revise' : undefined, ...(images.length ? { images } : {}) });
         letter.read = true;
-        run(letter, promptWith(revise ? `Komisaris minta rencananya direvisi:\n${text}\n\nTulis ulang rencananya.` : text, images), { resume: true });
+        // After the branch was merged, turned into a PR or thrown away, the old session's folder is gone: continue in a fresh session in the real folder.
+        const fresh = !!letter.needFresh;
+        if (fresh) { letter.sessionId = crypto.randomUUID(); delete letter.needFresh; }
+        const lead = fresh ? 'Catatan: pekerjaan di cabang terpisah sebelumnya sudah selesai diurus (digabung, dijadikan PR, atau dibuang). Ini lanjutan baru di folder aslinya.\n\n' : '';
+        run(letter, promptWith(revise ? `Komisaris minta rencananya direvisi:\n${text}\n\nTulis ulang rencananya.` : `${lead}${text}`, images), { resume: !fresh });
         return send(res, 200, { letter }, origin);
       }
       if (req.method === 'POST' && (m?.[2] === 'approve' || m?.[2] === 'reject')) {
@@ -955,6 +967,38 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (running.has(letter.id) || letter.status === 'queued') return send(res, 409, { error: 'running' }, origin);
         if (m[2] === 'archive') Object.assign(letter, { archived: true, archivedAt: new Date().toISOString(), read: true });
         else { delete letter.archived; delete letter.archivedAt; }
+        save();
+        return send(res, 200, { letter }, origin);
+      }
+      if (req.method === 'GET' && m?.[2] === 'diff') {
+        if (letter.wt?.state !== 'open') return send(res, 409, { error: 'no worktree' }, origin);
+        return send(res, 200, { diff: wtlib.diff(letter.wt), summary: wtlib.summary(letter.wt) }, origin);
+      }
+      if (req.method === 'POST' && m?.[2] === 'wt') {
+        // What to do with the result of a task that worked on its own branch: merge it, open a PR, or throw it away.
+        const action = String((await readBody(req)).action ?? '');
+        if (letter.wt?.state !== 'open') return send(res, 409, { error: 'no worktree' }, origin);
+        if (running.has(letter.id) || letter.status === 'queued') return send(res, 409, { error: 'running' }, origin);
+        const wt = letter.wt;
+        const at = new Date().toISOString();
+        const note = (text) => letter.thread.push({ from: 'you', kind: 'allow', at, text });
+        try {
+          if (action === 'merge') { const into = wtlib.merge(wt, letter.title); Object.assign(wt, { state: 'merged', into }); note(`🌿 Digabung ke ${into}.`); }
+          else if (action === 'discard') { wtlib.discard(wt); wt.state = 'discarded'; note('🗑 Cabang terpisah dibuang.'); }
+          else if (action === 'pr') {
+            const lines = (letter.wtSummary?.files ?? []).slice(0, 30).map((f) => `- ${f.path} (+${f.add} −${f.del})`).join('\n');
+            const body = `Dikerjakan lewat kotak surat Asa Office.\n\n${letter.thread[0]?.text?.slice(0, 600) ?? ''}\n\n${lines}`;
+            wt.pr = await wtlib.openPr(wt, letter.title, body);
+            wtlib.remove(wt); // the branch is pushed and stays; the folder isn't needed any more
+            wt.state = 'pr';
+            note(`🌿 PR dibuka: ${wt.pr}`);
+          } else return send(res, 400, { error: 'action' }, origin);
+        } catch (err) {
+          return send(res, 409, { error: ['conflict', 'detached', 'gone'].includes(err.message) ? err.message : `worktree: ${err.message}`.slice(0, 160) }, origin);
+        }
+        letter.needFresh = true;
+        delete letter.wtSummary;
+        letter.read = true;
         save();
         return send(res, 200, { letter }, origin);
       }
@@ -1022,6 +1066,9 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       }
       if (req.method === 'DELETE' && m && !m[2]) {
         if (running.has(letter.id)) return send(res, 409, { error: 'running' }, origin);
+        if (letter.wt?.state === 'open') { // loose work is committed to its branch first, so deleting the chat never loses it
+          try { wtlib.commitIfDirty(letter.wt, `${letter.title ?? 'Asa Office'} (surat dihapus)`); wtlib.remove(letter.wt); } catch { /* already gone */ }
+        }
         clearTimeout(holds.get(letter.id));
         holds.delete(letter.id);
         letters = letters.filter((l) => l.id !== letter.id);

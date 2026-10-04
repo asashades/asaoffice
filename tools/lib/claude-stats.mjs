@@ -10,6 +10,7 @@
 //   runs()     — the sub-agents of the last day (type, task description, when, folder) for the HUD's history tab
 //   spawns()   — { toolUseId: subagent_type } for Agent/Task calls in the last few hours, so the office can
 //                tell which staff member (staff/roster.json) a freshly spawned sub-agent is
+import { isOfficeWorktree } from './worktree.mjs';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -240,7 +241,7 @@ export class ClaudeStats {
   projects(limit = 15) {
     const seen = new Map();
     for (const s of [...this.sessions.values()].sort((a, b) => Math.max(b.lastAt, b.fileAt) - Math.max(a.lastAt, a.fileAt))) {
-      if (s.cwd && !seen.has(s.cwd)) seen.set(s.cwd, { name: path.basename(s.cwd), cwd: s.cwd });
+      if (s.cwd && !seen.has(s.cwd) && !isOfficeWorktree(s.cwd)) seen.set(s.cwd, { name: path.basename(s.cwd), cwd: s.cwd }); // the office's own task branches aren't projects
     }
     return [...seen.values()].slice(0, limit);
   }
