@@ -12,6 +12,9 @@
   let enabled = ns.setting('dayNight', ['on', 'off'], 'on') === 'on';
   let previewHour = null;
   const roomLightsOn = ns.setting('roomLights', ['on', 'off'], 'on') === 'on';
+  // 'stardew': the dark is multiplied in (colours keep their strength, shadows go indigo-purple), lit rooms glow amber, and light comes from things
+  // (lanterns, fireplace, lamps, windows). 'classic': the older blue wash. ?nightStyle=classic|stardew (remembered).
+  const stardew = ns.setting('nightStyle', ['stardew', 'classic'], 'stardew') === 'stardew';
 
   // The rooms of the bundled layout (33×24, tools/gen-layout.mjs): tile rectangles of floor, both ends included.
   const ROOMS = [
@@ -24,6 +27,11 @@
   const LIGHT_RGB = {
     work: [255, 218, 160], meeting: [255, 224, 176], director: [255, 192, 118], toilet: [226, 236, 255],
     pantry: [255, 238, 205], breakout: [255, 208, 134], lounge: [255, 176, 100],
+  };
+  // The warm colour each lit room glows (stardew style): the office ivory-amber, the meeting room orange, the lounge brick red, the bathroom a cooler teal.
+  const AMBIENT = {
+    work: [255, 165, 85], meeting: [255, 145, 65], director: [255, 125, 55], toilet: [130, 190, 225],
+    pantry: [255, 170, 90], breakout: [255, 138, 62], lounge: [235, 100, 62],
   };
   const OUTSIDE = { id: 'outside', c0: 14, r0: 18, c1: 18, r1: 22 };
   const DOORS = [
@@ -58,6 +66,19 @@
     [19.6, [18, 24, 70], 0.55, 1, [14, 20, 52]],
     [24, [18, 24, 70], 0.55, 1, [14, 20, 52]],
   ];
+  // The colour the picture is multiplied by, by hour (white = no change). Night is a deep indigo; dusk and dawn are warm.
+  const MULS = [
+    [0, [66, 60, 124]], [4.5, [66, 60, 124]], [6, [230, 168, 168]], [7.5, [255, 255, 255]],
+    [16, [255, 255, 255]], [17.5, [255, 206, 160]], [18.6, [150, 106, 160]], [19.6, [74, 66, 130]], [24, [66, 60, 124]],
+  ];
+  function mulAt(hour) {
+    for (let i = 0; i < MULS.length - 1; i++) {
+      const [h0, c0] = MULS[i];
+      const [h1, c1] = MULS[i + 1];
+      if (hour >= h0 && hour <= h1) return mixRgb(c0, c1, (hour - h0) / (h1 - h0 || 1));
+    }
+    return [255, 255, 255];
+  }
   const mix = (a, b, t) => a + (b - a) * t;
   const mixRgb = (a, b, t) => a.map((v, i) => Math.round(mix(v, b[i], t)));
 
@@ -98,6 +119,32 @@
 
   // Fixed star positions inside a window's glass (sprite pixels), so they don't jump around.
   const STARS = [[8, 5], [11, 9], [13, 6], [18, 5], [20, 10], [23, 7], [10, 12], [22, 13]];
+
+  // Multiplies the picture by a colour (and a soft vignette) without painting the empty area round the room: the canvas is copied first, and
+  // whatever was transparent is made transparent again afterwards.
+  let copy = null;
+  function multiplyNight(ctx, canvas, rgb, vignette) {
+    if (!copy || copy.width !== canvas.width || copy.height !== canvas.height) { copy = document.createElement('canvas'); copy.width = canvas.width; copy.height = canvas.height; }
+    const c = copy.getContext('2d');
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.globalCompositeOperation = 'copy';
+    c.drawImage(canvas, 0, 0);
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = `rgb(${rgb.join(',')})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (vignette > 0.01) {
+      const w = canvas.width, hgt = canvas.height;
+      const g = ctx.createRadialGradient(w / 2, hgt / 2, Math.min(w, hgt) * 0.3, w / 2, hgt / 2, Math.hypot(w, hgt) * 0.55);
+      const edge = Math.round(255 - 110 * vignette);
+      g.addColorStop(0, 'rgb(255,255,255)');
+      g.addColorStop(1, `rgb(${edge},${edge - 8},${Math.min(255, edge + 40)})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, hgt);
+    }
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.drawImage(copy, 0, 0);
+    ctx.globalCompositeOperation = 'source-atop';
+  }
 
   ns.onFrame((canvas, office, offX, offY, zoom, editMode) => {
     if (!enabled || editMode) return;
@@ -147,9 +194,12 @@
     }
 
     // Tint everything already drawn (source-atop leaves the empty area around the room alone).
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = `rgba(${p.tint.join(',')},${p.alpha})`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (stardew) multiplyNight(ctx, canvas, mulAt(hour), Math.min(1, p.light));
+    else {
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = `rgba(${p.tint.join(',')},${p.alpha})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     // Room lights: the ceiling light of every occupied room (soft pools that add light, clipped to the room), and a desk lamp
     // on each desk where someone is working. Dusk brings them in gradually (p.light is 0 by day and 1 at night).
@@ -171,13 +221,27 @@
       rect.set(OUTSIDE.id, OUTSIDE);
       const clipTo = (r) => { ctx.beginPath(); ctx.rect(offX + px(r.c0 * 16), offY + px(r.r0 * 16), px((r.c1 - r.c0 + 1) * 16), px((r.r1 - r.r0 + 1) * 16)); ctx.clip(); };
       // An empty room is darker than a lit one: walls separate them, so the edge reads as a wall, not a seam.
-      for (const room of ROOMS) {
+      for (const room of stardew ? [] : ROOMS) {
         const dark = (1 - levels.get(room.id)) * ceil;
         if (dark < 0.02) continue;
         ctx.fillStyle = `rgba(6,10,36,${0.3 * dark})`;
         ctx.fillRect(offX + px(room.c0 * 16), offY + px(room.r0 * 16), px((room.c1 - room.c0 + 1) * 16), px((room.r1 - room.r0 + 1) * 16));
       }
       ctx.globalCompositeOperation = 'lighter';
+      // Stardew: a lit room is warm all over (amber from the middle, a little less at the walls), an empty one stays a dark purple.
+      if (stardew) {
+        for (const room of ROOMS) {
+          const lvl = levels.get(room.id) * ceil;
+          if (lvl < 0.02) continue;
+          const rx = offX + px(room.c0 * 16), ry = offY + px(room.r0 * 16), rw = px((room.c1 - room.c0 + 1) * 16), rh = px((room.r1 - room.r0 + 1) * 16);
+          const amb = AMBIENT[room.id] ?? [255, 160, 80];
+          const g = ctx.createRadialGradient(rx + rw / 2, ry + rh / 2, 0, rx + rw / 2, ry + rh / 2, Math.hypot(rw, rh) * 0.55);
+          g.addColorStop(0, `rgba(${amb.join(',')},${(0.36 * lvl).toFixed(3)})`);
+          g.addColorStop(1, `rgba(${amb.join(',')},${(0.15 * lvl).toFixed(3)})`);
+          ctx.fillStyle = g;
+          ctx.fillRect(rx, ry, rw, rh);
+        }
+      }
       // Ceiling lights: a few soft pools per room, each with its own switch-on delay, a slight breathing and no hard edge.
       ROOMS.forEach((room, ri) => {
         const lvl = levels.get(room.id) * ceil;
@@ -195,7 +259,7 @@
           const breath = 1 + 0.03 * Math.sin(t * 1.7 + k * 2.1 + ri);
           const lx = room.c0 * 16 + sx * ((k % cols) + 0.5);
           const ly = room.r0 * 16 + sy * (Math.floor(k / cols) + 0.5);
-          lightPool(ctx, offX + px(lx), offY + px(ly), px(Math.max(sx, sy) * 0.85), LIGHT_RGB[room.id], 1.25 * on * breath);
+          lightPool(ctx, offX + px(lx), offY + px(ly), px(Math.max(sx, sy) * 0.85), stardew ? AMBIENT[room.id] ?? LIGHT_RGB[room.id] : LIGHT_RGB[room.id], (stardew ? 0.85 : 1.25) * on * breath);
         }
         ctx.restore();
         // The walls round the room catch some of that light too (the tall wall faces: two rows above and below, one tile at the sides),
@@ -246,6 +310,7 @@
 
     // Warm light pools.
     if (p.light > 0.05) {
+      if (stardew) ctx.globalCompositeOperation = 'lighter'; // light adds to the dark picture instead of painting over it
       const flicker = 0.85 + 0.1 * Math.sin(t * 9) + 0.05 * Math.sin(t * 23);
       for (const f of layout.furniture) {
         const cx = offX + px(f.col * 16);
@@ -257,7 +322,7 @@
       // Screens light up the faces of villagers at work.
       for (const c of office.characters.values()) {
         if (!c.isActive || c.state !== 'type') continue;
-        glow(ctx, offX + px(c.x), offY + px(c.y - 10), px(22), [170, 230, 255], p.light * 0.8);
+        glow(ctx, offX + px(c.x), offY + px(c.y - 12), px(14), [170, 220, 255], p.light * (stardew ? 0.22 : 0.3)); // a small cool light on the face, not a haze round the whole villager
       }
       // Desk lamps: the desk each working villager sits at.
       if (lamps) {
