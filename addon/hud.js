@@ -25,7 +25,7 @@
       running: 'bekerja', finished: 'selesai', source: 'Sumber: transkrip Claude Code, 24 jam terakhir (terbaru di atas)',
       todoSource: (n) => `Sumber: TodoWrite · ${n} sesi terbaru`, main: 'Sesi utama', director: 'Direktur', actingFor: 'Bantu Shades',
       atDesk: 'Di meja direktur', noProject: 'Sesi Claude Code', chatWith: (n) => `Ngobrol sama ${n}`,
-      planReady: 'Rencana siap', approveBtn: '✅ Setujui', rejectBtn: '❌ Tolak', openBtn: 'Buka', morePlans: (n) => `+${n} rencana lagi di kotak surat`,
+      planReady: 'Rencana siap', askReady: 'Claude minta izin', askAllowBtn: '✅ Izinkan', askDenyBtn: '⛔ Tolak', approveBtn: '✅ Setujui', rejectBtn: '❌ Tolak', openBtn: 'Buka', morePlans: (n) => `+${n} rencana lagi di kotak surat`,
       perm: 'Izin', emptyPerm: 'Belum ada langkah yang ditolak otomatis.', permSource: 'Langkah yang ditolak otomatis karena di luar izin tugas. Klik buat buka suratnya.', stOpen: 'menunggu', stTerminal: 'jalankan sendiri', stRo: 'Downloads baca-saja', stAllowed: 'diizinkan sekali', clearPerm: 'Abaikan semua',
       seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', openEnd: 'Pendapatan kemarin', kasTip: 'Kas kantor · klik buat ke Toko', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
     },
@@ -41,7 +41,7 @@
       running: 'working', finished: 'done', source: 'Source: Claude Code transcripts, last 24 hours (newest first)',
       todoSource: (n) => `Source: TodoWrite · ${n} latest sessions`, main: 'Main session', director: 'Director', actingFor: 'Helping Shades',
       atDesk: "At the director's desk", noProject: 'Claude Code session', chatWith: (n) => `Chatting with ${n}`,
-      planReady: 'Plan ready', approveBtn: '✅ Approve', rejectBtn: '❌ Reject', openBtn: 'Open', morePlans: (n) => `+${n} more plans in the mailbox`,
+      planReady: 'Plan ready', askReady: 'Claude asks permission', askAllowBtn: '✅ Allow', askDenyBtn: '⛔ Deny', approveBtn: '✅ Approve', rejectBtn: '❌ Reject', openBtn: 'Open', morePlans: (n) => `+${n} more plans in the mailbox`,
       perm: 'Permissions', emptyPerm: 'Nothing has been refused automatically.', permSource: 'Steps refused automatically because they were outside the task’s permissions. Click to open the letter.', stOpen: 'waiting', stTerminal: 'run it yourself', stRo: 'Downloads read-only', stAllowed: 'allowed once', clearPerm: 'Dismiss all',
       seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', openEnd: "Yesterday's income", kasTip: 'Office cash · click to open the shop', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
     },
@@ -113,6 +113,9 @@
   .hud-pending { position: fixed; top: 136px; left: 64px; width: 360px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
   .hud-pending > * { pointer-events: auto; }
   .hud-plan { padding: 7px 10px 8px; border-color: #3f74b8; box-shadow: inset 0 0 0 2px #9fc2ea, 0 4px 0 rgba(0,0,0,0.25); animation: hud-plan-in 0.2s ease-out; }
+  .hud-plan.hud-ask { border-color: #c8801f; box-shadow: inset 0 0 0 2px #f0c987, 0 4px 0 rgba(0,0,0,0.25); }
+  .hud-plan.hud-ask small { color: #a8650f; }
+  .hud-plan.hud-ask .t { font-family: ui-monospace, Menlo, monospace; font-size: 12px; word-break: break-all; }
   .hud-plan small { display: block; font-size: 11.5px; color: #3f74b8; }
   .hud-plan .t { font-size: 13.5px; line-height: 1.3; margin: 2px 0 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .hud-plan .b { display: flex; gap: 6px; }
@@ -288,6 +291,7 @@
     if (planBtn) {
       const l = (ns.data?.mail ?? []).find((x) => x.id === planBtn.dataset.id);
       if (!l) return;
+      if (planBtn.dataset.plan.startsWith('ask-')) { planBtn.disabled = true; ns.mailbox?.answerAsk(l.id, planBtn.dataset.ask, planBtn.dataset.plan === 'ask-allow' ? 'allow' : 'deny'); return; }
       if (planBtn.dataset.plan === 'approve') { planBtn.disabled = true; ns.mailbox?.approve(l, planBtn); }
       else if (planBtn.dataset.plan === 'reject') { planBtn.disabled = true; ns.mailbox?.reject(l); }
       else ns.mailbox?.openLetter(l.id);
@@ -465,7 +469,10 @@
     // Plans waiting for you: approve or reject without opening the mailbox
     const waiting = (ns.data?.mail ?? []).filter((l) => l.status === 'awaiting' && !l.report && !l.archived).slice(0, 3);
     const moreWaiting = (ns.data?.mail ?? []).filter((l) => l.status === 'awaiting' && !l.report && !l.archived).length - waiting.length;
-    const pendingHtml = waiting.map((l) => `<div class="hud-plan hud-box"><small>📝 ${esc(S.planReady)} · ${esc([l.name ?? '', l.project ?? ''].filter(Boolean).join(' · '))}</small><div class="t" title="${esc(l.title)}">${esc(l.title)}</div><div class="b"><button type="button" class="go" data-plan="approve" data-id="${esc(l.id)}">${esc(S.approveBtn)}</button><button type="button" data-plan="reject" data-id="${esc(l.id)}">${esc(S.rejectBtn)}</button><button type="button" data-plan="open" data-id="${esc(l.id)}">${esc(S.openBtn)}</button></div></div>`).join('')
+    // Permission questions of running tasks: answer them from here, with the whole command in view
+    const askCards = (ns.data?.mail ?? []).filter((l) => !l.archived && l.status === 'running').flatMap((l) => (l.asks ?? []).filter((a) => a.state === 'open').map((a) => ({ l, a }))).slice(0, 3)
+      .map(({ l, a }) => `<div class="hud-plan hud-ask hud-box"><small>🔐 ${esc(S.askReady)} · ${esc([l.name ?? '', l.project ?? ''].filter(Boolean).join(' · '))}</small><div class="t" title="${esc(a.text)}">${esc(`${a.tool}: ${a.text}`)}</div><div class="b"><button type="button" class="go" data-plan="ask-allow" data-id="${esc(l.id)}" data-ask="${esc(a.id)}">${esc(S.askAllowBtn)}</button><button type="button" data-plan="ask-deny" data-id="${esc(l.id)}" data-ask="${esc(a.id)}">${esc(S.askDenyBtn)}</button><button type="button" data-plan="open" data-id="${esc(l.id)}">${esc(S.openBtn)}</button></div></div>`).join('');
+    const pendingHtml = askCards + waiting.map((l) => `<div class="hud-plan hud-box"><small>📝 ${esc(S.planReady)} · ${esc([l.name ?? '', l.project ?? ''].filter(Boolean).join(' · '))}</small><div class="t" title="${esc(l.title)}">${esc(l.title)}</div><div class="b"><button type="button" class="go" data-plan="approve" data-id="${esc(l.id)}">${esc(S.approveBtn)}</button><button type="button" data-plan="reject" data-id="${esc(l.id)}">${esc(S.rejectBtn)}</button><button type="button" data-plan="open" data-id="${esc(l.id)}">${esc(S.openBtn)}</button></div></div>`).join('')
       + (moreWaiting > 0 ? `<div class="hud-more">${esc(S.morePlans(moreWaiting))}</div>` : '');
     setHtml($('hud-pending'), pendingHtml, 'pending');
 

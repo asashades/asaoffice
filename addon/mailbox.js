@@ -53,6 +53,11 @@
       schedBtn: '⏰ Jadwal', schedTip: 'Tugas yang jalan sendiri pada jam tertentu',
       tidyBtn: '🧹', tidyTip: 'Tanya atau rapikan folder Downloads (file baru dipindah setelah kamu setujui)', dlName: 'Downloads', tidyDraft: 'Rapikan file lepas di Downloads', dlPh: 'Tanya soal Downloads atau minta dirapikan, mis. "cari invoice bulan lalu" atau "rapikan file PDF"', tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.',
       tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
+      permChips: { manual: '🔐 Tanya dulu', acceptEdits: '✏️ Terima edit', auto: '🤖 Auto', bypass: '⚡ Bypass izin', strict: '🔒 Ketat' },
+      permTip: 'Cara izin ditangani saat tugas jalan. Tanya dulu: kamu jawab tiap langkah di luar daftar. Terima edit: ubah file langsung jalan, sisanya tanya. Auto: Claude menilai sendiri, tanya kalau ragu. Bypass: tanpa tanya sama sekali. Ketat: langkah di luar daftar ditolak otomatis (cara lama).',
+      permShort: { manual: 'tanya dulu', acceptEdits: 'terima edit', auto: 'auto', bypass: 'bypass izin', strict: 'ketat' },
+      permBypassAsk: 'Aktifkan mode Bypass izin? Claude akan menjalankan apa saja tanpa bertanya (hapus file, git, perintah apa pun) selama tugas itu jalan. Pakai hanya di folder yang aman.', permBypassYes: 'Aktifkan', permBypassNo: 'Batal',
+      askTitle: 'Claude minta izin', askAllow: 'Izinkan', askAlways: 'Izinkan terus di obrolan ini', askDeny: 'Tolak', askGone: 'Pertanyaan ini sudah tidak aktif (tugasnya selesai atau dihentikan).', askWaitShort: '🔐 menunggu izinmu',
       modelDefault: '🧠 Model default', modelTip: 'Model Claude yang dipakai (default = pengaturan Claude Code di Mac)', sesModelOrig: (n) => `🧠 Sesi asli (${n})`, sesModelDefault: '🧠 Default',
       archiveAllSessions: (n) => `🗄 Arsipkan ${n} sesi dari luar kantor`, archiveSure: 'Yakin? Klik lagi', archiveRow: 'Arsipkan', unarchiveRow: 'Keluarkan dari arsip', archiveFailed: 'Gagal mengarsipkan.',
       fArchived: '🗄 Arsip', unarchive: 'Keluarkan dari arsip', deletePerm: '🗑 Hapus permanen', deleteSure: 'Yakin? Klik lagi', emptyArchive: 'Belum ada chat yang diarsipkan. Pakai tombol 🗄 di chat buat menyimpannya di sini.',
@@ -111,6 +116,11 @@
       schedBtn: '⏰ Schedules', schedTip: 'Tasks that run by themselves at a set time',
       tidyBtn: '🧹', tidyTip: 'Ask about or tidy the Downloads folder (files only move after you approve)', dlName: 'Downloads', tidyDraft: 'Tidy the loose files in Downloads', dlPh: 'Ask about Downloads or ask for a tidy-up, e.g. "find last month\'s invoice" or "tidy the PDFs"', tidyNoFolder: 'The Downloads folder was not found on this Mac.',
       tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
+      permChips: { manual: '🔐 Ask first', acceptEdits: '✏️ Accept edits', auto: '🤖 Auto', bypass: '⚡ Bypass permissions', strict: '🔒 Strict' },
+      permTip: 'How permissions are handled while the task runs. Ask first: you answer each step outside the list. Accept edits: file edits go through, the rest asks. Auto: Claude judges, asks when unsure. Bypass: nothing asks. Strict: steps outside the list are refused automatically (the old way).',
+      permShort: { manual: 'ask first', acceptEdits: 'accept edits', auto: 'auto', bypass: 'bypass', strict: 'strict' },
+      permBypassAsk: 'Turn on Bypass permissions? Claude will run anything without asking (delete files, git, any command) while that task runs. Only use it in a safe folder.', permBypassYes: 'Turn on', permBypassNo: 'Cancel',
+      askTitle: 'Claude asks permission', askAllow: 'Allow', askAlways: 'Always allow in this chat', askDeny: 'Deny', askGone: 'This question is no longer active (the task finished or was stopped).', askWaitShort: '🔐 waiting for you',
       modelDefault: '🧠 Default model', modelTip: 'The Claude model to use (default = your Claude Code setting on this Mac)', sesModelOrig: (n) => `🧠 Original (${n})`, sesModelDefault: '🧠 Default',
       archiveAllSessions: (n) => `🗄 Archive ${n} sessions from outside the office`, archiveSure: 'Sure? Click again', archiveRow: 'Archive', unarchiveRow: 'Take out of the archive', archiveFailed: 'Could not archive.',
       fArchived: '🗄 Archive', unarchive: 'Take out of the archive', deletePerm: '🗑 Delete for good', deleteSure: 'Sure? Click again', emptyArchive: 'No archived chats yet. Use the 🗄 button in a chat to keep it here.',
@@ -263,6 +273,10 @@
   .asa-deny { border: 2px solid #c8503c; background: #ffe9e0; padding: 8px 10px; font-size: 13.5px; }
   .asa-deny b { display: block; font-weight: 600; margin-bottom: 4px; }
   .asa-deny-exact { margin-top: 4px; padding: 4px 6px; background: #fff6dc; border: 1px dashed #c8503c; }
+  .asa-ask { align-self: stretch; padding: 8px 10px; border: 2px solid #c8801f; background: #fff3d6; box-shadow: inset 4px 0 0 #c8801f; display: flex; flex-direction: column; gap: 6px; }
+  .asa-ask pre { margin: 0; padding: 6px; background: #fffbe9; white-space: pre-wrap; word-break: break-all; font-size: 12.5px; max-height: 30vh; overflow: auto; }
+  .asa-ask .asa-ask-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .asa-permbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; width: 100%; padding: 6px 8px; background: #fde7c8; border: 2px solid #c8801f; font-size: 12.5px; }
   .asa-deny-exact pre { margin: 4px 0; padding: 6px; background: #fffbe9; white-space: pre-wrap; word-break: break-all; font-size: 12.5px; }
   .asa-deny-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
   .asa-deny-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
@@ -404,7 +418,7 @@
   const statusGroup = (l) => (l.status === 'running' || l.status === 'queued' ? 'running' : l.status === 'awaiting' ? 'awaiting' : 'done');
   const has = (text, q) => String(text ?? '').toLowerCase().includes(q);
   const pickLang = (v) => (v && typeof v === 'object' ? v[ns.lang] ?? v.en : v);
-  const errorText = (err) => ({ busy: S.busy, noApi: S.noApi, 'director busy': S.directorBusy })[err.message] ?? `${S.failed} (${err.message})`;
+  const errorText = (err) => ({ busy: S.busy, noApi: S.noApi, 'director busy': S.directorBusy, gone: S.askGone })[err.message] ?? `${S.failed} (${err.message})`;
   const memberOf = (agent) => (agent ? (options?.staff ?? ns.data?.staff ?? []).find((m) => m.agent === agent) ?? null : null);
   const isDirector = (agent) => !!memberOf(agent)?.director;
   const current = () => (sel && sel !== 'new' ? letters().find((l) => l.id === sel) ?? null : null);
@@ -811,7 +825,7 @@
       fillHead(l);
     }
     // Thread
-    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.cost, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join(), [...exactOpen].join()]);
+    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.cost, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join(), (l?.asks ?? []).map((d) => d.id + d.state).join(), [...exactOpen].join()]);
     if (force || ui.keys.thread !== threadKey) {
       ui.keys.thread = threadKey;
       const box = ui.thread;
@@ -853,7 +867,7 @@
       actions.append(del);
     } else if (!busy(l)) actions.append(h('button', { type: 'button', class: 'asa-btn', title: S.archive, 'aria-label': S.archive, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/archive`), leave) }, '🗄'));
     head.replaceChildren(back, face(l), h('div', { class: 'asa-chat-title' }, titleBox,
-      h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.commit ? S.commitShort : null, l.usedModel || l.model ? `🧠 ${modelName(l.usedModel || l.model)}` : null, S[l.status]].filter(Boolean).join(' · '))), actions);
+      h('span', { class: 'asa-muted' }, [who(l), m ? ns.staffRole(m) : null, l.project, l.mode ? S.modeShort[l.mode] : null, l.commit ? S.commitShort : null, l.perm && l.perm !== 'manual' ? S.permShort[l.perm] : null, l.usedModel || l.model ? `🧠 ${modelName(l.usedModel || l.model)}` : null, S[l.status]].filter(Boolean).join(' · '))), actions);
   }
 
   /** Calls the task tried that were refused automatically, each with a one-time "Izinkan sekali" when that's safe to offer. */
@@ -935,6 +949,7 @@
           ? h('div', { class: 'asa-sys' }, S.tidyUndone)
           : h('div', { class: 'asa-actions asa-plan-actions' }, h('button', { type: 'button', class: 'asa-btn', onclick: () => act(() => api('POST', `/api/tasks/${l.id}/undo`)) }, S.tidyUndo)));
       }
+      for (const a of (l.asks ?? []).filter((x) => x.state === 'open')) out.push(askCard(l, a));
       const deny = denialBlock(l);
       if (deny) out.push(deny);
       if (l.status === 'queued') out.push(h('div', { class: 'asa-sys' }, S.queuedNote(isDirector(l.agent) ? '' : l.name ?? '')));
@@ -944,6 +959,41 @@
     }
     if (notice) out.push(h('div', { class: 'asa-warn' }, notice));
     box.replaceChildren(...out);
+  }
+
+  const PERMS = ['manual', 'acceptEdits', 'auto', 'bypass', 'strict'];
+  /** The permission-mode chip. Choosing Bypass the first time asks (inline, no browser dialog) before switching it on in the office. */
+  function permSelect(initial, chips, onPick) {
+    const sel2 = h('select', { class: 'asa-chipsel', title: S.permTip, 'aria-label': S.permTip }, PERMS.map((v) => h('option', { value: v }, S.permChips[v])));
+    let last = PERMS.includes(initial) && !(initial === 'bypass' && !options?.perms?.bypass) ? initial : 'manual';
+    sel2.value = last;
+    sel2.onchange = () => {
+      if (sel2.value !== 'bypass' || options?.perms?.bypass) { last = sel2.value; onPick?.(last); return; }
+      const bar = h('div', { class: 'asa-permbar', role: 'alert' }, h('span', {}, S.permBypassAsk));
+      const close = () => { bar.remove(); sel2.value = last; };
+      const yes = h('button', { type: 'button', class: 'asa-btn primary' }, S.permBypassYes);
+      yes.onclick = async () => {
+        try { options = { ...options, perms: (await api('POST', '/api/settings', { allowBypass: true })).perms }; } catch { return close(); }
+        bar.remove();
+        last = 'bypass';
+        sel2.value = 'bypass';
+        onPick?.(last);
+      };
+      bar.append(yes, h('button', { type: 'button', class: 'asa-btn', onclick: close }, S.permBypassNo));
+      chips.parentElement?.insertBefore(bar, chips) ?? chips.before(bar);
+    };
+    return sel2;
+  }
+  /** A permission question from a running task: the whole command, and the buttons to answer it. */
+  function askCard(l, a) {
+    const answer = (decision) => act(() => api('POST', `/api/tasks/${l.id}/ask`, { id: a.id, decision }));
+    return h('div', { class: 'asa-ask', role: 'alert' },
+      h('b', {}, `🔐 ${S.askTitle}: ${a.tool}`),
+      h('pre', {}, a.text || a.tool),
+      h('div', { class: 'asa-ask-row' },
+        h('button', { type: 'button', class: 'asa-btn primary', onclick: () => answer('allow') }, S.askAllow),
+        a.always ? h('button', { type: 'button', class: 'asa-btn', onclick: () => answer('always') }, S.askAlways) : null,
+        h('button', { type: 'button', class: 'asa-btn', onclick: () => answer('deny') }, S.askDeny)));
   }
 
   function fillComposer(l) {
@@ -968,7 +1018,7 @@
     const sync = () => { send.disabled = locked || (!ta.value.trim() && !pendingImages().length) || (attach && !attach.ready()) || sending; };
     ta.oninput = () => { setDraft(ta.value); grow(); sync(); updateMention(); };
     const controls = {};
-    const submit = () => (existing ? sendReply(l, ta, send) : sendNew(ta, send, controls));
+    const submit = () => (existing ? sendReply(l, ta, send, controls) : sendNew(ta, send, controls));
     // @name in a new chat picks who does it (a small list above the box, like a chat app's mentions).
     const mention = { open: false, idx: 0, items: [], start: -1 };
     const pop = h('div', { class: 'asa-mention', role: 'listbox' });
@@ -1033,6 +1083,7 @@
       const modelSel = h('select', { class: 'asa-chipsel', title: S.modelTip, 'aria-label': S.modelTip }, h('option', { value: '' }, S.modelDefault), MODEL_CHOICES.map(([v, t]) => h('option', { value: v }, `🧠 ${t}`)));
       modelSel.value = MODEL_CHOICES.some(([v]) => v === prefs.model) ? prefs.model : '';
       modelSel.onchange = () => { prefs.model = modelSel.value; savePrefs(); };
+      const permSel = permSelect(prefs.perm, chips, (v) => { prefs.perm = v; savePrefs(); });
       const styleSel = h('select', { class: 'asa-chipsel', title: S.style, 'aria-label': S.style }, Object.entries(S.chipStyles).map(([v, t]) => h('option', { value: v }, t)));
       styleSel.value = prefs.style ?? 'solo';
       const commitBox = h('input', { type: 'checkbox', id: 'asa-commit' });
@@ -1048,7 +1099,7 @@
           modeSel.replaceChildren(...Object.entries(S.chipModes).map(([v, t]) => h('option', { value: v }, t)));
           if (!dl) modeSel.value = defaultMode();
         }
-        for (const el of [modeSel, whoSel, commitLab]) el.style.display = dl ? 'none' : '';
+        for (const el of [modeSel, whoSel, commitLab, permSel]) el.style.display = dl ? 'none' : '';
         styleSel.style.display = !dl && member()?.director ? '' : 'none';
         ta.placeholder = dl ? S.dlPh : S.placeholder;
       };
@@ -1074,10 +1125,12 @@
       styleSel.onchange = () => { prefs.style = styleSel.value; savePrefs(); };
       update();
       syncDl();
-      Object.assign(controls, { whoSel, projSel, modeSel, modelSel, styleSel, commitBox, member, setWho });
-      chips.append(whoSel, projSel, modeSel, modelSel, styleSel, commitLab);
+      Object.assign(controls, { whoSel, projSel, modeSel, modelSel, permSel, styleSel, commitBox, member, setWho });
+      chips.append(whoSel, projSel, modeSel, modelSel, permSel, styleSel, commitLab);
     } else {
       chips.append(h('span', { class: 'asa-pill' }, `👤 ${who(l)}`), h('span', { class: 'asa-pill', title: l.cwd }, `📁 ${l.project}`), l.mode ? h('span', { class: 'asa-pill' }, S.chipModes[l.mode]) : null);
+      // The permission mode can be changed between replies (it applies to the next run), except in Downloads where it is read-only anyway.
+      if (!l.readOnlyDir && l.kind !== 'tidy' && !locked) { controls.permSel = permSelect(l.perm, chips, null); chips.append(controls.permSel); }
     }
     const sendBtn = locked
       ? h('button', { type: 'button', class: 'asa-send stop', title: S.stop, 'aria-label': S.stop, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/stop`)) }, '⏹')
@@ -1127,7 +1180,7 @@
     if (cwd === '@downloads') return sendDownloads(text, landed, c.modelSel.value);
     try {
       const { letter } = await api('POST', '/api/tasks', {
-        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, model: c.modelSel.value || undefined, style: director ? c.styleSel.value : undefined, commit: c.commitBox.checked, images, hold: true,
+        agent: agent || null, cwd, prompt: text, mode: c.modeSel.value, model: c.modelSel.value || undefined, perm: c.permSel.value, style: director ? c.styleSel.value : undefined, commit: c.commitBox.checked, images, hold: true,
       });
       await landed;
       dropLetter();
@@ -1160,7 +1213,7 @@
       if (panel) { ui.keys.comp = null; refreshMain(); }
     }
   }
-  async function sendReply(l, ta, sendBtn) {
+  async function sendReply(l, ta, sendBtn, controls = {}) {
     const images = pendingImages();
     const text = ta.value.trim() || (images.length ? S.lookAtImages : '');
     if (!text || sending) return;
@@ -1170,7 +1223,7 @@
     ns.notify?.sfx?.('send');
     const landed = flyPlane(sendBtn);
     try {
-      await api('POST', `/api/tasks/${l.id}/reply`, { text, images });
+      await api('POST', `/api/tasks/${l.id}/reply`, { text, images, perm: controls.permSel?.value });
       clearAtt();
       setDraft('', l.id);
       if (isDirector(l.agent)) ns.director?.expect({ cwd: l.cwd });
@@ -1310,6 +1363,8 @@
     open, compose: (text) => open({ name: 'compose', text }), unread,
     /** For inbound.js: a paper plane from any element to the mailbox on the wall, and the thud when it lands. */
     flyPlane, dropLetter,
+    /** From the HUD: answer a permission question of a running task ('allow' | 'always' | 'deny'). */
+    answerAsk: async (id, askId, decision) => { try { await api('POST', `/api/tasks/${id}/ask`, { id: askId, decision }); } catch { /* it was answered or the task ended */ } await ns.refreshData(); },
     /** From the HUD: approve or reject a waiting plan, or open the letter. */
     approve: (l, btn) => (l.kind === 'tidy' ? open({ name: 'letter', id: l.id }) : approve(l, btn)), // moving files is approved with the list in view
     reject: (l) => act(() => api('POST', `/api/tasks/${l.id}/reject`)),
