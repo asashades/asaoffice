@@ -32,14 +32,14 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Rapat sungguhan (🗣 Rapat dulu): Shades memanggil staf, dua putaran tanya jawab antar agent, rencana final; ditampilkan di surat dan di meja rapat | #54 |
 | ✅ | Malam gaya Stardew: peta cahaya yang dikalikan (lantai merah anggur, ruangan kosong ungu, cahaya dari benda), villager di depan gelap, dan perbaikan render hook ganda (penyebab "kabut") | #55 |
 | ✅ | Ikon pixel art berwarna penuh (67 ikon menggantikan emoji di tombol, label, kartu, HUD) dan filter folder sementara di daftar proyek | #56 |
+| ✅ | "Jiwa" dan ingatan per agent (kepribadian yang bisa diubah, satu pelajaran di akhir tugas, panel 🧠) | #57 |
 
 ## Rencana (urutan prioritas)
 
-Butir 1 (notifikasi macOS) sudah selesai (#51); nomor lainnya dibiarkan agar rujukannya tetap sama. Butir 2 (cabang terpisah, #52) dan 3 (batas biaya, #53) juga selesai. Rapat sungguhan (#54) juga selesai. Berikutnya: butir 4, atau butir 11 (jiwa agent).
+Butir 1 (notifikasi macOS) sudah selesai (#51); nomor lainnya dibiarkan agar rujukannya tetap sama. Butir 2 (cabang terpisah, #52) dan 3 (batas biaya, #53) juga selesai. Rapat sungguhan (#54) juga selesai. Jiwa agent (butir 11, #57) juga selesai. Berikutnya: butir 4 (PDF dan Word) atau butir 5 (templat tugas).
 
 | | # | Butir | Catatan |
 |---|---|---|---|
-| ⬜ | 11 | **"Jiwa" per agent**: berkas kepribadian dan gaya bicara, plus memori kecil yang bertambah setelah tiap tugas (bisa dibaca dan diedit) | Lapis 1 dari ide agent dengan jiwa. Rapat sungguhan (lapis 2) sudah jadi, jadi mereka tinggal diberi karakter dan ingatan. |
 | ⬜ | 4 | **Pembaca PDF dan Word bawaan** (baca-saja) | Seperti pembaca Excel; bahan kuliah di Downloads banyak PDF dan docx. |
 | ⬜ | 5 | **Templat tugas** (satu tombol) dan jadwal dengan model pilihan | |
 | ⬜ | 6 | **Cari lintas semua sesi dan surat** | Termasuk transkrip Claude Code, bukan hanya judul surat. |

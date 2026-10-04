@@ -11,14 +11,14 @@
       chatting: 'Ngobrol dengan', walkingTo: 'Menghampiri', idle: 'Santai', leaving: 'Pamit pulang', forMin: (m) => `${m} menit`,
       project: 'Proyek', lastTool: 'Tool terakhir', context: 'Context', subagents: 'Sub-agent', team: 'Tim', since: 'Terlihat sejak',
       none: '—', subagent: 'Sub-agent dari', task: 'Mengerjakan', prompt: 'Permintaan terakhir',
-      rename: 'Ganti nama', renamePh: 'Kosongkan = nama asli', renameFail: 'Gagal ganti nama (buka dari Mac yang jalanin kantor).',
+      soul: 'Jiwa dan ingatan', rename: 'Ganti nama', renamePh: 'Kosongkan = nama asli', renameFail: 'Gagal ganti nama (buka dari Mac yang jalanin kantor).',
     },
     en: {
       agent: 'Agent', working: 'Working', permission: 'Needs your permission', waiting: 'Waiting for your reply',
       chatting: 'Chatting with', walkingTo: 'Walking over to', idle: 'Relaxing', leaving: 'Heading out', forMin: (m) => `${m} min`,
       project: 'Project', lastTool: 'Last tool', context: 'Context', subagents: 'Sub-agents', team: 'Team', since: 'Seen since',
       none: '—', subagent: 'Sub-agent of', task: 'Working on', prompt: 'Last prompt',
-      rename: 'Rename', renamePh: 'Empty = original name', renameFail: 'Could not rename (open it from the Mac that runs the office).',
+      soul: 'Soul and memories', rename: 'Rename', renamePh: 'Empty = original name', renameFail: 'Could not rename (open it from the Mac that runs the office).',
     },
   });
 
@@ -135,6 +135,7 @@
     };
     const role = h('div', { class: 'asa-card-role' });
     const duty = h('div', { class: 'asa-card-duty' });
+    const soulBtn = h('button', { type: 'button', class: 'asa-btn', style: { margin: '0 0 8px' }, title: S.soul }, `🧠 ${S.soul}`);
     const dot = h('i', { class: 'asa-dot' });
     const statusText = h('span');
     const taskTitle = h('b');
@@ -142,7 +143,7 @@
     const task = h('div', { class: 'asa-card-task' }, taskTitle, taskPrompt);
     const parts = {
       task, taskTitle, taskPrompt,
-      name, edit, role, duty, portrait,
+      name, edit, role, duty, soulBtn, portrait,
       dot,
       statusText,
       project: row(S.project),
@@ -165,6 +166,7 @@
       closeBtn,
       h('div', { class: 'asa-card-top' }, portrait, h('div', {}, nameWrap, role, h('div', { class: 'asa-card-status' }, dot, statusText))),
       duty,
+      soulBtn,
       task,
       parts.project.el,
       parts.tool.el,
@@ -191,6 +193,8 @@
     p.role.style.display = staff ? '' : 'none';
     p.duty.textContent = staff ? ns.staffDuty(staff) : '';
     p.duty.style.display = staff ? '' : 'none';
+    p.soulBtn.style.display = staff ? '' : 'none';
+    p.soulBtn.onclick = () => staff && ns.souls?.open(staff.agent);
     p.portrait.style.backgroundImage = `url(${ns.portraitUrl(ch)})`; // faces can change once identities resolve
     const [text, color] = status(office, ch);
     p.statusText.textContent = parent && !staff ? `${S.subagent} ${ns.villagerName(parent)} · ${text}` : text;
