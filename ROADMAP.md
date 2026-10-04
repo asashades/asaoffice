@@ -26,12 +26,14 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Lampu malam: pintu dan dinding ikut kena cahaya | #48 |
 | ✅ | Tab Izin di HUD tidak lagi terpotong | #49 |
 | ✅ | Mode izin seperti Claude Code (tanya dulu, terima edit, auto, bypass, ketat) dengan kartu Izinkan/Tolak | #50 |
+| ✅ | Notifikasi macOS dari server (izin, rencana siap, selesai, gagal) dan ROADMAP.md | #51 |
 
 ## Rencana (urutan prioritas)
 
+Butir 1 (notifikasi macOS) sudah selesai (#51); nomor lainnya dibiarkan agar rujukannya tetap sama. Berikutnya: butir 2.
+
 | | # | Butir | Catatan |
 |---|---|---|---|
-| 🚧 | 1 | **Notifikasi macOS** untuk izin, rencana siap, tugas selesai atau gagal | Dari server (jalan walau browser ditutup), mati otomatis saat kantor sedang di depan, ikut tombol 🔔. Lihat "Catatan 1". |
 | ⬜ | 2 | **Tugas kotak surat di git worktree sendiri** | Hasil terisolasi dari folder yang sedang kamu pakai. Surat menampilkan `git diff --stat` dengan tombol Gabung, Buang, Buka PR. |
 | ⬜ | 3 | **Batas biaya** per tugas dan per hari | `letter.cost` sudah tercatat. Tugas berhenti dan kantor memberi tahu kalau terlewati. |
 | ⬜ | 4 | **Pembaca PDF dan Word bawaan** (baca-saja) | Seperti pembaca Excel; bahan kuliah di Downloads banyak PDF dan docx. |
@@ -46,7 +48,7 @@ Opsional: jam hunian villager yang bisa diatur; jawab izin dari HP (perlu PIN ke
 
 ## Catatan
 
-**1. Notifikasi macOS.** Server memakai `terminal-notifier` kalau terpasang (klik membuka kantor), kalau tidak `osascript display notification` (klik membuka Script Editor, itu batasan macOS; pasang `brew install terminal-notifier` biar klik membuka kantor). Halaman kantor mengirim denyut tiap 5 detik; kalau jendelanya sedang di depan, notifikasi macOS ditahan (toast dan bunyi di halaman cukup). Notifikasi halaman (Web Notification) untuk villager milik surat dimatikan supaya tidak dobel; untuk sesi Claude Code biasa tetap jalan.
+**1. Notifikasi macOS (selesai, #51).** Server memakai `terminal-notifier` kalau terpasang (klik membuka kantor), kalau tidak `osascript display notification` (klik membuka Script Editor, itu batasan macOS; pasang `brew install terminal-notifier` biar klik membuka kantor). Halaman kantor mengirim denyut tiap 5 detik; kalau jendelanya sedang di depan, notifikasi macOS ditahan (toast dan bunyi di halaman cukup). Notifikasi halaman (Web Notification) untuk villager milik surat dimatikan supaya tidak dobel; untuk sesi Claude Code biasa tetap jalan.
 
 ## Batasan yang diketahui
 
