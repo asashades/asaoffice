@@ -28,14 +28,14 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Mode izin seperti Claude Code (tanya dulu, terima edit, auto, bypass, ketat) dengan kartu Izinkan/Tolak | #50 |
 | ✅ | Notifikasi macOS dari server (izin, rencana siap, selesai, gagal) dan ROADMAP.md | #51 |
 | ✅ | Tugas kotak surat di git worktree sendiri (Cabang terpisah: lihat perubahan, gabung, PR, buang) | #52 |
+| ✅ | Batas biaya per tugas dan per hari (💰), berhenti otomatis dan notifikasi 80% | #53 |
 
 ## Rencana (urutan prioritas)
 
-Butir 1 (notifikasi macOS) sudah selesai (#51); nomor lainnya dibiarkan agar rujukannya tetap sama. Butir 2 (cabang terpisah) juga selesai (#52). Berikutnya: butir 3.
+Butir 1 (notifikasi macOS) sudah selesai (#51); nomor lainnya dibiarkan agar rujukannya tetap sama. Butir 2 (cabang terpisah, #52) dan 3 (batas biaya, #53) juga selesai. Berikutnya: butir 4.
 
 | | # | Butir | Catatan |
 |---|---|---|---|
-| ⬜ | 3 | **Batas biaya** per tugas dan per hari | `letter.cost` sudah tercatat. Tugas berhenti dan kantor memberi tahu kalau terlewati. |
 | ⬜ | 4 | **Pembaca PDF dan Word bawaan** (baca-saja) | Seperti pembaca Excel; bahan kuliah di Downloads banyak PDF dan docx. |
 | ⬜ | 5 | **Templat tugas** (satu tombol) dan jadwal dengan model pilihan | |
 | ⬜ | 6 | **Cari lintas semua sesi dan surat** | Termasuk transkrip Claude Code, bukan hanya judul surat. |
