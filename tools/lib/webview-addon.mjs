@@ -40,11 +40,12 @@ const SCRIPTS = [
 ];
 const HTML_MARKER = '<!-- asaoffice addon -->';
 const JS_MARKER_PREFIX = '/*asaoffice-hook';
-const JS_MARKER = '/*asaoffice-hook:2*/';
+const JS_MARKER = '/*asaoffice-hook:3*/';
 // pixel-agents 1.4.1 render callback: right after drawing, it stores the frame's offsets.
 // In that scope: t = canvas, e = OfficeState, d/p = offsetX/offsetY, f = zoom, n = edit mode, m = pan ref.
 const ANCHOR = 'y.current={x:d,y:p},';
-const HOOK = `y.current={x:d,y:p},${JS_MARKER}(()=>{try{window.__asaoffice?.afterRender?.(t,e,d,p,f,n,m)}catch{}})(),`;
+// The last argument is pixel-agents' own function that draws furniture and characters (null if this build has none): the night uses it to put the villagers back in front of the dark.
+const HOOK = `y.current={x:d,y:p},${JS_MARKER}(()=>{try{window.__asaoffice?.afterRender?.(t,e,d,p,f,n,m,typeof ua===\`function\`?ua:null)}catch{}})(),`;
 
 function bundlePath(webview) {
   const html = fs.readFileSync(path.join(webview, 'index.html'), 'utf8');
@@ -52,6 +53,10 @@ function bundlePath(webview) {
   if (!src) throw new Error('could not find the webview bundle in index.html');
   return path.join(webview, src);
 }
+
+// Every version of our render hook (the marker can carry a version number); stripped before the current one goes in, so there is never more than one.
+const HOOK_RE = /\/\*asaoffice-hook(?::\d+)?\*\/\(\(\)=>\{try\{window\.__asaoffice\?\.afterRender\?\.\([^)]*\)\}catch\{\}\}\)\(\),/g;
+const stripHooks = (js) => js.replace(HOOK_RE, '');
 
 function backupOnce(dist, backup, file) {
   const saved = path.join(backup, path.relative(dist, file));
@@ -65,20 +70,19 @@ function backupOnce(dist, backup, file) {
 export function applyWebviewAddon(root, dist, backup) {
   const webview = path.join(dist, 'webview');
   const bundle = bundlePath(webview);
-  let js = fs.readFileSync(bundle, 'utf8');
-  if (js.includes(JS_MARKER_PREFIX) && !js.includes(JS_MARKER)) {
-    // An older hook version: start again from the original bundle.
-    const saved = path.join(backup, path.relative(dist, bundle));
-    if (!fs.existsSync(saved)) throw new Error('original bundle backup missing; run `npm install` to reset pixel-agents');
-    js = fs.readFileSync(saved, 'utf8');
+  const js = fs.readFileSync(bundle, 'utf8');
+  // Start from the bundle without any of our hooks and put the current one in exactly once. (Earlier versions kept a backup that already had
+  // the old hook in it, so an upgrade ended up with two: the whole office was drawn twice a frame and the night tint was applied twice.)
+  const clean = stripHooks(js);
+  if (clean.split(ANCHOR).length !== 2) {
+    throw new Error('render hook anchor not found (pixel-agents version changed?); office addon not installed');
   }
-  if (!js.includes(JS_MARKER)) {
-    if (js.split(ANCHOR).length !== 2) {
-      throw new Error('render hook anchor not found (pixel-agents version changed?); office addon not installed');
-    }
-    backupOnce(dist, backup, bundle);
-    fs.writeFileSync(bundle, js.replace(ANCHOR, HOOK));
-  }
+  const savedBundle = path.join(backup, path.relative(dist, bundle));
+  fs.mkdirSync(path.dirname(savedBundle), { recursive: true });
+  if (!fs.existsSync(savedBundle) || HOOK_RE.test(fs.readFileSync(savedBundle, 'utf8'))) fs.writeFileSync(savedBundle, clean); // the backup is the original, never a patched copy
+  HOOK_RE.lastIndex = 0;
+  const patched = clean.replace(ANCHOR, HOOK);
+  if (patched !== js) fs.writeFileSync(bundle, patched);
 
   // Always rebuild index.html from the original, so the script list follows SCRIPTS.
   const htmlFile = path.join(webview, 'index.html');

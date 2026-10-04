@@ -30,6 +30,7 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Tugas kotak surat di git worktree sendiri (Cabang terpisah: lihat perubahan, gabung, PR, buang) | #52 |
 | ✅ | Batas biaya per tugas dan per hari (💰), berhenti otomatis dan notifikasi 80% | #53 |
 | ✅ | Rapat sungguhan (🗣 Rapat dulu): Shades memanggil staf, dua putaran tanya jawab antar agent, rencana final; ditampilkan di surat dan di meja rapat | #54 |
+| ✅ | Malam gaya Stardew: peta cahaya yang dikalikan (lantai merah anggur, ruangan kosong ungu, cahaya dari benda), villager di depan gelap, dan perbaikan render hook ganda (penyebab "kabut") | #55 |
 
 ## Rencana (urutan prioritas)
 
@@ -53,6 +54,7 @@ Opsional: jam hunian villager yang bisa diatur; jawab izin dari HP (perlu PIN ke
 **1. Notifikasi macOS (selesai, #51).** Server memakai `terminal-notifier` kalau terpasang (klik membuka kantor), kalau tidak `osascript display notification` (klik membuka Script Editor, itu batasan macOS; pasang `brew install terminal-notifier` biar klik membuka kantor). Halaman kantor mengirim denyut tiap 5 detik; kalau jendelanya sedang di depan, notifikasi macOS ditahan (toast dan bunyi di halaman cukup). Notifikasi halaman (Web Notification) untuk villager milik surat dimatikan supaya tidak dobel; untuk sesi Claude Code biasa tetap jalan.
 
 ## Batasan yang diketahui
+- Render hook ganda (diperbaiki): `npm run overlay` versi lama menyimpan cadangan bundle yang sudah berisi hook lama, jadi setelah upgrade hook terpasang dua kali, seluruh kantor digambar dua kali per frame dan tint malam diterapkan dua kali (terlihat seperti kabut). Overlay sekarang selalu membuang semua hook lama sebelum memasang satu, dan `core.js` menolak panggilan kedua di frame yang sama.
 
 - Perintah yang menyentuh path di luar folder tugas, atau folder sistem seperti `/etc`, bisa tetap ditolak Claude Code sendiri.
 - Surat 📥 Downloads sengaja baca-saja, tanpa tombol izin.
