@@ -40,11 +40,12 @@ const SCRIPTS = [
 ];
 const HTML_MARKER = '<!-- asaoffice addon -->';
 const JS_MARKER_PREFIX = '/*asaoffice-hook';
-const JS_MARKER = '/*asaoffice-hook:2*/';
+const JS_MARKER = '/*asaoffice-hook:3*/';
 // pixel-agents 1.4.1 render callback: right after drawing, it stores the frame's offsets.
 // In that scope: t = canvas, e = OfficeState, d/p = offsetX/offsetY, f = zoom, n = edit mode, m = pan ref.
 const ANCHOR = 'y.current={x:d,y:p},';
-const HOOK = `y.current={x:d,y:p},${JS_MARKER}(()=>{try{window.__asaoffice?.afterRender?.(t,e,d,p,f,n,m)}catch{}})(),`;
+// The last argument is pixel-agents' own function that draws furniture and characters (null if this build has none): the night uses it to put the villagers back in front of the dark.
+const HOOK = `y.current={x:d,y:p},${JS_MARKER}(()=>{try{window.__asaoffice?.afterRender?.(t,e,d,p,f,n,m,typeof ua===\`function\`?ua:null)}catch{}})(),`;
 
 function bundlePath(webview) {
   const html = fs.readFileSync(path.join(webview, 'index.html'), 'utf8');

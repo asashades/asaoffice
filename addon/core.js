@@ -1,6 +1,6 @@
 // asaoffice addon core: shared plumbing for the office add-ons (idle chat, villager card, calendar,
 // Holo-board). Loaded first.
-//   - frame hook: the bundle patch calls __asaoffice.afterRender(canvas, office, offX, offY, zoom, editMode, panRef)
+//   - frame hook: the bundle patch calls __asaoffice.afterRender(canvas, office, offX, offY, zoom, editMode, panRef, drawObjects)
 //     after each frame; add-ons subscribe with __asaoffice.onFrame(fn). panRef.current is the camera pan.
 //   - toolbar: __asaoffice.toolbarButton({ id, title, onClick }) adds a button under the zoom buttons.
 //   - furniture clicks: __asaoffice.onFurnitureClick('COZY_CALENDAR', fn) fires when that item is clicked.
@@ -65,11 +65,11 @@
   ns.view = null;
   // The render hook must be installed once; if a stale second copy of it ever runs, this keeps a frame from being drawn twice.
   let renderedThisTask = false;
-  ns.afterRender = (canvas, office, offX, offY, zoom, editMode, panRef) => {
+  ns.afterRender = (canvas, office, offX, offY, zoom, editMode, panRef, drawObjects) => {
     if (renderedThisTask) return;
     renderedThisTask = true;
     queueMicrotask(() => { renderedThisTask = false; });
-    ns.view = { canvas, office, offX, offY, zoom, editMode, panRef };
+    ns.view = { canvas, office, offX, offY, zoom, editMode, panRef, drawObjects };
     attachCanvas(canvas);
     placeToolbar();
     for (const fn of frameHandlers) {

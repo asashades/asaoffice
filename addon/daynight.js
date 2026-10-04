@@ -343,6 +343,21 @@
         }
       }
     }
+    // Villagers stay in front of the dark: each one is drawn once more over the night picture, strongly where the room is lit and faintly where
+    // it isn't, so they never look like they are standing in fog. (pixel-agents' own sprite drawing is reused, so it matches exactly.)
+    const drawObjects = ns.view?.drawObjects;
+    if (stardew && lamps && typeof drawObjects === 'function') {
+      ctx.globalCompositeOperation = 'source-over';
+      const roomOf = (c) => ROOMS.find((r) => c.tileCol >= r.c0 && c.tileCol <= r.c1 && c.tileRow >= r.r0 && c.tileRow <= r.r1);
+      for (const c of office.getCharacters()) {
+        if (c.matrixEffect || c.tileCol == null) continue;
+        const room = roomOf(c);
+        const lit = room ? (levels.get(room.id) ?? 0) * ceil : 0;
+        ctx.globalAlpha = Math.min(0.72, (0.3 + 0.42 * lit) * Math.min(1, p.light * 1.3));
+        try { drawObjects(ctx, [], [c], offX, offY, zoom, null, null, []); } catch { break; }
+      }
+      ctx.globalAlpha = 1;
+    }
     ctx.restore();
   });
 
