@@ -220,7 +220,7 @@ const safeEqual = (a, b) => {
  * extraDirs (always-allowed folders, e.g. the office workspace), onChange() when letters change, log.
  * Returns { port, letters(), agentMap(), stop() }.
  */
-export async function startTaskServer({ root, token, officePort, port, projects, sessions = () => [], extraDirs = [], onChange = () => {}, onNamesChange = () => {}, log = console.log }) {
+export async function startTaskServer({ root, token, officePort, port, projects, sessions = () => [], extraDirs = [], onChange = () => {}, onNamesChange = () => {}, journal = null, log = console.log }) {
   const mailFile = path.join(os.homedir(), '.pixel-agents', 'asaoffice-mail.json');
   const roster = () => {
     try { return JSON.parse(fs.readFileSync(path.join(root, 'staff', 'roster.json'), 'utf8')); } catch { return { staff: [], general: { access: ['read'] } }; }
@@ -865,6 +865,19 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         }
         return send(res, 200, { perms: { bypass: settings.allowBypass }, notifyMac: settings.notifyMac !== false, budget: budgetInfo() }, origin);
       }
+      // The daily summary in the Obsidian journal (journal.mjs, driven by office-data.mjs): settings, and "write today's now".
+      if (journal && url.pathname === '/api/journal') {
+        if (req.method === 'GET') return send(res, 200, { ...journal.config(), today: journal.todayRel(), vault: journal.vault() }, origin);
+        if (req.method === 'POST') {
+          const body = await readBody(req);
+          return send(res, 200, { ...journal.setConfig({ enabled: typeof body.enabled === 'boolean' ? body.enabled : undefined, folder: typeof body.folder === 'string' ? body.folder : undefined }), today: journal.todayRel() }, origin);
+        }
+      }
+      if (journal && req.method === 'POST' && url.pathname === '/api/journal/today') {
+        const results = journal.now();
+        const r = results[results.length - 1] ?? { reason: 'quiet' };
+        return send(res, 200, { rel: r.rel ?? journal.todayRel(), wrote: !!r.wrote, reason: r.reason }, origin);
+      }
       // Souls: each staff member's personality and memories (souls.mjs): read, edit, forget.
       const soulM = /^\/api\/souls(?:\/([\w-]+)(?:\/(memory)(?:\/([\w-]+))?)?)?$/.exec(url.pathname);
       if (soulM) {
@@ -1327,6 +1340,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   return {
     port: actualPort,
     letters: () => letters,
+    spendOn: (day) => (spend[day] ? Number(spend[day]) : null),
     agentMap,
     schedules: schedView,
     stop() {

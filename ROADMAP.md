@@ -34,6 +34,7 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Ikon pixel art berwarna penuh (67 ikon menggantikan emoji di tombol, label, kartu, HUD) dan filter folder sementara di daftar proyek | #56 |
 | ✅ | "Jiwa" dan ingatan per agent (kepribadian yang bisa diubah, satu pelajaran di akhir tugas, panel 🧠), disimpan sebagai catatan `Staf/<nama>.md` di vault Obsidian | #57 |
 | ✅ | Kotak surat lebih rapi (daftar chat bisa dilipat, menu Alat, filter jadi satu menu) dan halaman Data Karyawan sendiri (👥 di HUD) untuk profil, jiwa, dan ingatan staf | #58 |
+| ✅ | Rangkuman harian ditulis ke catatan Jurnal Obsidian (`1-Fleeting Journal/2026-10-5, Mon.md`, plugin obsidian-journal), menggantikan laporan di folder Laporan | #59 |
 
 ## Rencana (urutan prioritas)
 

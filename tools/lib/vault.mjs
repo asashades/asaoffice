@@ -39,6 +39,23 @@ export function vaultDir() {
   return path.join(os.homedir(), 'AsaOffice-Vault');
 }
 
+let usableAt = { at: 0, v: { dir: null, reason: 'missing' } };
+/**
+ * Can the vault folder really be used right now? { dir, reason }: reason is 'ok', 'permission' (macOS lets the folder be seen but not opened, as with an
+ * iCloud Drive vault for a program without access) or 'missing' (not there: iCloud not synced, folder moved). Looked up at most every 5 s.
+ */
+export function usable() {
+  if (Date.now() - usableAt.at < 5000) return usableAt.v;
+  let v;
+  try {
+    const d = vaultDir();
+    if (fs.statSync(d).isDirectory()) { fs.readdirSync(d); v = { dir: d, reason: 'ok' }; } else v = { dir: null, reason: 'missing' };
+  } catch (err) { v = { dir: null, reason: err?.code === 'EPERM' || err?.code === 'EACCES' ? 'permission' : 'missing' }; }
+  usableAt = { at: Date.now(), v };
+  return v;
+}
+export const resetUsable = () => { usableAt = { at: 0, v: usableAt.v }; };
+
 /** True when $OFFICE_VAULT decides the folder (so the bookshelf can't change it). */
 export const vaultFromEnv = () => !!process.env.OFFICE_VAULT;
 
