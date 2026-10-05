@@ -25,17 +25,20 @@ const roster = () => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, '
 const safeName = (s) => String(s ?? '').replace(/[^\p{L}\p{N} _-]/gu, '').trim() || 'Staf';
 
 /** The vault folder if it is there to be used (an unmounted iCloud folder is not created out of thin air). */
-let seen = { at: 0, dir: null };
+let seen = { at: 0, dir: null, reason: 'missing' };
 export function vaultPath() {
   if (Date.now() - seen.at < 5000) return seen.dir; // looked at a moment ago (a vault with many notes isn't listed on every call)
   let dir = null;
+  let reason = 'missing';
   try {
     const d = vault.vaultDir();
-    if (fs.statSync(d).isDirectory()) { fs.readdirSync(d); dir = d; } // macOS can let a folder be seen but not opened (iCloud Drive without permission)
-  } catch { dir = null; }
-  seen = { at: Date.now(), dir };
+    if (fs.statSync(d).isDirectory()) { fs.readdirSync(d); dir = d; reason = 'ok'; } // macOS can let a folder be seen but not opened (iCloud Drive without permission)
+  } catch (err) { reason = err?.code === 'EPERM' || err?.code === 'EACCES' ? 'permission' : 'missing'; }
+  seen = { at: Date.now(), dir, reason };
   return dir;
 }
+/** Why the vault can or can't be used: 'ok', 'permission' (macOS refuses to open the folder for this app) or 'missing' (not there: iCloud not synced, folder moved). */
+export const vaultReason = () => { vaultPath(); return seen.reason; };
 export const available = () => !!vaultPath();
 
 /** The note of one staff member, relative to the vault ("Staf/Gus.md"), named after the roster name (not a nickname, so it never moves). */

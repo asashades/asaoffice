@@ -875,7 +875,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           const db = souls.load();
           return send(res, 200, {
             auto: db.auto,
-            vault: { ok: souls.available(), path: souls.vaultPath() },
+            vault: { ok: souls.available(), path: souls.vaultPath(), reason: souls.vaultReason() },
             staff: roster().staff.map((m) => {
               const cur = souls.soulOf(root, m.agent, db);
               const dflt = souls.soulOf(root, m.agent, { souls: {} });
