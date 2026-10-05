@@ -34,6 +34,7 @@ import * as tidy from './tidy.mjs';
 import { createNotifier } from './macnotify.mjs';
 import * as wtlib from './worktree.mjs';
 import * as mt from './meeting.mjs';
+import * as souls from './souls.mjs';
 import { cleanSchedule, dueAction, loadSchedules, MAX_SCHEDULES, newSchedule, nextDue, saveSchedules } from './schedules.mjs';
 
 const MAX_RUNNING = 3;
@@ -249,6 +250,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   };
   const cleanPerm = (p) => (PERMS.includes(p) ? p : null);
   // macOS notifications (macnotify.mjs): held back while an office page is in front (pages send a heartbeat), switched with the 🔔 button.
+  try { souls.init(root); } catch { /* never stop the task server for this */ } // each staff member's note in the vault (Staf/<name>.md): personality and memories
   const notifier = createNotifier();
   let lastFocusAt = 0;
   const officeUrl = `http://127.0.0.1:${officePort}/?token=${token}`;
@@ -546,7 +548,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       let picks = null;
       let open = '';
       try {
-        const opening = mt.parseOpening((await meetingCall(letter, ctl, director, mt.openingPrompt({ task, staff }))).text, staff);
+        const opening = mt.parseOpening((await meetingCall(letter, ctl, director, mt.openingPrompt({ task, staff }), souls.promptFor(root, director.agent, { remember: false }))).text, staff);
         if (opening) { picks = opening.picks; open = opening.open; }
       } catch (err) { if (ctl.cancelled || err.message === 'budget') throw err; /* unreadable opening: pick by keywords */ }
       if (!picks) picks = mt.fallbackPicks(task, staff);
@@ -559,7 +561,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         for (const m of people) {
           if (ctl.cancelled) throw new Error('cancelled');
           step(m, round, `${m.name} berpikir…`);
-          const { text: said } = await meetingCall(letter, ctl, m, mt.turnPrompt({ task, member: m, ask: m.ask, turns, round }));
+          const { text: said } = await meetingCall(letter, ctl, m, mt.turnPrompt({ task, member: m, ask: m.ask, turns, round }), souls.promptFor(root, m.agent, { remember: false }));
           if (!said) continue;
           turns.push({ name: m.name, role: m.role, text: said });
           say(m, said, round);
@@ -610,6 +612,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (member?.director) system += `\n${STYLE_PROMPT[letter.style === 'delegate' ? 'delegate' : 'solo']}`;
     const nick = roster().staff.filter((m) => !m.director && loadNames().staff[m.agent]);
     if (nick.length) system += `\n\nNama panggilan tim di kantor Komisaris: ${nick.map((m) => `${m.agent} sekarang dipanggil ${loadNames().staff[m.agent]}`).join('; ')}. Pakai nama panggilan itu kalau menyebut mereka.`;
+    if (member && !dlOnly) system += souls.promptFor(root, member.agent); // personality, memories, and how to add one
     const notes = dlOnly ? '' : vault.contextNotes();
     if (notes) system += `\n\n${notes}`;
     // Permission handling: the work phase asks the Commissioner (like Claude Code); plan/report phases, Downloads and 'strict' tasks refuse instead.
@@ -650,6 +653,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     let buf = '';
     let lastProgressSave = 0;
     let lastText = '';
+    let usedWeb = false; // a task that read the web doesn't write memory (the text came from outside)
     let result = null;
     let stderr = '';
     child.stdout.on('data', (chunk) => {
@@ -667,6 +671,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           const blocks = msg.message?.content ?? [];
           const t = blocks.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
           if (t) lastText = t;
+          if (blocks.some((b) => b.type === 'tool_use' && (b.name === 'WebFetch' || b.name === 'WebSearch'))) usedWeb = true;
           const tool = blocks.filter((b) => b.type === 'tool_use').map(progressOf).filter(Boolean).pop();
           const next = tool ?? (t ? 'Writing the answer' : null);
           if (next && next !== letter.progress) {
@@ -712,7 +717,15 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         tidyPlan = tidy.parsePlan(answer, tidyScan);
         answer = tidyPlan.text;
       }
+      // The agent's own one-line lesson ("INGAT: …"): taken off the answer, and kept as a memory unless the task read the web or the Downloads folder.
+      let remembered = null;
+      if (answer) {
+        const r = souls.takeRemember(answer);
+        answer = r.text;
+        if (r.note && member && !dlOnly && !usedWeb && souls.load().auto && !letter.stopped && !(result?.is_error)) remembered = souls.addMemory(member.agent, r.note, { letter: letter.id, project: letter.project });
+      }
       if (answer) letter.thread.push({ from: 'agent', text: answer.slice(0, MAX_RESULT), at: new Date().toISOString(), kind: tidyPlan && !tidyPlan.moves.length ? 'work' : phase });
+      if (remembered) letter.thread.push({ from: 'you', kind: 'allow', at: new Date().toISOString(), text: `🧠 ${loadNames().staff[member.agent] || member.name} mengingat: ${remembered.text}` });
       // claude usually answers SIGTERM by exiting with 143 (128 + 15) instead of dying from the signal itself.
       const killed = !!signal || code === 143 || code === 137;
       const failed = killed || (result ? result.is_error : code !== 0);
@@ -851,6 +864,43 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           saveSettings();
         }
         return send(res, 200, { perms: { bypass: settings.allowBypass }, notifyMac: settings.notifyMac !== false, budget: budgetInfo() }, origin);
+      }
+      // Souls: each staff member's personality and memories (souls.mjs): read, edit, forget.
+      const soulM = /^\/api\/souls(?:\/([\w-]+)(?:\/(memory)(?:\/([\w-]+))?)?)?$/.exec(url.pathname);
+      if (soulM) {
+        const agent = soulM[1];
+        const known = !agent || roster().staff.some((m) => m.agent === agent);
+        if (!known) return send(res, 404, { error: 'agent' }, origin);
+        if (req.method === 'GET' && !agent) {
+          const db = souls.load();
+          return send(res, 200, {
+            auto: db.auto,
+            vault: { ok: souls.available(), path: souls.vaultPath() },
+            staff: roster().staff.map((m) => {
+              const cur = souls.soulOf(root, m.agent, db);
+              const dflt = souls.soulOf(root, m.agent, { souls: {} });
+              return { agent: m.agent, name: (!m.director && loadNames().staff[m.agent]) || m.name, file: souls.fileOf(m.agent), director: !!m.director, soul: cur.text, custom: cur.custom, defaultSoul: dflt.text, memories: db.memories[m.agent] ?? [], max: { memories: souls.MAX_MEMORIES, memoryChars: souls.MAX_MEMORY_CHARS, soulChars: souls.MAX_SOUL_CHARS } };
+            }),
+          }, origin);
+        }
+        if (req.method === 'POST' && !agent) {
+          const body = await readBody(req);
+          if (typeof body.auto === 'boolean') souls.setAuto(body.auto);
+          return send(res, 200, { auto: souls.load().auto }, origin);
+        }
+        if (req.method === 'POST' && agent && !soulM[2]) {
+          const body = await readBody(req);
+          if (!souls.setSoul(agent, body.soul === null ? null : String(body.soul ?? ''))) return send(res, 409, { error: 'vault' }, origin);
+          return send(res, 200, { ok: true }, origin);
+        }
+        if (req.method === 'POST' && agent && soulM[2] === 'memory' && !soulM[3]) {
+          if (!souls.available()) return send(res, 409, { error: 'vault' }, origin);
+          const entry = souls.addMemory(agent, (await readBody(req)).text, { manual: true });
+          return entry ? send(res, 200, { memory: entry }, origin) : send(res, 400, { error: 'memory' }, origin);
+        }
+        if (req.method === 'DELETE' && agent && soulM[2] === 'memory' && soulM[3]) {
+          return souls.removeMemory(agent, soulM[3]) ? send(res, 200, { ok: true }, origin) : send(res, 404, { error: 'memory' }, origin);
+        }
       }
       // Heartbeat from an open office page: while one is in front there's no need for a macOS notification.
       if (req.method === 'POST' && url.pathname === '/api/presence') {

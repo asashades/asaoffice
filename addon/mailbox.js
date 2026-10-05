@@ -51,7 +51,7 @@
       attach: 'Lampirkan gambar', attachTip: 'Lampirkan gambar (atau tempel / seret ke sini)', attachFail: 'Gambar gak bisa dilampirkan (png, jpg, gif, webp; maks 8 MB, 4 gambar).', lookAtImages: 'Tolong lihat gambar terlampir.', remove: 'Hapus',
       denied: (n) => `⛔ ${n} langkah ditolak otomatis (di luar izin tugas ini)`, allowOnce: 'Izinkan sekali', cantAllow: 'terlalu berisiko dari sini, jalankan sendiri di Terminal', copyCmd: 'Salin', copied: 'Tersalin ✓', allowExact: 'Izinkan persis…', exactTitle: 'Perintah lengkap yang dibuka, sekali, persis seperti ini:', exactRun: 'Yang dijalankan (tanpa cd):', exactYes: 'Ya, izinkan sekali', exactNo: 'Batal', cantAllowRo: 'Downloads baca-saja, jalankan sendiri di Terminal', dismiss: 'Abaikan', dismissAll: 'Abaikan semua',
       schedBtn: '⏰ Jadwal', schedTip: 'Tugas yang jalan sendiri pada jam tertentu',
-      budgetTip: 'Batas biaya per tugas dan per hari', budgetFull: 'Batas biaya hari ini sudah tercapai, jadi tugas baru belum bisa dimulai. Naikkan batasnya di 💰 atau coba lagi besok.',
+      soulTip: 'Jiwa (kepribadian) dan ingatan staf', budgetTip: 'Batas biaya per tugas dan per hari', budgetFull: 'Batas biaya hari ini sudah tercapai, jadi tugas baru belum bisa dimulai. Naikkan batasnya di 💰 atau coba lagi besok.',
       tidyBtn: '🧹', tidyTip: 'Tanya atau rapikan folder Downloads (file baru dipindah setelah kamu setujui)', dlName: 'Downloads', tidyDraft: 'Rapikan file lepas di Downloads', dlPh: 'Tanya soal Downloads atau minta dirapikan, mis. "cari invoice bulan lalu" atau "rapikan file PDF"', tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.',
       tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
       meetRound: (n) => `putaran ${n}`, meetTip: 'Shades memimpin rapat: dia memilih 2-3 staf, masing-masing menjawab sebagai dirinya sendiri (dua putaran), lalu Shades menulis rencananya dari isi rapat. Butuh beberapa menit dan beberapa panggilan Claude.',
@@ -121,7 +121,7 @@
       attach: 'Attach an image', attachTip: 'Attach an image (or paste / drag it here)', attachFail: 'Could not attach the image (png, jpg, gif, webp; max 8 MB, 4 images).', lookAtImages: 'Please look at the attached images.', remove: 'Remove',
       denied: (n) => `⛔ ${n} step(s) refused automatically (outside this task's permissions)`, allowOnce: 'Allow once', cantAllow: 'too risky from here, run it yourself in Terminal', copyCmd: 'Copy', copied: 'Copied ✓', allowExact: 'Allow exactly…', exactTitle: 'The full command being opened, once, exactly as written:', exactRun: 'What will run (without the cd):', exactYes: 'Yes, allow once', exactNo: 'Cancel', cantAllowRo: 'Downloads is read-only, run it yourself in Terminal', dismiss: 'Dismiss', dismissAll: 'Dismiss all',
       schedBtn: '⏰ Schedules', schedTip: 'Tasks that run by themselves at a set time',
-      budgetTip: 'Cost limits per task and per day', budgetFull: 'Today\'s cost limit is reached, so no new task can start. Raise it in 💰 or try again tomorrow.',
+      soulTip: 'Staff souls (personality) and memories', budgetTip: 'Cost limits per task and per day', budgetFull: 'Today\'s cost limit is reached, so no new task can start. Raise it in 💰 or try again tomorrow.',
       tidyBtn: '🧹', tidyTip: 'Ask about or tidy the Downloads folder (files only move after you approve)', dlName: 'Downloads', tidyDraft: 'Tidy the loose files in Downloads', dlPh: 'Ask about Downloads or ask for a tidy-up, e.g. "find last month\'s invoice" or "tidy the PDFs"', tidyNoFolder: 'The Downloads folder was not found on this Mac.',
       tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
       meetRound: (n) => `round ${n}`, meetTip: 'Shades leads the meeting: he picks 2-3 staff, each answers as themselves (two rounds), then Shades writes the plan from what was said. It takes a few minutes and several Claude calls.',
@@ -731,6 +731,7 @@
         h('button', { type: 'button', class: `asa-btn primary asa-newchat${sel === 'new' ? ' on' : ''}`, style: { flex: '1' }, onclick: () => select('new') }, S.newChat),
         h('button', { type: 'button', class: 'asa-btn', title: S.schedTip, onclick: () => ns.schedule?.open() }, S.schedBtn),
         h('button', { type: 'button', class: 'asa-btn', title: S.budgetTip, 'aria-label': S.budgetTip, onclick: () => ns.budget?.open() }, '💰'),
+        h('button', { type: 'button', class: 'asa-btn', title: S.soulTip, 'aria-label': S.soulTip, onclick: () => ns.souls?.open() }, '🧠'),
         h('button', { type: 'button', class: 'asa-btn', title: S.tidyTip, 'aria-label': S.tidyTip, onclick: () => { prefs.cwd = '@downloads'; savePrefs(); setDraft(S.tidyDraft, 'new'); select('new'); setTimeout(() => ui.comp?.querySelector('textarea')?.focus(), 60); } }, S.tidyBtn)),
       search, chips, rows);
     ui.refill();

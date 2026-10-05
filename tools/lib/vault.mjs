@@ -2,6 +2,7 @@
 // $OFFICE_VAULT). Only the office page on this Mac can reach it (through the task API in task-server.mjs).
 //   Ide-TODO.md   ideas and to-dos as "- [ ] …" lines
 //   Laporan/      reports written when the Commissioner asks for one
+//   Staf/         one note per staff member: the soul (personality) and the memories the office keeps for them (souls.mjs)
 //   Catatan/      the Commissioner's own notes; any note that contains #konteks is also given to the team as context
 import { execFileSync } from 'node:child_process';
 import crypto from 'node:crypto';
@@ -17,7 +18,7 @@ const CONTEXT_FILES = 5;
 const CONTEXT_CHARS = 6000;
 const IDEAS = 'Ide-TODO.md';
 const LIST_TEXT = 48_000; // what the list reads of each note when nothing is being searched (big vaults stay quick)
-const PROTECTED = new Set([IDEAS, 'Catatan', 'Laporan']); // the bookshelf relies on these at the vault's root
+const PROTECTED = new Set([IDEAS, 'Catatan', 'Laporan', 'Staf']); // the bookshelf relies on these at the vault's root
 const ASSET_TYPES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' };
 const MAX_ASSET = 8 * 1024 * 1024;
 
