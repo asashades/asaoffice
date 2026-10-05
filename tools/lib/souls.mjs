@@ -25,8 +25,16 @@ const roster = () => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, '
 const safeName = (s) => String(s ?? '').replace(/[^\p{L}\p{N} _-]/gu, '').trim() || 'Staf';
 
 /** The vault folder if it is there to be used (an unmounted iCloud folder is not created out of thin air). */
+let seen = { at: 0, dir: null };
 export function vaultPath() {
-  try { const d = vault.vaultDir(); return fs.statSync(d).isDirectory() ? d : null; } catch { return null; }
+  if (Date.now() - seen.at < 5000) return seen.dir; // looked at a moment ago (a vault with many notes isn't listed on every call)
+  let dir = null;
+  try {
+    const d = vault.vaultDir();
+    if (fs.statSync(d).isDirectory()) { fs.readdirSync(d); dir = d; } // macOS can let a folder be seen but not opened (iCloud Drive without permission)
+  } catch { dir = null; }
+  seen = { at: Date.now(), dir };
+  return dir;
 }
 export const available = () => !!vaultPath();
 
@@ -73,21 +81,28 @@ function render(agent, soul, memories) {
 
 function readNote(agent) {
   if (!available()) return { soul: null, memories: [] };
-  const text = vault.read(fileOf(agent));
-  return text == null ? { soul: null, memories: [] } : parse(text);
+  try {
+    const text = vault.read(fileOf(agent));
+    return text == null ? { soul: null, memories: [] } : parse(text);
+  } catch { return { soul: null, memories: [] }; }
 }
 function writeNote(agent, soul, memories) {
   if (!available()) return false;
-  const text = render(agent, soul || defaultSoul(agent), memories.slice(-MAX_MEMORIES));
-  return vault.write(fileOf(agent), text);
+  try {
+    return vault.write(fileOf(agent), render(agent, soul || defaultSoul(agent), memories.slice(-MAX_MEMORIES)));
+  } catch { return false; } // e.g. the vault went away or is not allowed: nothing is lost that was already there
 }
 
 /** Sets things up: remembers the office folder, and puts a note for every staff member in the vault (and moves memories an older version kept elsewhere). */
 export function init(root) {
   ROOT = root;
+  try { setup(); } catch { /* the office must start even when the vault can't be used */ }
+}
+function setup() {
   try {
     if (!available() && path.resolve(vault.vaultDir()) === path.join(os.homedir(), 'AsaOffice-Vault')) vault.ensureVault(); // the default vault is ours to create
   } catch { /* nothing to set up yet */ }
+  seen.at = 0; // the vault may have just been created
   if (!available()) return;
   let old = null;
   try { old = JSON.parse(fs.readFileSync(settingsFile(), 'utf8')); } catch { /* no older data */ }

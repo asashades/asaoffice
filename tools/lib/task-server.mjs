@@ -250,7 +250,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   };
   const cleanPerm = (p) => (PERMS.includes(p) ? p : null);
   // macOS notifications (macnotify.mjs): held back while an office page is in front (pages send a heartbeat), switched with the 🔔 button.
-  souls.init(root); // each staff member's note in the vault (Staf/<name>.md): personality and memories
+  try { souls.init(root); } catch { /* never stop the task server for this */ } // each staff member's note in the vault (Staf/<name>.md): personality and memories
   const notifier = createNotifier();
   let lastFocusAt = 0;
   const officeUrl = `http://127.0.0.1:${officePort}/?token=${token}`;
