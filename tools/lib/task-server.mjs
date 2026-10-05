@@ -250,6 +250,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   };
   const cleanPerm = (p) => (PERMS.includes(p) ? p : null);
   // macOS notifications (macnotify.mjs): held back while an office page is in front (pages send a heartbeat), switched with the 🔔 button.
+  souls.init(root); // each staff member's note in the vault (Staf/<name>.md): personality and memories
   const notifier = createNotifier();
   let lastFocusAt = 0;
   const officeUrl = `http://127.0.0.1:${officePort}/?token=${token}`;
@@ -874,10 +875,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           const db = souls.load();
           return send(res, 200, {
             auto: db.auto,
+            vault: { ok: souls.available(), path: souls.vaultPath() },
             staff: roster().staff.map((m) => {
               const cur = souls.soulOf(root, m.agent, db);
               const dflt = souls.soulOf(root, m.agent, { souls: {} });
-              return { agent: m.agent, name: (!m.director && loadNames().staff[m.agent]) || m.name, director: !!m.director, soul: cur.text, custom: cur.custom, defaultSoul: dflt.text, memories: db.memories[m.agent] ?? [], max: { memories: souls.MAX_MEMORIES, memoryChars: souls.MAX_MEMORY_CHARS, soulChars: souls.MAX_SOUL_CHARS } };
+              return { agent: m.agent, name: (!m.director && loadNames().staff[m.agent]) || m.name, file: souls.fileOf(m.agent), director: !!m.director, soul: cur.text, custom: cur.custom, defaultSoul: dflt.text, memories: db.memories[m.agent] ?? [], max: { memories: souls.MAX_MEMORIES, memoryChars: souls.MAX_MEMORY_CHARS, soulChars: souls.MAX_SOUL_CHARS } };
             }),
           }, origin);
         }
@@ -888,10 +890,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         }
         if (req.method === 'POST' && agent && !soulM[2]) {
           const body = await readBody(req);
-          souls.setSoul(agent, body.soul === null ? null : String(body.soul ?? ''));
+          if (!souls.setSoul(agent, body.soul === null ? null : String(body.soul ?? ''))) return send(res, 409, { error: 'vault' }, origin);
           return send(res, 200, { ok: true }, origin);
         }
         if (req.method === 'POST' && agent && soulM[2] === 'memory' && !soulM[3]) {
+          if (!souls.available()) return send(res, 409, { error: 'vault' }, origin);
           const entry = souls.addMemory(agent, (await readBody(req)).text, { manual: true });
           return entry ? send(res, 200, { memory: entry }, origin) : send(res, 400, { error: 'memory' }, origin);
         }

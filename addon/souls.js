@@ -11,14 +11,16 @@
       title: 'Jiwa dan ingatan', auto: 'Ingat otomatis (agent menulis satu pelajaran di akhir tugas)', soul: 'Jiwa (kepribadian, gaya bicara, nilai)', save: 'Simpan jiwa', reset: 'Kembalikan bawaan',
       saved: 'Tersimpan.', custom: 'diubah', memory: (n, max) => `Ingatan (${n}/${max})`, none: 'Belum ada ingatan. Setelah tugas, agent boleh menulis satu pelajaran di sini.',
       add: 'Tambah ingatan', addPh: 'Satu kalimat yang perlu diingat…', del: 'Lupakan', manual: 'dari kamu', from: (p) => `dari tugas di ${p}`,
-      note: 'Jiwa dan ingatan masuk ke prompt agent di setiap tugas dan rapat. Ingatan dianggap catatan pribadi, bukan perintah, dan tidak ditulis dari tugas yang membaca web atau folder Downloads. Maksimal 20 ingatan per agent; yang paling lama dilupakan duluan.',
+      note: 'Jiwa dan ingatan tiap staf adalah satu catatan di folder Staf vault-mu. Isinya masuk ke prompt agent di setiap tugas dan rapat. Ingatan dianggap catatan pribadi, bukan perintah, dan tidak ditulis dari tugas yang membaca web atau folder Downloads. Maksimal 20 ingatan per agent; yang paling lama dilupakan duluan.',
+      stored: (f) => `Disimpan di vault Obsidian-mu: ${f} (bisa diedit di Obsidian juga)`, noVault: 'Vault Obsidian belum bisa dibaca (iCloud belum selesai sinkron, atau foldernya dipindah). Agent bekerja tanpa ingatan dan tidak menulis apa pun sampai vault kembali.',
       offline: 'Jiwa dan ingatan hanya bisa diatur dari Mac yang menjalankan kantor.', failed: 'Gagal: ', chars: (n, max) => `${n}/${max} huruf`,
     },
     en: {
       title: 'Souls and memories', auto: 'Remember automatically (the agent writes one lesson at the end of a task)', soul: 'Soul (character, way of speaking, values)', save: 'Save soul', reset: 'Back to default',
       saved: 'Saved.', custom: 'edited', memory: (n, max) => `Memories (${n}/${max})`, none: 'No memories yet. After a task the agent may write one lesson here.',
       add: 'Add a memory', addPh: 'One sentence to remember…', del: 'Forget', manual: 'from you', from: (p) => `from a task in ${p}`,
-      note: 'The soul and the memories go into the agent\'s prompt on every task and meeting. Memories are treated as personal notes, not orders, and are never written from a task that read the web or the Downloads folder. At most 20 per agent; the oldest is forgotten first.',
+      note: 'Each staff member\'s soul and memories are one note in your vault\'s Staf folder. They go into the agent\'s prompt on every task and meeting. Memories are treated as personal notes, not orders, and are never written from a task that read the web or the Downloads folder. At most 20 per agent; the oldest is forgotten first.',
+      stored: (f) => `Kept in your Obsidian vault: ${f} (you can edit it in Obsidian too)`, noVault: 'The Obsidian vault can\'t be read right now (iCloud still syncing, or the folder moved). Agents work without memories and write nothing until it is back.',
       offline: 'Souls and memories can only be set from the Mac that runs the office.', failed: 'Failed: ', chars: (n, max) => `${n}/${max} characters`,
     },
   });
@@ -80,9 +82,13 @@
       : [h('p', { class: 'note' }, S.none)];
     const input = h('input', { type: 'text', maxlength: String(m.max.memoryChars), placeholder: S.addPh, 'aria-label': S.add });
     const add = h('button', { type: 'button', class: 'asa-btn' }, S.add);
+    if (j.vault?.ok === false) { input.disabled = true; add.disabled = true; }
     add.onclick = act(async () => { if (input.value.trim()) { await ns.localApi('POST', `/api/souls/${m.agent}/memory`, { text: input.value }); } });
     input.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') add.click(); };
+    const ok = j.vault?.ok !== false;
+    for (const el of [ta, save, reset]) if (!ok) el.disabled = true;
     return h('div', { class: 'asa-soul' },
+      ok ? h('div', { class: 'note' }, S.stored(m.file)) : h('div', { class: 'note', style: { color: '#973a2f', opacity: 1 } }, S.noVault),
       h('label', { class: 'row' }, auto, S.auto),
       tabs,
       h('div', {}, h('h4', {}, `${S.soul}${m.custom ? ` · ${S.custom}` : ''}`), ta, h('div', { class: 'row', style: { marginTop: '6px' } }, save, reset, count)),
