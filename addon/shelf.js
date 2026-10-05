@@ -16,7 +16,7 @@
       obNotKnown: 'Obsidian belum mengenal vault ini, jadi catatan tidak bisa dibuka dari sini.', obRegister: 'Daftarkan ke Obsidian', obCopy: 'Salin path vault', obCopied: 'Path vault disalin.',
       obRunning: 'Tutup Obsidian dulu (⌘Q), lalu klik Daftarkan lagi. Atau di Obsidian: Open folder as vault, lalu pilih folder vault ini (path-nya bisa disalin).',
       obNotInstalled: 'Obsidian belum pernah dijalankan di Mac ini. Buka Obsidian sekali (atau pasang dulu), lalu coba lagi. Atau di Obsidian: Open folder as vault, lalu pilih folder vault ini.', obFailed: 'Gagal mendaftarkan vault. Pakai cara manual: di Obsidian pilih Open folder as vault.',
-      search: 'Cari catatan, atau ketik untuk bikin yang baru…', report: '📜 Tulis laporan hari ini', back: 'Kembali',
+      search: 'Cari catatan, atau ketik untuk bikin yang baru…', report: '📜 Tulis laporan ke Jurnal', journalOff: 'Penulisan ke Jurnal sedang dimatikan.', journalVault: 'Vault belum bisa dibaca (iCloud belum sinkron, atau macOS belum mengizinkan kantor membukanya).', journalQuiet: 'Belum ada aktivitas hari ini, jadi belum ada yang ditulis.', back: 'Kembali',
       ideas: '💡 Ide & TODO', reports: '📜 Laporan', notes: '📝 Catatan', other: '📁 Lainnya', empty: 'Belum ada catatan. Ketik sesuatu di atas lalu Enter.', noMatch: 'Gak ada yang cocok.',
       createNote: (t) => `📝 Buat catatan “${t}”`, createIdea: (t) => `💡 Simpan jadi ide/TODO: “${t}”`,
       edit: 'Ubah', save: 'Simpan', cancel: 'Batal', saved: 'Tersimpan ✓', unsaved: '● belum disimpan', keepEditing: 'Masih ada yang belum disimpan. Simpan dengan Ctrl/⌘+Enter, atau klik Batal.',
@@ -43,7 +43,7 @@
       obNotKnown: 'Obsidian does not know this vault yet, so the note cannot be opened from here.', obRegister: 'Add it to Obsidian', obCopy: 'Copy vault path', obCopied: 'Vault path copied.',
       obRunning: 'Quit Obsidian first (⌘Q), then click Add again. Or in Obsidian: Open folder as vault and pick this vault folder (you can copy its path).',
       obNotInstalled: 'Obsidian has not been run on this Mac yet. Open Obsidian once (or install it), then try again. Or in Obsidian: Open folder as vault and pick this vault folder.', obFailed: 'Could not add the vault. Do it by hand: in Obsidian choose Open folder as vault.',
-      search: 'Search notes, or type to create a new one…', report: "📜 Write today's report", back: 'Back',
+      search: 'Search notes, or type to create a new one…', report: '📜 Write the report to the Journal', journalOff: 'Writing to the Journal is switched off.', journalVault: 'The vault can\'t be read right now (iCloud not synced, or macOS has not let the office open it).', journalQuiet: 'Nothing has happened today yet, so nothing was written.', back: 'Back',
       ideas: '💡 Ideas & TODO', reports: '📜 Reports', notes: '📝 Notes', other: '📁 Other', empty: 'No notes yet. Type something above and press Enter.', noMatch: 'Nothing matches.',
       createNote: (t) => `📝 Create note “${t}”`, createIdea: (t) => `💡 Save as idea/TODO: “${t}”`,
       edit: 'Edit', save: 'Save', cancel: 'Cancel', saved: 'Saved ✓', unsaved: '● unsaved', keepEditing: 'There are unsaved changes. Save with Ctrl/⌘+Enter, or click Cancel.',
@@ -277,24 +277,17 @@
   /** Quick capture: one line appended to Ide-TODO.md. Also used by the hero card. */
   const addIdea = (text) => api('POST', '/api/vault/idea', { text });
 
+  // "Tulis laporan hari ini": the summary goes into today's note in the Obsidian journal (1-Fleeting Journal/2026-10-5, Mon.md), in a block of its own, and opens.
   async function writeReport() {
-    const day = dayKey();
-    const d = ns.data?.stats?.days?.[day];
-    const mail = (ns.data?.mail ?? []).filter((l) => !l.report);
-    const doneToday = mail.filter((l) => l.status === 'done' && l.finishedAt && dayKey(new Date(l.finishedAt)) === day);
-    const waiting = mail.filter((l) => l.status === 'awaiting');
-    const line = (l) => `- ${l.title}${l.name ? ` (${l.name})` : ''}`;
-    const parts = [`# ${S.reportH(day)}`, ''];
-    parts.push(d?.tools ? S.today(day, d.sessions ?? 0, d.tools, d.files ?? 0) : S.quiet);
-    if (ns.data?.stats?.streak) parts.push('', S.streak(ns.data.stats.streak));
-    parts.push('', `## ${S.done}`, ...(doneToday.length ? doneToday.map(line) : [S.none]));
-    parts.push('', `## ${S.decide}`, ...(waiting.length ? waiting.map(line) : [S.none]), '');
-    const rel = `Laporan/${day}.md`;
     try {
-      await api('POST', '/api/vault/note', { path: rel, text: parts.join('\n') });
+      const r = await api('GET', '/api/journal').catch(() => null);
+      if (r && r.enabled === false) { say(S.journalOff); return; }
+      const out = await api('POST', '/api/journal/today');
+      if (out.reason === 'vault') { say(S.journalVault); return; }
+      if (out.reason === 'quiet') { say(S.journalQuiet); return; }
       state.q = '';
       await loadList('');
-      await openNote(rel);
+      await openNote(out.rel);
     } catch (err) { say(S.failed + err.message); }
   }
 

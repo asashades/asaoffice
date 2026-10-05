@@ -25,20 +25,9 @@ const roster = () => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, '
 const safeName = (s) => String(s ?? '').replace(/[^\p{L}\p{N} _-]/gu, '').trim() || 'Staf';
 
 /** The vault folder if it is there to be used (an unmounted iCloud folder is not created out of thin air). */
-let seen = { at: 0, dir: null, reason: 'missing' };
-export function vaultPath() {
-  if (Date.now() - seen.at < 5000) return seen.dir; // looked at a moment ago (a vault with many notes isn't listed on every call)
-  let dir = null;
-  let reason = 'missing';
-  try {
-    const d = vault.vaultDir();
-    if (fs.statSync(d).isDirectory()) { fs.readdirSync(d); dir = d; reason = 'ok'; } // macOS can let a folder be seen but not opened (iCloud Drive without permission)
-  } catch (err) { reason = err?.code === 'EPERM' || err?.code === 'EACCES' ? 'permission' : 'missing'; }
-  seen = { at: Date.now(), dir, reason };
-  return dir;
-}
+export function vaultPath() { return vault.usable().dir; }
 /** Why the vault can or can't be used: 'ok', 'permission' (macOS refuses to open the folder for this app) or 'missing' (not there: iCloud not synced, folder moved). */
-export const vaultReason = () => { vaultPath(); return seen.reason; };
+export const vaultReason = () => vault.usable().reason;
 export const available = () => !!vaultPath();
 
 /** The note of one staff member, relative to the vault ("Staf/Gus.md"), named after the roster name (not a nickname, so it never moves). */
@@ -105,7 +94,7 @@ function setup() {
   try {
     if (!available() && path.resolve(vault.vaultDir()) === path.join(os.homedir(), 'AsaOffice-Vault')) vault.ensureVault(); // the default vault is ours to create
   } catch { /* nothing to set up yet */ }
-  seen.at = 0; // the vault may have just been created
+  vault.resetUsable(); // the vault may have just been created
   if (!available()) return;
   let old = null;
   try { old = JSON.parse(fs.readFileSync(settingsFile(), 'utf8')); } catch { /* no older data */ }
