@@ -33,6 +33,7 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Malam gaya Stardew: peta cahaya yang dikalikan (lantai merah anggur, ruangan kosong ungu, cahaya dari benda), villager di depan gelap, dan perbaikan render hook ganda (penyebab "kabut") | #55 |
 | ✅ | Ikon pixel art berwarna penuh (67 ikon menggantikan emoji di tombol, label, kartu, HUD) dan filter folder sementara di daftar proyek | #56 |
 | ✅ | "Jiwa" dan ingatan per agent (kepribadian yang bisa diubah, satu pelajaran di akhir tugas, panel 🧠), disimpan sebagai catatan `Staf/<nama>.md` di vault Obsidian | #57 |
+| ✅ | Kotak surat lebih rapi (daftar chat bisa dilipat, menu Alat, filter jadi satu menu) dan halaman Data Karyawan sendiri (👥 di HUD) untuk profil, jiwa, dan ingatan staf | #58 |
 
 ## Rencana (urutan prioritas)
 

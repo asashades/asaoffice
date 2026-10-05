@@ -1220,6 +1220,24 @@
       '................',
       '................',
     ],
+    menu: [
+      '................',
+      '................',
+      '................',
+      '..KKKKKKKKKKKK..',
+      '..KBBBBBBBBBBK..',
+      '..KKKKKKKKKKKK..',
+      '................',
+      '..KKKKKKKKKKKK..',
+      '..KBBBBBBBBBBK..',
+      '..KKKKKKKKKKKK..',
+      '................',
+      '..KKKKKKKKKKKK..',
+      '..KBBBBBBBBBBK..',
+      '..KKKKKKKKKKKK..',
+      '................',
+      '................',
+    ],
   };
 
   // emoji → icon (the variation selector U+FE0F is optional)
@@ -1231,7 +1249,7 @@
     '☕': 'coffee', '❌': 'cross', '⏳': 'hourglass', '🔥': 'fire', '📜': 'scroll', '☀': 'sun', '🌻': 'sunflower', '👥': 'people', '⚠': 'warning', '🏠': 'house',
     '📂': 'folder', '🗂': 'folder', '💬': 'speech', '📄': 'page', '🍄': 'mushroom', '⛏': 'pickaxe', '🎣': 'fishing', '⚔': 'swords', '🧾': 'receipt', '⭐': 'star',
     '📦': 'box', '❄': 'snow', '🍂': 'autumn', '🌱': 'sprout', '✨': 'sparkle', '📅': 'calendar', '⚙': 'gear', '🕒': 'clock', '☐': 'checkOff', '☑': 'checkOn',
-    '🌳': 'tree', '🔓': 'unlock', '⏸': 'pause', '🔖': 'bookmark', '🖼': 'frame', '🧭': 'compass', '🌾': 'wheat', '✓': 'check',
+    '🌳': 'tree', '🔓': 'unlock', '⏸': 'pause', '🔖': 'bookmark', '🖼': 'frame', '🧭': 'compass', '🌾': 'wheat', '✓': 'check', '☰': 'menu',
   };
 
   if (!on) { ns.icon = (name) => document.createTextNode(Object.keys(EMOJI).find((k) => EMOJI[k] === name) ?? ''); return; }

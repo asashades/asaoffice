@@ -11,14 +11,14 @@
       chatting: 'Ngobrol dengan', walkingTo: 'Menghampiri', idle: 'Santai', leaving: 'Pamit pulang', forMin: (m) => `${m} menit`,
       project: 'Proyek', lastTool: 'Tool terakhir', context: 'Context', subagents: 'Sub-agent', team: 'Tim', since: 'Terlihat sejak',
       none: '—', subagent: 'Sub-agent dari', task: 'Mengerjakan', prompt: 'Permintaan terakhir',
-      soul: 'Jiwa dan ingatan', rename: 'Ganti nama', renamePh: 'Kosongkan = nama asli', renameFail: 'Gagal ganti nama (buka dari Mac yang jalanin kantor).',
+      soul: 'Data karyawan', rename: 'Ganti nama', renamePh: 'Kosongkan = nama asli', renameFail: 'Gagal ganti nama (buka dari Mac yang jalanin kantor).',
     },
     en: {
       agent: 'Agent', working: 'Working', permission: 'Needs your permission', waiting: 'Waiting for your reply',
       chatting: 'Chatting with', walkingTo: 'Walking over to', idle: 'Relaxing', leaving: 'Heading out', forMin: (m) => `${m} min`,
       project: 'Project', lastTool: 'Last tool', context: 'Context', subagents: 'Sub-agents', team: 'Team', since: 'Seen since',
       none: '—', subagent: 'Sub-agent of', task: 'Working on', prompt: 'Last prompt',
-      soul: 'Soul and memories', rename: 'Rename', renamePh: 'Empty = original name', renameFail: 'Could not rename (open it from the Mac that runs the office).',
+      soul: 'Employee records', rename: 'Rename', renamePh: 'Empty = original name', renameFail: 'Could not rename (open it from the Mac that runs the office).',
     },
   });
 

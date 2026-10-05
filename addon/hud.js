@@ -27,7 +27,7 @@
       atDesk: 'Di meja direktur', noProject: 'Sesi Claude Code', chatWith: (n) => `Ngobrol sama ${n}`,
       planReady: 'Rencana siap', askReady: 'Claude minta izin', askAllowBtn: '✅ Izinkan', askDenyBtn: '⛔ Tolak', approveBtn: '✅ Setujui', rejectBtn: '❌ Tolak', openBtn: 'Buka', morePlans: (n) => `+${n} rencana lagi di kotak surat`,
       perm: 'Izin', emptyPerm: 'Belum ada langkah yang ditolak otomatis.', permSource: 'Langkah yang ditolak otomatis karena di luar izin tugas. Klik buat buka suratnya.', stOpen: 'menunggu', stTerminal: 'jalankan sendiri', stRo: 'Downloads baca-saja', stAllowed: 'diizinkan sekali', clearPerm: 'Abaikan semua',
-      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', openEnd: 'Pendapatan kemarin', kasTip: 'Kas kantor · klik buat ke Toko', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
+      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', openStaff: 'Data karyawan (jiwa dan ingatan staf)', openEnd: 'Pendapatan kemarin', kasTip: 'Kas kantor · klik buat ke Toko', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
     },
     en: {
       title: 'Asa Office', live: 'Connected', dead: 'Data offline', nodata: 'No data', sessions: 'Sessions working', helpers: 'Helpers', today: 'Sub-agents today',
@@ -43,7 +43,7 @@
       atDesk: "At the director's desk", noProject: 'Claude Code session', chatWith: (n) => `Chatting with ${n}`,
       planReady: 'Plan ready', askReady: 'Claude asks permission', askAllowBtn: '✅ Allow', askDenyBtn: '⛔ Deny', approveBtn: '✅ Approve', rejectBtn: '❌ Reject', openBtn: 'Open', morePlans: (n) => `+${n} more plans in the mailbox`,
       perm: 'Permissions', emptyPerm: 'Nothing has been refused automatically.', permSource: 'Steps refused automatically because they were outside the task’s permissions. Click to open the letter.', stOpen: 'waiting', stTerminal: 'run it yourself', stRo: 'Downloads read-only', stAllowed: 'allowed once', clearPerm: 'Dismiss all',
-      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', openEnd: "Yesterday's income", kasTip: 'Office cash · click to open the shop', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
+      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', openStaff: 'Employee records (staff souls and memories)', openEnd: "Yesterday's income", kasTip: 'Office cash · click to open the shop', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
     },
   });
 
@@ -232,6 +232,7 @@
         <div class="hud-quick">
           <button type="button" data-open="mail" title="${esc(S.openMail)}" aria-label="${esc(S.openMail)}">📮<i class="hud-badge" id="hud-badge"></i></button>
           <button type="button" data-open="shelf" title="${esc(S.openShelf)}" aria-label="${esc(S.openShelf)}">📚</button>
+          <button type="button" data-open="staff" title="${esc(S.openStaff)}" aria-label="${esc(S.openStaff)}">👥</button>
           <button type="button" data-open="idea" title="${esc(S.idea)}" aria-label="${esc(S.idea)}">💡</button>
           <button type="button" id="hud-end" data-open="end" title="${esc(S.openEnd)}" aria-label="${esc(S.openEnd)}">🌙</button>
           <span class="hud-kas" id="hud-kas" hidden title="${esc(S.kasTip)}"></span>
@@ -308,6 +309,7 @@
     if (openBtn) {
       if (openBtn.dataset.open === 'idea') toggleIdea(true);
       else if (openBtn.dataset.open === 'end') ns.dayEnd?.open();
+      else if (openBtn.dataset.open === 'staff') ns.souls?.open();
       else (openBtn.dataset.open === 'mail' ? ns.mailbox : ns.shelf)?.open();
       return;
     }

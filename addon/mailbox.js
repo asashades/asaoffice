@@ -51,6 +51,7 @@
       attach: 'Lampirkan gambar', attachTip: 'Lampirkan gambar (atau tempel / seret ke sini)', attachFail: 'Gambar gak bisa dilampirkan (png, jpg, gif, webp; maks 8 MB, 4 gambar).', lookAtImages: 'Tolong lihat gambar terlampir.', remove: 'Hapus',
       denied: (n) => `⛔ ${n} langkah ditolak otomatis (di luar izin tugas ini)`, allowOnce: 'Izinkan sekali', cantAllow: 'terlalu berisiko dari sini, jalankan sendiri di Terminal', copyCmd: 'Salin', copied: 'Tersalin ✓', allowExact: 'Izinkan persis…', exactTitle: 'Perintah lengkap yang dibuka, sekali, persis seperti ini:', exactRun: 'Yang dijalankan (tanpa cd):', exactYes: 'Ya, izinkan sekali', exactNo: 'Batal', cantAllowRo: 'Downloads baca-saja, jalankan sendiri di Terminal', dismiss: 'Abaikan', dismissAll: 'Abaikan semua',
       schedBtn: '⏰ Jadwal', schedTip: 'Tugas yang jalan sendiri pada jam tertentu',
+      sideHide: 'Ciutkan daftar chat', sideShow: 'Tampilkan daftar chat', filterTip: 'Tampilkan: semua, berjalan, menunggu, selesai, atau arsip', menuBtn: 'Alat', menuTip: 'Jadwal, batas biaya, dan merapikan Downloads', menuSched: 'Jadwal tugas', menuBudget: 'Batas biaya', menuTidy: 'Rapikan Downloads',
       soulTip: 'Jiwa (kepribadian) dan ingatan staf', budgetTip: 'Batas biaya per tugas dan per hari', budgetFull: 'Batas biaya hari ini sudah tercapai, jadi tugas baru belum bisa dimulai. Naikkan batasnya di 💰 atau coba lagi besok.',
       tidyBtn: '🧹', tidyTip: 'Tanya atau rapikan folder Downloads (file baru dipindah setelah kamu setujui)', dlName: 'Downloads', tidyDraft: 'Rapikan file lepas di Downloads', dlPh: 'Tanya soal Downloads atau minta dirapikan, mis. "cari invoice bulan lalu" atau "rapikan file PDF"', tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.',
       tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
@@ -121,6 +122,7 @@
       attach: 'Attach an image', attachTip: 'Attach an image (or paste / drag it here)', attachFail: 'Could not attach the image (png, jpg, gif, webp; max 8 MB, 4 images).', lookAtImages: 'Please look at the attached images.', remove: 'Remove',
       denied: (n) => `⛔ ${n} step(s) refused automatically (outside this task's permissions)`, allowOnce: 'Allow once', cantAllow: 'too risky from here, run it yourself in Terminal', copyCmd: 'Copy', copied: 'Copied ✓', allowExact: 'Allow exactly…', exactTitle: 'The full command being opened, once, exactly as written:', exactRun: 'What will run (without the cd):', exactYes: 'Yes, allow once', exactNo: 'Cancel', cantAllowRo: 'Downloads is read-only, run it yourself in Terminal', dismiss: 'Dismiss', dismissAll: 'Dismiss all',
       schedBtn: '⏰ Schedules', schedTip: 'Tasks that run by themselves at a set time',
+      sideHide: 'Collapse the chat list', sideShow: 'Show the chat list', filterTip: 'Show: all, running, waiting, done, or archived', menuBtn: 'Tools', menuTip: 'Schedules, cost limits and tidying Downloads', menuSched: 'Schedules', menuBudget: 'Cost limits', menuTidy: 'Tidy Downloads',
       soulTip: 'Staff souls (personality) and memories', budgetTip: 'Cost limits per task and per day', budgetFull: 'Today\'s cost limit is reached, so no new task can start. Raise it in 💰 or try again tomorrow.',
       tidyBtn: '🧹', tidyTip: 'Ask about or tidy the Downloads folder (files only move after you approve)', dlName: 'Downloads', tidyDraft: 'Tidy the loose files in Downloads', dlPh: 'Ask about Downloads or ask for a tidy-up, e.g. "find last month\'s invoice" or "tidy the PDFs"', tidyNoFolder: 'The Downloads folder was not found on this Mac.',
       tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
@@ -180,6 +182,28 @@
   .asa-panel.asa-wide { max-width: min(960px, 100%); }
   .asa-chat { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 12px; height: min(74vh, 640px); }
   .asa-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden; border-right: 2px dashed #c9a877; padding-right: 12px; }
+  .asa-side { position: relative; }
+  .asa-sidehead { display: flex; gap: 6px; align-items: stretch; }
+  .asa-sidehead .asa-newchat { flex: 1; min-width: 0; position: relative; }
+  .asa-sidehead .asa-collapse { flex: none; padding: 3px 8px; }
+  .asa-sidehead .asa-menu-btn { flex: none; white-space: nowrap; }
+  .asa-sidebadge { position: absolute; top: -7px; right: -7px; min-width: 17px; height: 17px; padding: 0 3px; background: #c8503c; color: #fff6dc; font-style: normal; font-size: 11px; line-height: 17px; text-align: center; border: 2px solid #973a2f; box-sizing: content-box; display: none; }
+  .asa-toolrow { display: flex; gap: 6px; }
+  .asa-toolrow input[type="search"] { flex: 1; min-width: 0; }
+  .asa-toolrow .asa-statussel { flex: none; max-width: 44%; }
+  .asa-menu { position: absolute; z-index: 6; top: 44px; left: 0; right: 12px; background: #fffbe9; border: 3px solid #744122; box-shadow: 0 4px 0 rgba(58, 33, 23, 0.35); padding: 4px; display: flex; flex-direction: column; }
+  .asa-menu-item { display: flex; gap: 10px; align-items: center; text-align: left; font: inherit; color: inherit; background: none; border: 0; padding: 7px 8px; cursor: pointer; }
+  .asa-menu-item:hover, .asa-menu-item:focus { background: #f4e6c4; outline: none; }
+  .asa-menu-item .mi { flex: none; font-size: 18px; width: 22px; text-align: center; }
+  .asa-menu-item b { display: block; font-weight: 600; font-size: 14px; }
+  .asa-menu-item small { display: block; font-size: 11.5px; opacity: 0.7; line-height: 1.25; }
+  .asa-chat { transition: grid-template-columns 0.18s ease; }
+  .asa-chat[data-side="min"] { grid-template-columns: 54px minmax(0, 1fr); }
+  .asa-chat[data-side="min"] .asa-side { padding-right: 8px; align-items: center; }
+  .asa-chat[data-side="min"] .asa-side > :not(.asa-sidehead) { display: none; }
+  .asa-chat[data-side="min"] .asa-sidehead { flex-direction: column; width: 100%; }
+  .asa-chat[data-side="min"] .asa-newchat .l, .asa-chat[data-side="min"] .asa-menu-btn { display: none; }
+  .asa-chat[data-side="min"] .asa-newchat { padding: 6px 0; }
   .asa-side .asa-letters { overflow-y: auto; flex: 1; min-height: 0; }
   .asa-side .asa-letter { padding: 6px 8px; gap: 8px; }
   .asa-side .asa-letter.on { border-color: #744122; background: #f4e6c4; box-shadow: inset 3px 0 0 #744122; }
@@ -256,6 +280,7 @@
   @keyframes asa-spark { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(10px) scale(0.3); } }
   @media (max-width: 720px) {
     .asa-chat { grid-template-columns: 1fr; height: min(78vh, 640px); }
+    .asa-sidehead .asa-collapse { display: none; }
     .asa-side { border-right: 0; padding-right: 0; }
     .asa-chat[data-show="list"] .asa-main, .asa-chat[data-show="chat"] .asa-side { display: none; }
     .asa-back { display: block; }
@@ -717,23 +742,46 @@
 
   function fillSide() {
     const rows = h('div', { class: 'asa-letters' });
-    ui.refill = () => chatRows(rows);
+    const badge = h('i', { class: 'asa-sidebadge' });
+    const paintBadge = () => { const n = unread(); badge.textContent = n > 9 ? '9+' : String(n); badge.style.display = n ? '' : 'none'; };
+    ui.refill = () => { chatRows(rows); paintBadge(); };
     const search = h('input', { type: 'search', placeholder: S.search, value: filter.q, 'aria-label': S.search });
     search.oninput = () => { filter.q = search.value; ui.refill(); };
-    const chips = h('div', { class: 'asa-filters' },
-      [['all', S.fAll], ['running', S.fRunning], ['awaiting', S.fAwaiting], ['done', S.fDone], ['archived', S.fArchived]].map(([v, t]) => {
-        const c = h('button', { type: 'button', class: `asa-chip${filter.status === v ? ' on' : ''}` }, t);
-        c.onclick = () => { filter.status = v; chips.querySelectorAll('.asa-chip').forEach((el) => el.classList.toggle('on', el === c)); ui.refill(); };
-        return c;
+    // The status filter is one small menu next to the search box (five chips used to take two rows).
+    const statusSel = h('select', { class: 'asa-chipsel asa-statussel', title: S.filterTip, 'aria-label': S.filterTip },
+      [['all', S.fAll], ['running', S.fRunning], ['awaiting', S.fAwaiting], ['done', S.fDone], ['archived', S.fArchived]].map(([v, t]) => h('option', { value: v }, t)));
+    statusSel.value = filter.status;
+    statusSel.onchange = () => { filter.status = statusSel.value; ui.refill(); };
+    // Collapsing the list gives the chat the whole panel; only "new chat" and the way back stay.
+    const toggle = h('button', { type: 'button', class: 'asa-btn asa-collapse' });
+    const paintToggle = () => { toggle.textContent = prefs.sideMin ? '»' : '«'; toggle.title = prefs.sideMin ? S.sideShow : S.sideHide; toggle.setAttribute('aria-label', toggle.title); };
+    toggle.onclick = () => { prefs.sideMin = !prefs.sideMin; savePrefs(); paintToggle(); syncLayout(); };
+    paintToggle();
+    // The tools (schedules, cost limits, tidy Downloads) live in one labelled menu instead of a row of icon-only buttons.
+    const closeMenu = () => ui.side.querySelector('.asa-menu')?.remove();
+    const menuItems = [
+      { icon: '⏰', label: S.menuSched, desc: S.schedTip, run: () => ns.schedule?.open() },
+      { icon: '💰', label: S.menuBudget, desc: S.budgetTip, run: () => ns.budget?.open() },
+      { icon: '🧹', label: S.menuTidy, desc: S.tidyTip, run: () => { prefs.cwd = '@downloads'; savePrefs(); setDraft(S.tidyDraft, 'new'); select('new'); setTimeout(() => ui.comp?.querySelector('textarea')?.focus(), 60); } },
+    ];
+    const menuBtn = h('button', { type: 'button', class: 'asa-btn asa-menu-btn', title: S.menuTip, 'aria-label': S.menuTip, 'aria-haspopup': 'menu' }, '☰ ', S.menuBtn);
+    menuBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (ui.side.querySelector('.asa-menu')) return closeMenu();
+      const menu = h('div', { class: 'asa-menu', role: 'menu' }, menuItems.map((it) => {
+        const b = h('button', { type: 'button', class: 'asa-menu-item', role: 'menuitem' }, h('span', { class: 'mi' }, it.icon), h('span', {}, h('b', {}, it.label), h('small', {}, it.desc)));
+        b.onclick = () => { closeMenu(); it.run(); };
+        return b;
       }));
+      ui.side.append(menu);
+      setTimeout(() => { const off = (ev) => { if (!menu.contains(ev.target)) { closeMenu(); document.removeEventListener('click', off, true); } }; document.addEventListener('click', off, true); }, 0);
+    };
     ui.side.replaceChildren(
-      h('div', { style: { display: 'flex', gap: '6px' } },
-        h('button', { type: 'button', class: `asa-btn primary asa-newchat${sel === 'new' ? ' on' : ''}`, style: { flex: '1' }, onclick: () => select('new') }, S.newChat),
-        h('button', { type: 'button', class: 'asa-btn', title: S.schedTip, onclick: () => ns.schedule?.open() }, S.schedBtn),
-        h('button', { type: 'button', class: 'asa-btn', title: S.budgetTip, 'aria-label': S.budgetTip, onclick: () => ns.budget?.open() }, '💰'),
-        h('button', { type: 'button', class: 'asa-btn', title: S.soulTip, 'aria-label': S.soulTip, onclick: () => ns.souls?.open() }, '🧠'),
-        h('button', { type: 'button', class: 'asa-btn', title: S.tidyTip, 'aria-label': S.tidyTip, onclick: () => { prefs.cwd = '@downloads'; savePrefs(); setDraft(S.tidyDraft, 'new'); select('new'); setTimeout(() => ui.comp?.querySelector('textarea')?.focus(), 60); } }, S.tidyBtn)),
-      search, chips, rows);
+      h('div', { class: 'asa-sidehead' }, toggle,
+        h('button', { type: 'button', class: `asa-btn primary asa-newchat${sel === 'new' ? ' on' : ''}`, title: S.newChat, onclick: () => select('new') }, h('span', { class: 'p' }, '＋'), h('span', { class: 'l' }, ` ${S.newChat.replace(/^[+＋]\s*/, '')}`), badge),
+        menuBtn),
+      h('div', { class: 'asa-toolrow' }, search, statusSel),
+      rows);
     ui.refill();
   }
 
@@ -750,7 +798,7 @@
     ui.side?.querySelector('.asa-newchat')?.classList.toggle('on', sel === 'new');
     buildMain();
   }
-  function syncLayout() { if (ui.root) ui.root.dataset.show = narrow() ? (sel ? 'chat' : 'list') : 'both'; }
+  function syncLayout() { if (ui.root) { ui.root.dataset.show = narrow() ? (sel ? 'chat' : 'list') : 'both'; ui.root.dataset.side = prefs.sideMin && !narrow() ? 'min' : 'open'; } }
 
   const sessionOf = (id) => (ns.data?.sessions ?? []).find((x) => `session:${x.id}` === id) ?? null;
 
