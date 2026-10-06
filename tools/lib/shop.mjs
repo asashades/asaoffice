@@ -1,7 +1,12 @@
 // The office shop (~/.pixel-agents/asaoffice-shop.json): the Kas buys décor for the building and looks for the villagers.
-//   decor    { <item id>: how many were bought }; each purchase adds one piece of furniture to ~/.pixel-agents/layout.json
-//   outfits  { <palette>: { owned: [preset ids], worn: preset id | null } }   a villager's outfit colours (hue shift)
-//   titles   { <palette>: { owned: [title ids], worn: title id | null } }     a title in front of a villager's name
+//   decor        { <item id>: how many were bought }; each purchase adds one piece of furniture to ~/.pixel-agents/layout.json,
+//                for good: it survives every day and is capped at DECOR[id].max.
+//   consumables  { day, items: { <item id>: how many were bought today } } — same idea, but SEASONAL instead of DECOR and
+//                capped per day (dailyMax). The first shop read on a new day wilts yesterday's: items reset to empty and
+//                their furniture pieces (uid "f-season-…") come back out of the layout, same lazy once-a-day check as
+//                dayend.js's payout (no separate scheduler).
+//   outfits      { <palette>: { owned: [preset ids], worn: preset id | null } }   a villager's outfit colours (hue shift)
+//   titles       { <palette>: { owned: [title ids], worn: title id | null } }     a title in front of a villager's name
 // Décor is only ever placed in spots that are known to be free (the garden's grass beside the entrance path, bare wall), and a
 // purchase is refused, without charging, when there is no such spot left or when it would cut anyone off from the rest of the
 // office. Money is taken by ledger.spend(), and a failed placement gives nothing away.
@@ -40,6 +45,16 @@ export const DECOR = {
   bookshelf: { type: 'COZY_BOOKSHELF', zone: 'wall', price: 450, max: 3, w: 2, h: 2, bg: 0, icon: '📚' },
 };
 
+// Seasonal décor: a sink that never "finishes" — bought and placed exactly like DECOR, but capped per day
+// (dailyMax) instead of forever, and wiped (state + layout) the next time the shop is read on a new day.
+export const SEASONAL = {
+  sunflower: { type: 'COZY_SUNFLOWER', zone: 'garden', price: 25, dailyMax: 3, w: 1, h: 2, bg: 1, icon: '🌻' },
+  fern: { type: 'COZY_FERN', zone: 'garden', price: 20, dailyMax: 3, w: 1, h: 2, bg: 1, icon: '🌿' },
+};
+// Placement (spotsFor/findSpot/footprintOf) treats décor and seasonal pieces the same way, so they share one lookup.
+const PLACEABLE = { ...DECOR, ...SEASONAL };
+const SEASON_PREFIX = 'f-season-';
+
 // Outfit colours: the villager's clothes, as a hue shift in degrees (0 = the original look).
 export const OUTFITS = {
   rose: { hue: 330, price: 200 }, sunset: { hue: 20, price: 200 }, honey: { hue: 50, price: 200 }, moss: { hue: 100, price: 200 },
@@ -59,6 +74,36 @@ const writeJson = (f, v) => {
   fs.renameSync(`${f}.tmp`, f);
 };
 
+const pad2 = (n) => String(n).padStart(2, '0');
+const todayKey = (d = new Date()) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+/**
+ * Yesterday's seasonal décor, if any: cleared from the state and taken back out of the layout, once, the first
+ * time the shop is read on a new day (same lazy dayKey check dayend.js uses for the payout — no cron). Writes the
+ * reset back to stateFile() itself so it only runs once per day even though loadShop() is read very often.
+ */
+function freshConsumables(raw, restOfState) {
+  const today = todayKey();
+  if (raw && raw.day === today) {
+    const items = {};
+    for (const [id, n] of Object.entries(raw.items ?? {})) if (SEASONAL[id] && Number.isInteger(n) && n > 0) items[id] = Math.min(n, SEASONAL[id].dailyMax);
+    return { day: today, items };
+  }
+  if (raw) { // a new day: yesterday's pieces wilt out of the layout
+    try {
+      const layout = readJson(layoutFile(), null);
+      if (layout && Array.isArray(layout.furniture)) {
+        const before = layout.furniture.length;
+        layout.furniture = layout.furniture.filter((f) => !String(f.uid ?? '').startsWith(SEASON_PREFIX));
+        if (layout.furniture.length !== before) writeJson(layoutFile(), layout);
+      }
+    } catch { /* best effort: the state still resets below even if the layout write fails */ }
+  }
+  const fresh = { day: today, items: {} };
+  writeJson(stateFile(), { ...restOfState, consumables: fresh }); // persist once so this doesn't re-run all day
+  return fresh;
+}
+
 export function loadShop() {
   const j = readJson(stateFile(), {});
   const decor = {};
@@ -72,7 +117,10 @@ export function loadShop() {
     }
     return out;
   };
-  return { decor, outfits: dressing(j.outfits, OUTFITS), titles: dressing(j.titles, TITLES) };
+  const outfits = dressing(j.outfits, OUTFITS);
+  const titles = dressing(j.titles, TITLES);
+  const consumables = freshConsumables(j.consumables, { decor, outfits, titles });
+  return { decor, outfits, titles, consumables };
 }
 
 /** What the shop window needs: the catalog, what is owned, and what the layout still has room for. */
@@ -80,10 +128,15 @@ export function shopInfo() {
   const state = loadShop();
   const layout = readJson(layoutFile(), null);
   const room = {};
-  if (layout) for (const id of Object.keys(DECOR)) room[id] = !!findSpot(layout, id);
+  const seasonRoom = {};
+  if (layout) {
+    for (const id of Object.keys(DECOR)) room[id] = !!findSpot(layout, id);
+    for (const id of Object.keys(SEASONAL)) seasonRoom[id] = !!findSpot(layout, id);
+  }
   return {
-    ...state, room, hasLayout: !!layout,
+    ...state, room, seasonRoom, hasLayout: !!layout,
     catalog: Object.fromEntries(Object.entries(DECOR).map(([id, d]) => [id, { price: d.price, max: d.max, zone: d.zone, icon: d.icon, w: d.w, h: d.h }])),
+    seasonal_catalog: Object.fromEntries(Object.entries(SEASONAL).map(([id, d]) => [id, { price: d.price, dailyMax: d.dailyMax, zone: d.zone, icon: d.icon, w: d.w, h: d.h }])),
     outfits_catalog: Object.fromEntries(Object.entries(OUTFITS).map(([id, o]) => [id, o])),
     titles_catalog: Object.fromEntries(Object.entries(TITLES).map(([id, o]) => [id, o])),
   };
@@ -96,7 +149,7 @@ const tileAt = (l, c, r) => (c < 0 || r < 0 || c >= l.cols || r >= l.rows ? VOID
 /** The footprint of a piece of furniture in the layout (type may carry a ":left"-style variant). */
 const footprintOf = (type) => {
   const base = String(type).split(':')[0];
-  const d = Object.values(DECOR).find((x) => x.type === base);
+  const d = Object.values(PLACEABLE).find((x) => x.type === base);
   if (d) return { w: d.w, h: d.h, bg: d.bg };
   try {
     const dir = path.join(root, 'stardew-pack', 'assets', 'furniture');
@@ -155,7 +208,7 @@ function blockedBy(l) {
 }
 
 function spotsFor(l, id) {
-  const d = DECOR[id];
+  const d = PLACEABLE[id];
   const occ = occupancy(l);
   const out = [];
   if (d.zone === 'wall') {
@@ -213,7 +266,7 @@ function findSpot(l, id, salt = 0) {
   const door = { c: 16, r: 18 };
   const start = `${door.c},${door.r}`;
   const before = reachable(l, blocked, start);
-  const d = DECOR[id];
+  const d = PLACEABLE[id];
   const tryOrder = [...spots.keys()].map((i) => (i + salt * 7 + id.length * 3) % spots.length);
   for (const i of tryOrder) {
     const s = spots[i];
@@ -236,60 +289,107 @@ function nextUid(l) {
   }
   return `f-shop-${String(n + 1).padStart(3, '0')}`;
 }
+/** Seasonal pieces get their own uid prefix so freshConsumables() can tell them apart from permanent décor. */
+function nextSeasonUid(l) {
+  let n = 0;
+  for (const f of l.furniture ?? []) {
+    const m = new RegExp(`^${SEASON_PREFIX}(\\d+)$`).exec(f.uid ?? '');
+    if (m) n = Math.max(n, Number(m[1]));
+  }
+  return `${SEASON_PREFIX}${String(n + 1).padStart(3, '0')}`;
+}
+
+/** { item } — places one piece of permanent décor (capped at DECOR[id].max) and returns the new layout + the piece. */
+function buyDecor(state, body) {
+  const id = String(body.item);
+  const d = DECOR[id];
+  if (!d) return { error: 'item' };
+  if ((state.decor[id] ?? 0) >= d.max) return { error: 'max' };
+  if (loadLedger().kas < d.price) return { error: 'kas' };
+  const layout = readJson(layoutFile(), null);
+  if (!layout || !Array.isArray(layout.furniture)) return { error: 'layout' };
+  const spot = findSpot(layout, id, state.decor[id] ?? 0);
+  if (!spot) return { error: 'room' };
+  const spent = spend(d.price);
+  if (!spent) return { error: 'kas' };
+  const piece = { uid: nextUid(layout), type: d.type, col: spot.col, row: spot.row };
+  layout.furniture.push(piece);
+  try {
+    writeJson(layoutFile(), layout);
+  } catch (err) {
+    return { error: 'write', message: err.message };
+  }
+  state.decor[id] = (state.decor[id] ?? 0) + 1;
+  writeJson(stateFile(), state);
+  return { ok: true, piece, layout, kas: spent.kas, shop: shopInfo() };
+}
+
+/** { item } — same as buyDecor, but from SEASONAL and capped per day; see freshConsumables() for the daily reset. */
+function buySeasonal(state, body) {
+  const id = String(body.item);
+  const d = SEASONAL[id];
+  if (!d) return { error: 'item' };
+  const have = state.consumables.items[id] ?? 0;
+  if (have >= d.dailyMax) return { error: 'max' };
+  if (loadLedger().kas < d.price) return { error: 'kas' };
+  const layout = readJson(layoutFile(), null);
+  if (!layout || !Array.isArray(layout.furniture)) return { error: 'layout' };
+  const spot = findSpot(layout, id, have);
+  if (!spot) return { error: 'room' };
+  const spent = spend(d.price);
+  if (!spent) return { error: 'kas' };
+  const piece = { uid: nextSeasonUid(layout), type: d.type, col: spot.col, row: spot.row };
+  layout.furniture.push(piece);
+  try {
+    writeJson(layoutFile(), layout);
+  } catch (err) {
+    return { error: 'write', message: err.message };
+  }
+  state.consumables.items[id] = have + 1;
+  writeJson(stateFile(), state);
+  return { ok: true, piece, layout, kas: spent.kas, shop: shopInfo() };
+}
+
+/** { item, palette } — buys (or switches to, when owned) an outfit colour or a title for that villager. */
+function buyLook(state, kind, body) {
+  const catalog = kind === 'outfit' ? OUTFITS : TITLES;
+  const book = kind === 'outfit' ? state.outfits : state.titles;
+  const p = Number(body.palette);
+  if (!Number.isInteger(p) || p < 0 || p >= PALETTES) return { error: 'palette' };
+  const id = body.item === null ? null : String(body.item);
+  if (id !== null && !catalog[id]) return { error: 'item' };
+  const mine = (book[p] ??= { owned: [], worn: null });
+  let kas = loadLedger().kas;
+  if (id !== null && !mine.owned.includes(id)) {
+    const spent = spend(catalog[id].price);
+    if (!spent) return { error: 'kas' };
+    kas = spent.kas;
+    mine.owned.push(id);
+  }
+  mine.worn = id;
+  writeJson(stateFile(), state);
+  return { ok: true, kas, shop: shopInfo() };
+}
+
+const BUY_HANDLERS = {
+  decor: buyDecor,
+  seasonal: buySeasonal,
+  outfit: (state, body) => buyLook(state, 'outfit', body),
+  title: (state, body) => buyLook(state, 'title', body),
+};
 
 /**
- * kind: 'decor' | 'outfit' | 'title' | 'wear'. Returns { ok, ... } or { error }.
- *   decor:  { item }                         places one piece and returns the new layout + the piece
- *   outfit: { item, palette }                buys (or switches to, when owned) a colour for that villager
- *   title:  { item, palette }
- *   wear:   { kind: 'outfit'|'title', palette, item|null }  switches without paying
+ * kind: 'decor' | 'seasonal' | 'outfit' | 'title'. Returns { ok, ... } or { error }.
+ *   decor:    { item }              permanent décor, capped at DECOR[id].max
+ *   seasonal: { item }              same, but from SEASONAL and capped per day (resets the next day)
+ *   outfit:   { item, palette }     buys (or switches to, when owned) a colour for that villager
+ *   title:    { item, palette }
+ *   (item: null for outfit/title switches back to the original look without paying)
  */
 export function buy(body) {
-  const kind = body?.kind;
-  const state = loadShop();
-  if (kind === 'decor') {
-    const id = String(body.item);
-    const d = DECOR[id];
-    if (!d) return { error: 'item' };
-    if ((state.decor[id] ?? 0) >= d.max) return { error: 'max' };
-    if (loadLedger().kas < d.price) return { error: 'kas' };
-    const layout = readJson(layoutFile(), null);
-    if (!layout || !Array.isArray(layout.furniture)) return { error: 'layout' };
-    const spot = findSpot(layout, id, state.decor[id] ?? 0);
-    if (!spot) return { error: 'room' };
-    const spent = spend(d.price);
-    if (!spent) return { error: 'kas' };
-    const piece = { uid: nextUid(layout), type: d.type, col: spot.col, row: spot.row };
-    layout.furniture.push(piece);
-    try {
-      writeJson(layoutFile(), layout);
-    } catch (err) {
-      return { error: 'write', message: err.message };
-    }
-    state.decor[id] = (state.decor[id] ?? 0) + 1;
-    writeJson(stateFile(), state);
-    return { ok: true, piece, layout, kas: spent.kas, shop: shopInfo() };
-  }
-  if (kind === 'outfit' || kind === 'title') {
-    const catalog = kind === 'outfit' ? OUTFITS : TITLES;
-    const book = kind === 'outfit' ? state.outfits : state.titles;
-    const p = Number(body.palette);
-    if (!Number.isInteger(p) || p < 0 || p >= PALETTES) return { error: 'palette' };
-    const id = body.item === null ? null : String(body.item);
-    if (id !== null && !catalog[id]) return { error: 'item' };
-    const mine = (book[p] ??= { owned: [], worn: null });
-    let kas = loadLedger().kas;
-    if (id !== null && !mine.owned.includes(id)) {
-      const spent = spend(catalog[id].price);
-      if (!spent) return { error: 'kas' };
-      kas = spent.kas;
-      mine.owned.push(id);
-    }
-    mine.worn = id;
-    writeJson(stateFile(), state);
-    return { ok: true, kas, shop: shopInfo() };
-  }
-  return { error: 'kind' };
+  const handler = BUY_HANDLERS[body?.kind];
+  if (!handler) return { error: 'kind' };
+  return handler(loadShop(), body);
 }
 
 /** Puts the décor that was already bought back into a freshly installed layout (npm run layout), at no charge. Returns how many pieces. */

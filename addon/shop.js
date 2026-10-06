@@ -1,6 +1,8 @@
 // asaoffice shop: the Kas buys things. Click the 💰 chip in the HUD.
 //   - Dekorasi: pieces for the garden and walls. Each purchase lands on a spot the server has checked to be free and out of the
-//     way (tools/lib/shop.mjs), the layout is saved, and the new piece sparkles for a moment.
+//     way (tools/lib/shop.mjs), the layout is saved, and the new piece sparkles for a moment. Musiman, in the same tab, is the
+//     same thing but cheap and capped per day instead of forever — it wilts out of the layout the next morning, so there's
+//     always somewhere for the day's Kas to go instead of just piling up once every permanent piece is bought.
 //   - Penampilan: an outfit colour or a title for a villager's face (kept in the data feed, so every view of the office shows it).
 // The money is the office's Kas (dayend.js). Buying needs the Mac that runs the office; the layout editor must be closed.
 (() => {
@@ -10,24 +12,28 @@
   const S = ns.t({
     id: {
       title: 'Toko', kas: 'Kas', tabDecor: '🌳 Dekorasi', tabLook: '👗 Penampilan', buy: 'Beli', wear: 'Pakai', worn: 'Dipakai', takeOff: 'Lepas',
-      owned: (n, max) => `${n}/${max}`, garden: 'Taman', wall: 'Dinding', outfits: 'Warna baju', titles: 'Gelar',
+      owned: (n, max) => `${n}/${max}`, garden: 'Taman', wall: 'Dinding', seasonal: '🌼 Musiman', outfits: 'Warna baju', titles: 'Gelar',
       full: 'Penuh', noRoom: 'Tidak ada tempat kosong', poor: 'Kas kurang', original: 'Asli',
       names: { bench: 'Bangku taman', lantern: 'Lentera', tree: 'Pohon apel', bush: 'Semak beri', flowers: 'Bunga', scarecrow: 'Orang-orangan sawah', barrel: 'Tong kayu', crate: 'Peti panen', basket: 'Keranjang sayur', well: 'Sumur batu', pond: 'Kolam', painting: 'Lukisan', clock: 'Jam bandul', bookshelf: 'Rak buku' },
+      seasonNames: { sunflower: 'Bunga matahari pot', fern: 'Pakis pot' },
       outfitNames: { rose: 'Mawar', sunset: 'Senja', honey: 'Madu', moss: 'Lumut', mint: 'Mint', lagoon: 'Laguna', dusk: 'Fajar', plum: 'Plum' },
       bought: (n) => `${n} sudah terpasang!`, editMode: 'Tutup editor tata ruang dulu.',
       errors: { kas: 'Kas tidak cukup.', max: 'Sudah mentok jumlahnya.', room: 'Tidak ada tempat kosong yang aman buat barang ini.', layout: 'Layout kantor belum terpasang (npm run layout).', noApi: 'Belanja cuma bisa dari Mac yang menjalankan kantor.' },
       hint: 'Dekorasi dipasang otomatis di tempat kosong yang aman. Layout kantor bisa kamu atur lagi lewat editor.', lookHint: 'Pilih villager, lalu beli warna baju atau gelar. Yang sudah dibeli bisa dipakai dan dilepas gratis.',
+      seasonHint: 'Layu dan hilang tiap pagi — beli lagi kapan saja kalau mau ada terus.',
       who: 'Villager',
     },
     en: {
       title: 'Shop', kas: 'Cash', tabDecor: '🌳 Décor', tabLook: '👗 Looks', buy: 'Buy', wear: 'Wear', worn: 'Wearing', takeOff: 'Take off',
-      owned: (n, max) => `${n}/${max}`, garden: 'Garden', wall: 'Walls', outfits: 'Outfit colours', titles: 'Titles',
+      owned: (n, max) => `${n}/${max}`, garden: 'Garden', wall: 'Walls', seasonal: '🌼 Seasonal', outfits: 'Outfit colours', titles: 'Titles',
       full: 'Full', noRoom: 'No free spot', poor: 'Not enough cash', original: 'Original',
       names: { bench: 'Garden bench', lantern: 'Lantern', tree: 'Apple tree', bush: 'Berry bush', flowers: 'Flowers', scarecrow: 'Scarecrow', barrel: 'Oak barrel', crate: 'Harvest crate', basket: 'Veggie basket', well: 'Stone well', pond: 'Pond', painting: 'Painting', clock: 'Pendulum clock', bookshelf: 'Bookshelf' },
+      seasonNames: { sunflower: 'Potted sunflower', fern: 'Potted fern' },
       outfitNames: { rose: 'Rose', sunset: 'Sunset', honey: 'Honey', moss: 'Moss', mint: 'Mint', lagoon: 'Lagoon', dusk: 'Dusk', plum: 'Plum' },
       bought: (n) => `${n} is in place!`, editMode: 'Close the layout editor first.',
       errors: { kas: 'Not enough cash.', max: 'Already at the limit.', room: 'There is no safe free spot for this.', layout: 'The office layout is not installed (npm run layout).', noApi: 'Shopping works only from the Mac that runs the office.' },
       hint: 'Décor is placed automatically on a free, safe spot. You can still rearrange the office in the layout editor.', lookHint: 'Pick a villager, then buy an outfit colour or a title. Whatever you own can be worn and taken off for free.',
+      seasonHint: 'Wilts and disappears every morning — buy it again any time you want it around.',
       who: 'Villager',
     },
   });
@@ -127,6 +133,21 @@
     render();
   }
 
+  async function buySeasonal(id) {
+    if (ns.view?.editMode) { state.msg = { err: true, text: S.editMode }; return render(); }
+    state.msg = null;
+    const res = await post({ kind: 'seasonal', item: id });
+    if (res?.ok) {
+      try { ns.view?.office?.rebuildFromLayout(res.layout); } catch (err) { console.error('[asaoffice]', err); }
+      const fp = res.shop.seasonal_catalog[id] ?? { w: 1, h: 1 };
+      sparkles.push({ col: res.piece.col, row: res.piece.row, w: fp.w, h: fp.h, born: performance.now(), until: performance.now() + 2800 });
+      state.shop = { ...res.shop, kas: res.kas };
+      ns.dayEnd?.setKas?.(res.kas);
+      state.msg = { err: false, text: `✨ ${S.bought(S.seasonNames[id] ?? id)}` };
+    } else if (res === null && !state.msg) state.msg = { err: true, text: S.errors.noApi };
+    render();
+  }
+
   async function buyLook(kind, item) {
     state.msg = null;
     const res = await post({ kind, palette: state.person, item });
@@ -158,6 +179,24 @@
           h('span', { class: 'meta' }, `${g(d.price)} · ${S.owned(n, d.max)}`), btn));
       }
       wrap.append(grid);
+    }
+    if (shop.seasonal_catalog && Object.keys(shop.seasonal_catalog).length) {
+      wrap.append(h('div', { class: 'asa-shop-sec' }, S.seasonal));
+      const grid = h('div', { class: 'asa-shop-grid' });
+      for (const [id, d] of Object.entries(shop.seasonal_catalog)) {
+        const n = shop.consumables?.items?.[id] ?? 0;
+        const full = n >= d.dailyMax;
+        const noRoom = !full && shop.seasonRoom?.[id] === false;
+        const poor = !full && !noRoom && shop.kas < d.price;
+        const btn = h('button', { class: 'asa-btn primary', type: 'button', onclick: () => buySeasonal(id) }, full ? S.full : noRoom ? S.noRoom : `${S.buy} · ${g(d.price)}`);
+        btn.disabled = full || noRoom || poor || state.pending;
+        if (poor) btn.title = S.poor;
+        grid.append(h('div', { class: `asa-shop-item${full ? ' done' : ''}` },
+          h('span', { class: 'ic' }, d.icon), h('b', {}, S.seasonNames[id] ?? id),
+          h('span', { class: 'meta' }, `${g(d.price)} · ${S.owned(n, d.dailyMax)}`), btn));
+      }
+      wrap.append(grid);
+      wrap.append(h('div', { class: 'asa-shop-note' }, S.seasonHint));
     }
     wrap.append(h('div', { class: 'asa-shop-note' }, S.hint));
     return wrap;
