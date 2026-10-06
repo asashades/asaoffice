@@ -34,6 +34,7 @@ import * as tidy from './tidy.mjs';
 import { createNotifier } from './macnotify.mjs';
 import * as wtlib from './worktree.mjs';
 import * as mt from './meeting.mjs';
+import { tokensOf, liveCounter, fmtTokens } from './usage.mjs';
 import * as souls from './souls.mjs';
 import { cleanSchedule, dueAction, loadSchedules, MAX_SCHEDULES, newSchedule, nextDue, saveSchedules } from './schedules.mjs';
 
@@ -72,10 +73,11 @@ export const PERMS = ['manual', 'acceptEdits', 'auto', 'bypass', 'strict'];
 const PERM_CLI = { manual: 'manual', acceptEdits: 'acceptEdits', auto: 'auto', bypass: 'bypassPermissions' };
 const ASK_WAIT_MS = 10 * 60_000; // an unanswered question is refused after this long
 const MAX_ASKS = 20;
-export const DEFAULT_BUDGET = { task: 3, day: 15 };
-const MIN_LIMIT = 0.25; // the CLI checks the budget between steps, so a smaller cap would be overshot by the very first one
-const MAX_LIMIT = 1000;
-const MIN_BUDGET = 0.05; // less than this left of today's budget and no new run starts
+// The limits are in tokens (usage.mjs), not dollars: a subscription has no price per run.
+export const DEFAULT_BUDGET = { task: 500_000, day: 3_000_000 };
+const MIN_LIMIT = 50_000; // a run is checked between steps, so a smaller cap would be overshot by the very first one (it alone writes the cache)
+const MAX_LIMIT = 1_000_000_000;
+const MIN_BUDGET = 5_000; // less than this left of today's budget and no new run starts
 const PRESENCE_MS = 12_000; // an office page that reported being in front this recently means no macOS notification
 // The model a task runs on: an alias Claude Code knows, or a full model id (the one a session was last answered with). Anything else = the default.
 const MODEL_ALIASES = ['opus', 'sonnet', 'haiku'];
@@ -238,11 +240,13 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   const pending = new Map(); // `${letter id}:${ask id}` -> { child, requestId, input, always, timer }: questions the CLI is waiting on
   // Office settings (only "allow bypass" so far): kept next to the mailbox.
   const settingsFile = path.join(os.homedir(), '.pixel-agents', 'asaoffice-settings.json');
-  // budget (USD): `task` caps each run (every message you send starts one), `day` caps what the office spends per day; null = no limit.
+  // budget (tokens): `task` caps each run (every message you send starts one), `day` caps what the office uses per day; null = no limit.
   let settings = { allowBypass: false, notifyMac: true, budget: { ...DEFAULT_BUDGET } };
   try {
     const saved = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
     settings = { ...settings, ...saved, budget: { ...DEFAULT_BUDGET, ...(saved.budget && typeof saved.budget === 'object' ? saved.budget : {}) } };
+    // Limits saved when they were dollars (3 and 15) are far below the token minimum: back to the defaults.
+    for (const k of ['task', 'day']) if (settings.budget[k] != null && !(settings.budget[k] >= MIN_LIMIT)) settings.budget[k] = DEFAULT_BUDGET[k];
   } catch { /* defaults */ }
   const saveSettings = () => {
     fs.mkdirSync(path.dirname(settingsFile), { recursive: true });
@@ -256,27 +260,27 @@ export async function startTaskServer({ root, token, officePort, port, projects,
   const officeUrl = `http://127.0.0.1:${officePort}/?token=${token}`;
   const pingMac = (n) => { if (settings.notifyMac !== false && Date.now() - lastFocusAt >= PRESENCE_MS) notifier.send({ ...n, url: officeUrl }); };
   const whoOf = (l) => l.name ?? 'Claude';
-  // What the office has spent per day (from each run's reported cost), and what the runs in progress may still use.
-  const spendFile = path.join(os.homedir(), '.pixel-agents', 'asaoffice-spend.json');
+  // What the office has used per day (tokens, from each run's reported usage), and what the runs in progress may still use.
+  const spendFile = path.join(os.homedir(), '.pixel-agents', 'asaoffice-usage.json');
   let spend = {};
   try { spend = JSON.parse(fs.readFileSync(spendFile, 'utf8')).days ?? {}; } catch { /* nothing spent yet */ }
   const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const spentToday = () => Number(spend[dayKey()] ?? 0);
   const reserved = new Map(); // letter id -> the budget its running claude may use
   let warnedDay = null;
-  function recordSpend(usd) {
-    if (!(usd > 0)) return;
+  function recordSpend(tokens) {
+    if (!(tokens > 0)) return;
     const k = dayKey();
-    spend[k] = Math.round((Number(spend[k] ?? 0) + usd) * 1e6) / 1e6;
+    spend[k] = Math.round(Number(spend[k] ?? 0) + tokens);
     for (const old of Object.keys(spend).sort().slice(0, -60)) delete spend[old];
     try { fs.mkdirSync(path.dirname(spendFile), { recursive: true }); fs.writeFileSync(spendFile, JSON.stringify({ days: spend }, null, 2)); } catch { /* not worth stopping for */ }
     const day = settings.budget?.day;
     if (day && warnedDay !== k && spentToday() >= day * 0.8) {
       warnedDay = k;
-      pingMac({ key: `budget-${k}`, title: '💰 Biaya hari ini hampir habis', body: `$${spentToday().toFixed(2)} dari batas $${day.toFixed(2)}.`, sound: 'Basso' });
+      pingMac({ key: `budget-${k}`, title: '💰 Token hari ini hampir habis', body: `${fmtTokens(spentToday())} dari batas ${fmtTokens(day)} token.`, sound: 'Basso' });
     }
   }
-  /** What one more run may spend: the per-run limit, or what is left of today's (less what running tasks may still use). null = no limit. */
+  /** What one more run may use (tokens): the per-run limit, or what is left of today's (less what running tasks may still use). null = no limit. */
   function budgetFor(letterId) {
     const t = settings.budget?.task ?? null;
     const d = settings.budget?.day ?? null;
@@ -290,7 +294,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     return allow;
   }
   const budgetOk = () => { const b = budgetFor(null); return b == null || b >= MIN_BUDGET; };
-  const budgetInfo = () => ({ task: settings.budget?.task ?? null, day: settings.budget?.day ?? null, spentToday: Math.round(spentToday() * 100) / 100, left: (() => { const b = budgetFor(null); return b == null ? null : Math.max(0, Math.round(b * 100) / 100); })() });
+  const budgetInfo = () => ({ task: settings.budget?.task ?? null, day: settings.budget?.day ?? null, spentToday: Math.round(spentToday()), left: (() => { const b = budgetFor(null); return b == null ? null : Math.max(0, Math.round(b)); })() });
   const save = () => {
     let active = 0;
     let archived = 0;
@@ -475,16 +479,16 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       if (!claude) return reject(new Error('claude'));
       const budget = budgetFor(letter.id);
       if (budget != null && budget < MIN_BUDGET) return reject(new Error('budget'));
-      const cap = Math.min(budget ?? mt.TURN_BUDGET_USD, mt.TURN_BUDGET_USD);
+      const hold = Math.min(budget ?? mt.TURN_TOKENS, mt.TURN_TOKENS);
       const entry = roster().staff.find((m) => m.agent === member.agent);
       const access = (entry?.access ?? ['read']).filter((a) => READ_ONLY.has(a)).concat('git');
       const tools = [...allowedTools(access), ...READONLY_BASH];
       const args = ['-p', '--output-format', 'json', '--permission-mode', 'dontAsk', '--no-session-persistence', '--agent', member.agent,
-        '--allowedTools', ...tools, '--append-system-prompt', `${mt.MEETING_SYSTEM}${extraSystem}`, '--max-budget-usd', cap.toFixed(2)];
+        '--allowedTools', ...tools, '--append-system-prompt', `${mt.MEETING_SYSTEM}${extraSystem}`, '--max-budget-usd', mt.TURN_BUDGET_USD.toFixed(2)];
       if (letter.model) args.push('--model', letter.model);
       const child = spawn(claude, args, { cwd: letter.wt?.state === 'open' ? letter.wt.dir : letter.cwd, env: childEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
       ctl.child = child;
-      reserved.set(letter.id, cap);
+      reserved.set(letter.id, hold);
       child.stdin.on('error', () => {});
       child.stdin.end(prompt);
       let out = '';
@@ -499,9 +503,9 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         reserved.delete(letter.id);
         let j = null;
         try { j = JSON.parse(out); } catch { /* not JSON */ }
-        const cost = Number(j?.total_cost_usd) || 0;
-        recordSpend(cost);
-        letter.cost = (letter.cost ?? 0) + cost;
+        const used = tokensOf(j);
+        recordSpend(used);
+        letter.tokens = (letter.tokens ?? 0) + used;
         if (ctl.cancelled) return reject(new Error('cancelled'));
         if (!j || j.is_error || code !== 0) return reject(new Error(j?.subtype === 'error_max_budget_usd' ? 'budget' : (err.trim().split('\n').pop() || String(j?.result ?? `claude exit ${code}`)).slice(0, 300)));
         resolve({ text: String(j.result ?? '').trim() });
@@ -537,7 +541,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       letter.meeting = m;
       delete letter.progress;
       if (ctl.cancelled) Object.assign(letter, { status: 'stopped' });
-      else Object.assign(letter, { status: 'error', error: err.message === 'budget' ? 'Batas biaya tercapai di tengah rapat, jadi rapat dihentikan. Naikkan batasnya di 💰 lalu kirim ulang.' : `Rapat gagal: ${err.message}`.slice(0, 400) });
+      else Object.assign(letter, { status: 'error', error: err.message === 'budget' ? 'Batas token tercapai di tengah rapat, jadi rapat dihentikan. Naikkan batasnya di 💰 lalu kirim ulang.' : `Rapat gagal: ${err.message}`.slice(0, 400) });
       Object.assign(letter, { read: false, finishedAt: new Date().toISOString() });
       delete letter.stopped;
       save();
@@ -557,7 +561,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       say({ agent: director.agent, name: dName }, open || `Tim, ada tugas dari Komisaris. Aku mau dengar pendapat ${people.map((m) => m.name).join(', ')} sebelum bikin rencana.`, 0);
       const turns = [];
       for (let round = 1; round <= mt.ROUNDS; round++) {
-        if (round === 2 && (budgetFor(letter.id) ?? 99) < mt.MIN_BUDGET_FOR_ROUND_2) break; // not enough left for a second round
+        if (round === 2 && (budgetFor(letter.id) ?? Infinity) < mt.MIN_TOKENS_FOR_ROUND_2) break; // not enough left for a second round
         for (const m of people) {
           if (ctl.cancelled) throw new Error('cancelled');
           step(m, round, `${m.name} berpikir…`);
@@ -622,7 +626,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     if (interactive) system += '\nKalau satu langkah tidak diizinkan Komisaris, jangan coba memutar lewat cara lain; lanjutkan dengan yang lain atau tanyakan apa yang harus diganti.';
     const budget = budgetFor(letter.id);
     if (budget != null && budget < MIN_BUDGET) {
-      Object.assign(letter, { status: 'error', error: 'Batas biaya hari ini sudah tercapai, jadi tugas ini tidak dijalankan. Naikkan batasnya di 💰 atau coba lagi besok.', read: false, finishedAt: new Date().toISOString() });
+      Object.assign(letter, { status: 'error', error: 'Batas token hari ini sudah tercapai, jadi tugas ini tidak dijalankan. Naikkan batasnya di 💰 atau coba lagi besok.', read: false, finishedAt: new Date().toISOString() });
       return save();
     }
     // The prompt goes in on stdin (as one JSON line when the CLI may ask questions back, plain text otherwise), so text that starts with "-" can never be read as a CLI option.
@@ -633,7 +637,6 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         '--allowedTools', ...tools, '--append-system-prompt', system];
     if (letter.thread.some((m) => m.images?.length)) args.push('--add-dir', uploadsDir);
     if (interactive) for (const d of letter.allowDirs ?? []) args.push('--add-dir', d);
-    if (budget != null) args.push('--max-budget-usd', budget.toFixed(2));
     if (letter.model) args.push('--model', letter.model);
     if (resume) args.push('--resume', letter.sessionId);
     else args.push('--session-id', letter.sessionId);
@@ -655,6 +658,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     let lastText = '';
     let usedWeb = false; // a task that read the web doesn't write memory (the text came from outside)
     let result = null;
+    const live = liveCounter(); // tokens so far: the run is stopped when it passes its limit
+    let overBudget = false;
     let stderr = '';
     child.stdout.on('data', (chunk) => {
       buf += chunk;
@@ -668,6 +673,8 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (msg.type === 'control_cancel_request') { dropAsks(letter, msg.request_id); save(); continue; }
         if (msg.type === 'system' && msg.subtype === 'init' && typeof msg.model === 'string') letter.usedModel = msg.model.slice(0, 80);
         if (msg.type === 'assistant') {
+          live.add(msg);
+          if (budget != null && !overBudget && live.total >= budget) { overBudget = true; child.kill('SIGTERM'); }
           const blocks = msg.message?.content ?? [];
           const t = blocks.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
           if (t) lastText = t;
@@ -709,8 +716,9 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       dropAsks(letter);
       running.delete(letter.id);
       reserved.delete(letter.id);
-      recordSpend(Number(result?.total_cost_usd) || 0);
-      const budgetHit = result?.subtype === 'error_max_budget_usd';
+      const usedTokens = result ? tokensOf(result) || live.total : live.total;
+      recordSpend(usedTokens);
+      const budgetHit = overBudget || result?.subtype === 'error_max_budget_usd';
       let answer = String(result?.result ?? lastText ?? '').trim();
       let tidyPlan = null;
       if (tidyScan && answer) {
@@ -739,14 +747,14 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         }
       }
       letter.error = failed && !letter.stopped
-        ? (budgetHit ? `Batas biaya tercapai (${budget != null ? `$${budget.toFixed(2)}` : ''} untuk satu kali jalan), jadi tugas dihentikan. Naikkan batasnya di 💰 lalu balas surat ini buat lanjut.`
+        ? (budgetHit ? `Batas token tercapai (${budget != null ? `${fmtTokens(budget)} token` : ''} untuk satu kali jalan), jadi tugas dihentikan. Naikkan batasnya di 💰 lalu balas surat ini buat lanjut.`
           : letter.timedOut ? 'Tugasnya kelamaan (lebih dari 30 menit), jadi dihentikan.'
           : letter.shutdown ? 'Kantor dimatikan waktu tugas ini masih jalan.'
           : killed ? 'Tugasnya dihentikan dari luar (claude dimatikan, kantor di-restart, atau Mac tidur). Kirim ulang atau balas surat ini buat lanjut.'
           : (stderr.trim().split('\n').pop() || `claude keluar dengan kode ${code}`)).slice(0, 400)
         : null;
       if (letter.wt?.state === 'open') { try { letter.wtSummary = wtlib.summary(letter.wt); } catch { /* the folder is gone */ } }
-      letter.cost = (letter.cost ?? 0) + (result?.total_cost_usd ?? 0);
+      letter.tokens = (letter.tokens ?? 0) + usedTokens;
       letter.finishedAt = new Date().toISOString();
       letter.read = false;
       const wasShutdown = !!letter.shutdown;
@@ -857,7 +865,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
             if (!(k in body.budget)) continue;
             const v = body.budget[k];
             if (v === null) settings.budget[k] = null;
-            else if (Number.isFinite(Number(v)) && Number(v) >= MIN_LIMIT && Number(v) <= MAX_LIMIT) settings.budget[k] = Math.round(Number(v) * 100) / 100;
+            else if (Number.isFinite(Number(v)) && Number(v) >= MIN_LIMIT && Number(v) <= MAX_LIMIT) settings.budget[k] = Math.round(Number(v));
             else return send(res, 400, { error: 'budget value' }, origin);
           }
           warnedDay = null;
@@ -865,7 +873,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         }
         return send(res, 200, { perms: { bypass: settings.allowBypass }, notifyMac: settings.notifyMac !== false, budget: budgetInfo() }, origin);
       }
-      // The daily summary in the Obsidian journal (journal.mjs, driven by office-data.mjs): settings, and "write today's now".
+      // The daily report in the Obsidian journal (journal.mjs, driven by office-data.mjs): settings, and the day's report.
       if (journal && url.pathname === '/api/journal') {
         if (req.method === 'GET') return send(res, 200, { ...journal.config(), today: journal.todayRel(), vault: journal.vault() }, origin);
         if (req.method === 'POST') {
@@ -873,10 +881,17 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           return send(res, 200, { ...journal.setConfig({ enabled: typeof body.enabled === 'boolean' ? body.enabled : undefined, folder: typeof body.folder === 'string' ? body.folder : undefined }), today: journal.todayRel() }, origin);
         }
       }
-      if (journal && req.method === 'POST' && url.pathname === '/api/journal/today') {
-        const results = journal.now();
-        const r = results[results.length - 1] ?? { reason: 'quiet' };
-        return send(res, 200, { rel: r.rel ?? journal.todayRel(), wrote: !!r.wrote, reason: r.reason }, origin);
+      // The day's report: GET is the draft (what the office worked out, over what the Commissioner already wrote), POST saves it and writes the journal note.
+      if (journal && url.pathname === '/api/journal/day') {
+        if (req.method === 'GET') {
+          const view = journal.day(url.searchParams.get('day') ?? '');
+          return view ? send(res, 200, { ...view, ...journal.config() }, origin) : send(res, 400, { error: 'day' }, origin);
+        }
+        if (req.method === 'POST') {
+          const body = await readBody(req);
+          const out = journal.save(typeof body.day === 'string' ? body.day : '', body);
+          return out ? send(res, 200, out, origin) : send(res, 400, { error: 'day' }, origin);
+        }
       }
       // Souls: each staff member's personality and memories (souls.mjs): read, edit, forget.
       const soulM = /^\/api\/souls(?:\/([\w-]+)(?:\/(memory)(?:\/([\w-]+))?)?)?$/.exec(url.pathname);

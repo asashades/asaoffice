@@ -32,6 +32,15 @@
   };
   ns.lang = ns.setting('chatLang', ['id', 'en'], 'id');
   ns.t = (strings) => strings[ns.lang] ?? strings.en;
+  /** 1 234 567 -> "1,2 jt" / "1.2M": token counts, shown short. */
+  ns.fmtTokens = (n) => {
+    const v = Math.max(0, Math.round(Number(n) || 0));
+    const id = ns.lang === 'id';
+    const dec = (x) => (id ? String(x).replace('.', ',') : String(x));
+    if (v >= 1e6) return `${dec(Math.round(v / 1e5) / 10)} ${id ? 'jt' : 'M'}`;
+    if (v >= 1e3) return `${dec(v >= 1e5 ? Math.round(v / 1e3) : Math.round(v / 100) / 10)} ${id ? 'rb' : 'k'}`;
+    return String(v);
+  };
   // Fallback names; addon/identity.js replaces these with the twelve villagers and staff names.
   ns.VILLAGERS = ['Asa', 'Rowan', 'Clem', 'Theo', 'Mabel', 'Juno'];
   ns.villagerName = (ch) => ns.VILLAGERS[(ch?.palette ?? 0) % ns.VILLAGERS.length];

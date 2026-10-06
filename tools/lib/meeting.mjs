@@ -3,8 +3,9 @@
 // `claude -p --agent <staff>` call; task-server.mjs runs them, this file holds what is said to them and how their answers are read.
 export const MAX_PARTICIPANTS = 3;
 export const ROUNDS = 2;
-export const TURN_BUDGET_USD = 0.6; // most one turn may spend (also limited by the cost limits)
-export const MIN_BUDGET_FOR_ROUND_2 = 0.3;
+export const TURN_BUDGET_USD = 0.6; // a hidden safety net for one turn (`--max-budget-usd`); the limits you see are in tokens
+export const TURN_TOKENS = 150_000; // what one turn is expected to use (held back from the day's limit while it runs)
+export const MIN_TOKENS_FOR_ROUND_2 = 100_000;
 
 export const MEETING_SYSTEM = 'Kamu sedang rapat tim kecil di kantor bersama Shades (direktur) dan rekan-rekanmu. Bicara sebagai dirimu sendiri, sesuai perananmu. '
   + 'Kamu boleh membaca kode atau mencari referensi (hanya baca) sebelum menjawab, tapi JANGAN mengubah apa pun dan jangan menjalankan perintah yang mengubah sesuatu. '
