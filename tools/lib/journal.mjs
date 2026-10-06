@@ -19,7 +19,6 @@ const END = '<!-- asaoffice:end -->';
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const pad = (n) => String(n).padStart(2, '0');
 export const dayKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const clock = (iso) => { const d = new Date(iso); return Number.isFinite(d.getTime()) ? `${pad(d.getHours())}.${pad(d.getMinutes())}` : ''; };
 const tok = (n) => `${fmtTokens(n)} token`;
 const MAX_BACK_DAYS = 14;
 
@@ -119,15 +118,18 @@ export function dayView({ date, stats, letters, spend = null, now = new Date() }
 }
 
 // ── The note ──
-/** Highlights as Obsidian callouts: one per line; "Judul: isi" gives the callout its own title, otherwise it is titled "Highlight". */
+/**
+ * Highlights as Obsidian callouts. A blank line starts a new callout; lines under each other (a plain Enter) continue the same one. The first line of a callout may be
+ * "Judul: isi" to give it its own title, otherwise it is titled "Highlight".
+ */
 export function callouts(text) {
   const out = [];
-  for (const raw of String(text ?? '').split('\n')) {
-    const line = raw.trim();
-    if (!line) continue;
-    const m = /^(.{1,50}?)\s*:\s+(.+)$/.exec(line);
-    const [title, body] = m ? [m[1], m[2]] : ['Highlight', line];
-    out.push(`> [!tip] ${title}\n> ${body}`);
+  for (const para of String(text ?? '').split(/\n\s*\n/)) {
+    const lines = para.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (!lines.length) continue;
+    const m = /^(.{1,50}?)\s*:\s+(.+)$/.exec(lines[0]);
+    const [title, first] = m ? [m[1], m[2]] : ['Highlight', lines[0]];
+    out.push([`> [!tip] ${title}`, ...[first, ...lines.slice(1)].map((l) => `> ${l}`)].join('\n'));
   }
   return out;
 }
@@ -156,7 +158,7 @@ export function buildBlock({ items = [], highlights = '', tokens = 0, now = new 
     }
   }
   if (tokens > 0) lines.push('', '### Pemakaian', `- Token hari ini: ${tok(tokens)}`);
-  lines.push('', `<small>Diperbarui ${clock(now.toISOString())}</small>`, END);
+  lines.push(END);
   return lines.join('\n');
 }
 
@@ -178,7 +180,8 @@ export function putBlock(existing, block) {
   return `${text.replace(/\s+$/, '')}\n\n${block}\n`;
 }
 
-const stable = (block) => String(block ?? '').replace(/<small>Diperbarui[^<]*<\/small>/, '');
+// Blocks written before the "Diperbarui" line was dropped carried it; it does not count as a difference.
+const stable = (block) => String(block ?? '').replace(/\n*<small>Diperbarui[^<]*<\/small>/, '');
 
 /**
  * Saves what the Commissioner wrote for a day and writes the note. `payload`: { items: [{ id, text, include }], highlights }.

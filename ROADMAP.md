@@ -40,6 +40,7 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Kartu karyawan di bawah layar lebih ringkas (dua baris), dan toast selesai membuka obrolan tugas atau sesinya, bukan karyawannya | (PR berikutnya) |
 | ✅ | Batas dan pemakaian dihitung dalam token, bukan dolar (cocok untuk langganan) | (PR berikutnya) |
 | ✅ | Laporan harian yang manusiawi: draf dari kantor, kamu ubah kalimatnya dan tulis highlight (callout Obsidian), baru masuk Jurnal; pengingat sore sekali sehari | (PR berikutnya) |
+| ✅ | Pesan jelas kalau login Claude Code kedaluwarsa (kartu dengan perintah `claude auth login`); highlight laporan: baris kosong = callout baru; baris "Diperbarui" dihapus | (PR berikutnya) |
 
 ## Rencana (urutan prioritas)
 

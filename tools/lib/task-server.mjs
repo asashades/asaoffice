@@ -78,6 +78,10 @@ export const DEFAULT_BUDGET = { task: 500_000, day: 3_000_000 };
 const MIN_LIMIT = 50_000; // a run is checked between steps, so a smaller cap would be overshot by the very first one (it alone writes the cache)
 const MAX_LIMIT = 1_000_000_000;
 const MIN_BUDGET = 5_000; // less than this left of today's budget and no new run starts
+// Claude Code's own login ran out (an `OAuth session expired` / `Failed to authenticate` answer): every run fails the same way until `claude auth login` is done again.
+const AUTH_RE = /failed to authenticate|oauth (?:session|token)|not logged in|please run \/login|authentication_error|invalid api key|invalid bearer token/i;
+export const isAuthError = (t) => AUTH_RE.test(String(t ?? ''));
+const AUTH_MSG = 'Login Claude Code kedaluwarsa, jadi Claude tidak bisa jalan. Buka Terminal, jalankan `claude auth login`, selesaikan masuknya di browser, lalu balas surat ini buat lanjut. Kantor tidak perlu di-restart.';
 const PRESENCE_MS = 12_000; // an office page that reported being in front this recently means no macOS notification
 // The model a task runs on: an alias Claude Code knows, or a full model id (the one a session was last answered with). Anything else = the default.
 const MODEL_ALIASES = ['opus', 'sonnet', 'haiku'];
@@ -525,6 +529,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     const ctl = { cancelled: false, child: null, kill() { this.cancelled = true; try { this.child?.kill('SIGTERM'); } catch { /* gone */ } } };
     running.set(letter.id, ctl);
     Object.assign(letter, { status: 'running', error: null, meeting: { state: 'running', participants: [], speaker: director.agent, round: 0 } });
+    delete letter.authError;
     delete letter.progress;
     save();
     const say = (member, body, round) => {
@@ -541,7 +546,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       letter.meeting = m;
       delete letter.progress;
       if (ctl.cancelled) Object.assign(letter, { status: 'stopped' });
-      else Object.assign(letter, { status: 'error', error: err.message === 'budget' ? 'Batas token tercapai di tengah rapat, jadi rapat dihentikan. Naikkan batasnya di 💰 lalu kirim ulang.' : `Rapat gagal: ${err.message}`.slice(0, 400) });
+      else {
+        const auth = isAuthError(err.message);
+        Object.assign(letter, { status: 'error', error: auth ? AUTH_MSG : err.message === 'budget' ? 'Batas token tercapai di tengah rapat, jadi rapat dihentikan. Naikkan batasnya di 💰 lalu kirim ulang.' : `Rapat gagal: ${err.message}`.slice(0, 400) });
+        if (auth) letter.authError = true;
+      }
       Object.assign(letter, { read: false, finishedAt: new Date().toISOString() });
       delete letter.stopped;
       save();
@@ -650,6 +659,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     reserved.set(letter.id, budget ?? 0);
     letter.status = 'running';
     letter.error = null;
+    delete letter.authError;
     delete letter.progress;
     save();
 
@@ -746,8 +756,10 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           if (!answer) letter.thread.push({ from: 'agent', text: 'Tidak ada file yang perlu dipindah.', at: new Date().toISOString(), kind: 'work' });
         }
       }
+      const authFail = failed && !letter.stopped && !budgetHit && isAuthError(`${result?.result ?? ''}\n${stderr}`);
+      if (authFail) letter.authError = true;
       letter.error = failed && !letter.stopped
-        ? (budgetHit ? `Batas token tercapai (${budget != null ? `${fmtTokens(budget)} token` : ''} untuk satu kali jalan), jadi tugas dihentikan. Naikkan batasnya di 💰 lalu balas surat ini buat lanjut.`
+        ? (authFail ? AUTH_MSG : budgetHit ? `Batas token tercapai (${budget != null ? `${fmtTokens(budget)} token` : ''} untuk satu kali jalan), jadi tugas dihentikan. Naikkan batasnya di 💰 lalu balas surat ini buat lanjut.`
           : letter.timedOut ? 'Tugasnya kelamaan (lebih dari 30 menit), jadi dihentikan.'
           : letter.shutdown ? 'Kantor dimatikan waktu tugas ini masih jalan.'
           : killed ? 'Tugasnya dihentikan dari luar (claude dimatikan, kantor di-restart, atau Mac tidur). Kirim ulang atau balas surat ini buat lanjut.'

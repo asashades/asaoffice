@@ -28,7 +28,7 @@
       reportMix: (d) => `Rinciannya: ${d.edit} edit, ${d.search} baca/cari, ${d.command} command, ${d.web} web, ${d.agent} sub-agent.`,
       reportTokens: (i, o) => `Token: ${i} masuk, ${o} keluar.`, reportModel: (m) => `Model paling sering: ${m}.`,
       reportTasks: (n) => `Tugas dari kotak surat: ${n} selesai.`, reportStreak: (n) => `Streak kerja: ${n} hari 🔥`,
-      tokenTip: 'Token yang dipakai tugas ini: masukan baru + keluaran + cache yang ditulis (membaca ulang cache tidak dihitung). Langgananmu tidak ditagih per token; ini cuma ukuran seberapa berat tugasnya.', reportNone: 'Kemarin kantor sepi, gak ada sesi Claude. Selamat istirahat! 🌻', cost: (c) => `±${fmtTok(c)} token`,
+      tokenTip: 'Token yang dipakai tugas ini: masukan baru + keluaran + cache yang ditulis (membaca ulang cache tidak dihitung). Langgananmu tidak ditagih per token; ini cuma ukuran seberapa berat tugasnya.', authTitle: 'Login Claude Code kedaluwarsa', authBody: 'Claude tidak bisa jalan sampai kamu masuk lagi. Buka Terminal, jalankan perintah di bawah, selesaikan masuknya di browser, lalu balas surat ini buat lanjut. Kantor tidak perlu di-restart.', authCopy: 'Salin perintah', authCopied: 'Tersalin ✓', reportNone: 'Kemarin kantor sepi, gak ada sesi Claude. Selamat istirahat! 🌻', cost: (c) => `±${fmtTok(c)} token`,
       awaiting: '📝 Nunggu persetujuan', rejected: '❌ Ditolak', mode: 'Cara kerja',
       modes: { plan: '📝 Rencana dulu — kamu setujui dulu', auto: '⚡ Langsung jalan', report: '👀 Cuma laporan — gak ngubah apa-apa' },
       modeShort: { plan: 'rencana dulu', meeting: 'rapat dulu', auto: 'langsung jalan', report: 'cuma laporan' },
@@ -99,7 +99,7 @@
       reportMix: (d) => `Breakdown: ${d.edit} edits, ${d.search} reads/searches, ${d.command} commands, ${d.web} web, ${d.agent} sub-agents.`,
       reportTokens: (i, o) => `Tokens: ${i} in, ${o} out.`, reportModel: (m) => `Most used model: ${m}.`,
       reportTasks: (n) => `Tasks from the mailbox: ${n} done.`, reportStreak: (n) => `Work streak: ${n} days 🔥`,
-      tokenTip: 'Tokens this task used: new input + output + cache written (re-reading the cache is not counted). A subscription is not billed per token; this just shows how heavy the task was.', reportNone: 'The office was quiet yesterday, no Claude sessions. Enjoy the rest! 🌻', cost: (c) => `≈ ${fmtTok(c)} tokens`,
+      tokenTip: 'Tokens this task used: new input + output + cache written (re-reading the cache is not counted). A subscription is not billed per token; this just shows how heavy the task was.', authTitle: 'Claude Code login expired', authBody: 'Claude can\'t run until you sign in again. Open Terminal, run the command below, finish signing in in the browser, then reply to this letter to carry on. The office doesn\'t need a restart.', authCopy: 'Copy command', authCopied: 'Copied ✓', reportNone: 'The office was quiet yesterday, no Claude sessions. Enjoy the rest! 🌻', cost: (c) => `≈ ${fmtTok(c)} tokens`,
       awaiting: '📝 Waiting for approval', rejected: '❌ Rejected', mode: 'How to work',
       modes: { plan: '📝 Plan first — you approve it', auto: '⚡ Just do it', report: "👀 Report only — doesn't change anything" },
       modeShort: { plan: 'plan first', meeting: 'meeting first', auto: 'just do it', report: 'report only' },
@@ -1030,7 +1030,8 @@
       if (deny) out.push(deny);
       if (l.status === 'queued') out.push(h('div', { class: 'asa-sys' }, S.queuedNote(isDirector(l.agent) ? '' : l.name ?? '')));
       if (l.status === 'running') out.push(h('div', { class: 'asa-working', role: 'status' }, h('span', { class: 'asa-dots' }, h('i'), h('i'), h('i')), h('span', { class: 'asa-working-t' }, `${l.name ?? S.general} · ${progressText(l).replace(/^⏳\s*/, '')}`)));
-      if (l.error) out.push(h('div', { class: 'asa-warn' }, l.error));
+      if (l.error && l.authError) out.push(authCard(l));
+      else if (l.error) out.push(h('div', { class: 'asa-warn' }, l.error));
       if (l.tokens) out.push(h('div', { class: 'asa-note', title: S.tokenTip }, S.cost(l.tokens)));
     }
     if (notice) out.push(h('div', { class: 'asa-warn' }, notice));
@@ -1096,6 +1097,13 @@
         sure(h('button', { type: 'button', class: 'asa-btn' }, S.wtPr), S.wtPr, S.wtPrSure, () => post('pr')),
         view,
         sure(h('button', { type: 'button', class: 'asa-btn' }, S.wtDiscard), S.wtDiscard, S.wtDiscardSure, () => post('discard'))));
+  }
+  /** Claude Code's login ran out: what to do, and the command to copy. */
+  function authCard() {
+    const copy = h('button', { type: 'button', class: 'asa-btn primary' }, S.authCopy);
+    copy.onclick = async () => { if (await copyText('claude auth login')) { copy.textContent = S.authCopied; setTimeout(() => { copy.textContent = S.authCopy; }, 2500); } };
+    return h('div', { class: 'asa-warn', role: 'alert' }, h('b', {}, `🔐 ${S.authTitle}`), h('div', {}, S.authBody),
+      h('pre', { style: { margin: '6px 0', padding: '6px 8px', background: '#fffbe9', fontSize: '13px' } }, 'claude auth login'), h('div', { class: 'asa-ask-row' }, copy));
   }
   /** A permission question from a running task:  /** A permission question from a running task: the whole command, and the buttons to answer it. */
   function askCard(l, a) {
