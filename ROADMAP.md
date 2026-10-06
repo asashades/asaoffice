@@ -35,6 +35,8 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | "Jiwa" dan ingatan per agent (kepribadian yang bisa diubah, satu pelajaran di akhir tugas, panel 🧠), disimpan sebagai catatan `Staf/<nama>.md` di vault Obsidian | #57 |
 | ✅ | Kotak surat lebih rapi (daftar chat bisa dilipat, menu Alat, filter jadi satu menu) dan halaman Data Karyawan sendiri (👥 di HUD) untuk profil, jiwa, dan ingatan staf | #58 |
 | ✅ | Rangkuman harian ditulis ke catatan Jurnal Obsidian (`1-Fleeting Journal/2026-10-5, Mon.md`, plugin obsidian-journal), menggantikan laporan di folder Laporan | #59 |
+| ✅ | Ganti orang, cara kerja, dan model di tengah chat (🔁), kartu "sedang bekerja" satu baris, kotak surat lebih tinggi | #60 |
+| ✅ | Dekorasi musiman (pengeluaran harian yang tak habis) dan Shades tetap aktif selama rapat | #60 |
 
 ## Rencana (urutan prioritas)
 

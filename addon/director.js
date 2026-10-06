@@ -291,6 +291,10 @@
     const plan = directorLetters().some((l) => l.status === 'running' && l.phase === 'plan');
     const team = pickTeam(prompt, plan).slice(0, Math.min(MAX_ACTING, atTable ? sofas.length : sofas.length - 1));
     if (!team.length) return false;
+    // A meeting is starting: make sure Shades is active and out of the desk↔stroll cycle, or the core wander
+    // logic can pull him away mid-meeting (he'd be "out for a walk" instead of at the table).
+    rest = { away: false, until: performance.now() + (180 + Math.random() * 240) * 1000 };
+    office.setAgentActive(shades.id, true);
     if (atTable) moveTo(office, shades, shadesSeat);
     else moveTo(office, shades, sofas[0]);
     const ids = new Set([shades.id]);
@@ -320,6 +324,10 @@
       shadesSeat = heads[0] ?? seats[0] ?? null;
       seats = seats.filter((id) => id !== shadesSeat);
     } else shadesSeat = seats.shift() ?? null;
+    // Same as startMeeting(): keep him active and out of the stroll cycle so the core wander logic doesn't
+    // walk him off while the real meeting (task-server.mjs runMeeting) is going on.
+    rest = { away: false, until: performance.now() + (180 + Math.random() * 240) * 1000 };
+    office.setAgentActive(shades.id, true);
     if (shadesSeat) moveTo(office, shades, shadesSeat);
     meeting = { start: performance.now(), lines: [], ids: new Set([shades.id]), shadesId: shades.id, live: letter.id, seats, cast: new Set(), seen: -1, shownAt: 0 };
   }

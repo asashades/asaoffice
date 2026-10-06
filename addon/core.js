@@ -224,6 +224,7 @@
           const top = r ? Math.round(r.bottom + 6) : 8;
           el.style.top = `${top}px`;
           el.style.maxHeight = `calc(100vh - ${top + 76}px)`;
+          el.style.setProperty('--asa-dockbody', `${Math.max(380, window.innerHeight - top - 76 - 112)}px`); // the room left for a panel's body
         };
         place();
         window.addEventListener('resize', place);

@@ -51,7 +51,7 @@
       attach: 'Lampirkan gambar', attachTip: 'Lampirkan gambar (atau tempel / seret ke sini)', attachFail: 'Gambar gak bisa dilampirkan (png, jpg, gif, webp; maks 8 MB, 4 gambar).', lookAtImages: 'Tolong lihat gambar terlampir.', remove: 'Hapus',
       denied: (n) => `⛔ ${n} langkah ditolak otomatis (di luar izin tugas ini)`, allowOnce: 'Izinkan sekali', cantAllow: 'terlalu berisiko dari sini, jalankan sendiri di Terminal', copyCmd: 'Salin', copied: 'Tersalin ✓', allowExact: 'Izinkan persis…', exactTitle: 'Perintah lengkap yang dibuka, sekali, persis seperti ini:', exactRun: 'Yang dijalankan (tanpa cd):', exactYes: 'Ya, izinkan sekali', exactNo: 'Batal', cantAllowRo: 'Downloads baca-saja, jalankan sendiri di Terminal', dismiss: 'Abaikan', dismissAll: 'Abaikan semua',
       schedBtn: '⏰ Jadwal', schedTip: 'Tugas yang jalan sendiri pada jam tertentu',
-      sideHide: 'Ciutkan daftar chat', sideShow: 'Tampilkan daftar chat', filterTip: 'Tampilkan: semua, berjalan, menunggu, selesai, atau arsip', menuBtn: 'Alat', menuTip: 'Jadwal, batas biaya, dan merapikan Downloads', menuSched: 'Jadwal tugas', menuBudget: 'Batas biaya', menuTidy: 'Rapikan Downloads',
+      folderLocked: 'Foldernya tetap: satu sesi tinggal di satu folder. Buat chat baru kalau mau folder lain.', sideHide: 'Ciutkan daftar chat', sideShow: 'Tampilkan daftar chat', filterTip: 'Tampilkan: semua, berjalan, menunggu, selesai, atau arsip', menuBtn: 'Alat', menuTip: 'Jadwal, batas biaya, dan merapikan Downloads', menuSched: 'Jadwal tugas', menuBudget: 'Batas biaya', menuTidy: 'Rapikan Downloads',
       soulTip: 'Jiwa (kepribadian) dan ingatan staf', budgetTip: 'Batas biaya per tugas dan per hari', budgetFull: 'Batas biaya hari ini sudah tercapai, jadi tugas baru belum bisa dimulai. Naikkan batasnya di 💰 atau coba lagi besok.',
       tidyBtn: '🧹', tidyTip: 'Tanya atau rapikan folder Downloads (file baru dipindah setelah kamu setujui)', dlName: 'Downloads', tidyDraft: 'Rapikan file lepas di Downloads', dlPh: 'Tanya soal Downloads atau minta dirapikan, mis. "cari invoice bulan lalu" atau "rapikan file PDF"', tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.',
       tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
@@ -122,7 +122,7 @@
       attach: 'Attach an image', attachTip: 'Attach an image (or paste / drag it here)', attachFail: 'Could not attach the image (png, jpg, gif, webp; max 8 MB, 4 images).', lookAtImages: 'Please look at the attached images.', remove: 'Remove',
       denied: (n) => `⛔ ${n} step(s) refused automatically (outside this task's permissions)`, allowOnce: 'Allow once', cantAllow: 'too risky from here, run it yourself in Terminal', copyCmd: 'Copy', copied: 'Copied ✓', allowExact: 'Allow exactly…', exactTitle: 'The full command being opened, once, exactly as written:', exactRun: 'What will run (without the cd):', exactYes: 'Yes, allow once', exactNo: 'Cancel', cantAllowRo: 'Downloads is read-only, run it yourself in Terminal', dismiss: 'Dismiss', dismissAll: 'Dismiss all',
       schedBtn: '⏰ Schedules', schedTip: 'Tasks that run by themselves at a set time',
-      sideHide: 'Collapse the chat list', sideShow: 'Show the chat list', filterTip: 'Show: all, running, waiting, done, or archived', menuBtn: 'Tools', menuTip: 'Schedules, cost limits and tidying Downloads', menuSched: 'Schedules', menuBudget: 'Cost limits', menuTidy: 'Tidy Downloads',
+      folderLocked: 'The folder stays: a session lives in its folder. Start a new chat for another one.', sideHide: 'Collapse the chat list', sideShow: 'Show the chat list', filterTip: 'Show: all, running, waiting, done, or archived', menuBtn: 'Tools', menuTip: 'Schedules, cost limits and tidying Downloads', menuSched: 'Schedules', menuBudget: 'Cost limits', menuTidy: 'Tidy Downloads',
       soulTip: 'Staff souls (personality) and memories', budgetTip: 'Cost limits per task and per day', budgetFull: 'Today\'s cost limit is reached, so no new task can start. Raise it in 💰 or try again tomorrow.',
       tidyBtn: '🧹', tidyTip: 'Ask about or tidy the Downloads folder (files only move after you approve)', dlName: 'Downloads', tidyDraft: 'Tidy the loose files in Downloads', dlPh: 'Ask about Downloads or ask for a tidy-up, e.g. "find last month\'s invoice" or "tidy the PDFs"', tidyNoFolder: 'The Downloads folder was not found on this Mac.',
       tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
@@ -238,6 +238,8 @@
   .asa-b small { display: block; opacity: 0.6; font-size: 11px; margin-top: 4px; }
   .asa-b em { display: block; font-style: normal; margin-bottom: 4px; }
   .asa-b.typing { display: flex; gap: 8px; align-items: center; }
+  .asa-working { align-self: flex-start; max-width: 100%; margin-left: 32px; display: inline-flex; gap: 7px; align-items: center; padding: 2px 10px; font-size: 12px; line-height: 1.3; background: #fffbe9; border: 1px solid #d9c49a; }
+  .asa-working-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.85; }
   .asa-dots { display: inline-flex; gap: 3px; } .asa-dots i { width: 5px; height: 5px; background: #744122; animation: asa-dot 1.2s infinite; }
   .asa-dots i:nth-child(2) { animation-delay: 0.2s; } .asa-dots i:nth-child(3) { animation-delay: 0.4s; }
   @keyframes asa-dot { 0%, 60%, 100% { opacity: 0.25; transform: none; } 30% { opacity: 1; transform: translateY(-3px); } }
@@ -302,7 +304,7 @@
   .asa-imgs figcaption { font-size: 11.5px; opacity: 0.6; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .asa-lightbox { position: fixed; inset: 0; z-index: 1300; display: flex; align-items: center; justify-content: center; background: rgba(20,12,6,0.82); cursor: zoom-out; padding: 16px; }
   .asa-lightbox img { max-width: 94vw; max-height: 90vh; border: 3px solid #f4e6c4; background: #fff; box-shadow: 0 6px 0 rgba(0,0,0,0.35); }
-  .asa-dock .asa-chat { height: max(380px, min(640px, calc(100vh - 330px))); }
+  .asa-dock .asa-chat { height: max(380px, min(1100px, var(--asa-dockbody, calc(100vh - 330px)))); }
   .asa-attach { display: flex; flex-wrap: wrap; gap: 6px; }
   .asa-attach figure { position: relative; margin: 0; }
   .asa-attach img { display: block; width: 56px; height: 56px; object-fit: cover; border: 2px solid #744122; background: #fff; }
@@ -991,7 +993,7 @@
       const thread = l.thread ?? [];
       const lastAgent = thread.map((m, i) => (m.from === 'agent' ? i : -1)).filter((i) => i >= 0).pop();
       thread.forEach((m, i) => {
-        if (m.from === 'you' && m.kind === 'allow') return out.push(h('div', { class: 'asa-sys' }, m.text));
+        if (m.from === 'you' && (m.kind === 'allow' || m.kind === 'switch')) return out.push(h('div', { class: 'asa-sys' }, m.text));
         if (m.from === 'you' && ['approve', 'reject', 'revise'].includes(m.kind)) {
           return out.push(h('div', { class: 'asa-sys' }, m.kind === 'approve' ? S.approvedNote : m.kind === 'reject' ? S.rejectedNote : `${S.revisedNote}: ${m.text}`));
         }
@@ -1026,7 +1028,7 @@
       const deny = denialBlock(l);
       if (deny) out.push(deny);
       if (l.status === 'queued') out.push(h('div', { class: 'asa-sys' }, S.queuedNote(isDirector(l.agent) ? '' : l.name ?? '')));
-      if (l.status === 'running') out.push(h('div', { class: 'asa-brow' }, smallFace(l), h('div', { class: 'asa-b agent typing' }, h('span', { class: 'asa-dots' }, h('i'), h('i'), h('i')), h('span', {}, progressText(l).replace(/^⏳\s*/, '')))));
+      if (l.status === 'running') out.push(h('div', { class: 'asa-working', role: 'status' }, h('span', { class: 'asa-dots' }, h('i'), h('i'), h('i')), h('span', { class: 'asa-working-t' }, `${l.name ?? S.general} · ${progressText(l).replace(/^⏳\s*/, '')}`)));
       if (l.error) out.push(h('div', { class: 'asa-warn' }, l.error));
       if (l.cost) out.push(h('div', { class: 'asa-note' }, S.cost(l.cost)));
     }
@@ -1249,7 +1251,27 @@
       Object.assign(controls, { whoSel, projSel, modeSel, modelSel, permSel, isoSel, styleSel, commitBox, member, setWho });
       chips.append(whoSel, projSel, modeSel, modelSel, permSel, isoSel, styleSel, commitLab);
     } else {
-      chips.append(h('span', { class: 'asa-pill' }, `👤 ${who(l)}`), h('span', { class: 'asa-pill', title: l.cwd }, `📁 ${l.project}`), l.mode ? h('span', { class: 'asa-pill' }, S.chipModes[l.mode]) : null);
+      const swappable = !l.readOnlyDir && l.kind !== 'tidy' && !locked;
+      if (!swappable) {
+        chips.append(h('span', { class: 'asa-pill' }, `👤 ${who(l)}`), h('span', { class: 'asa-pill', title: l.cwd }, `📁 ${l.project}`), l.mode ? h('span', { class: 'asa-pill' }, S.chipModes[l.mode]) : null);
+      } else {
+        // Between replies everything but the folder can change (each reply is a new run that continues the same session; a session lives in its folder).
+        const staff = options?.staff ?? [];
+        const whoSel = h('select', { class: 'asa-chipsel', title: S.who, 'aria-label': S.who }, h('option', { value: '' }, `👤 ${S.general}`), staff.map((m) => h('option', { value: m.agent }, `👤 ${m.name}`)));
+        whoSel.value = staff.some((m) => m.agent === l.agent) ? l.agent : '';
+        const mode0 = l.mode === 'report' ? 'report' : l.phase === 'plan' ? 'plan' : 'auto';
+        const modeSel = h('select', { class: 'asa-chipsel', title: S.mode, 'aria-label': S.mode }, ['plan', 'auto', 'report'].map((v) => h('option', { value: v }, S.chipModes[v])));
+        modeSel.value = mode0;
+        const modelSel = h('select', { class: 'asa-chipsel', title: S.modelTip, 'aria-label': S.modelTip }, h('option', { value: '' }, S.modelDefault), MODEL_CHOICES.map(([v, t]) => h('option', { value: v }, `🧠 ${t}`)));
+        modelSel.value = MODEL_CHOICES.some(([v]) => v === l.model) ? l.model : '';
+        const styleSel = h('select', { class: 'asa-chipsel', title: S.style, 'aria-label': S.style }, Object.entries(S.chipStyles).map(([v, t]) => h('option', { value: v }, t)));
+        styleSel.value = l.style === 'delegate' ? 'delegate' : 'solo';
+        const showStyle = () => { styleSel.style.display = staff.find((m) => m.agent === whoSel.value)?.director ? '' : 'none'; };
+        whoSel.onchange = showStyle;
+        showStyle();
+        Object.assign(controls, { whoSel, modeSel, modelSel, styleSel });
+        chips.append(whoSel, h('span', { class: 'asa-pill', title: `${l.cwd}\n${S.folderLocked}` }, `📁 ${l.project}`), modeSel, modelSel, styleSel);
+      }
       // The permission mode can be changed between replies (it applies to the next run), except in Downloads where it is read-only anyway.
       if (!l.readOnlyDir && l.kind !== 'tidy' && !locked) { controls.permSel = permSelect(l.perm, chips, null); chips.append(controls.permSel); }
     }
@@ -1344,10 +1366,10 @@
     ns.notify?.sfx?.('send');
     const landed = flyPlane(sendBtn);
     try {
-      await api('POST', `/api/tasks/${l.id}/reply`, { text, images, perm: controls.permSel?.value });
+      await api('POST', `/api/tasks/${l.id}/reply`, { text, images, perm: controls.permSel?.value, ...(controls.whoSel ? { agent: controls.whoSel.value, mode: controls.modeSel.value, model: controls.modelSel.value, style: controls.styleSel.value } : {}) });
       clearAtt();
       setDraft('', l.id);
-      if (isDirector(l.agent)) ns.director?.expect({ cwd: l.cwd });
+      if (isDirector(controls.whoSel ? controls.whoSel.value : l.agent)) ns.director?.expect({ cwd: l.cwd });
       await landed;
       dropLetter();
     } catch (err) {
