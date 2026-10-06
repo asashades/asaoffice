@@ -1260,15 +1260,22 @@
         const whoSel = h('select', { class: 'asa-chipsel', title: S.who, 'aria-label': S.who }, h('option', { value: '' }, `👤 ${S.general}`), staff.map((m) => h('option', { value: m.agent }, `👤 ${m.name}`)));
         whoSel.value = staff.some((m) => m.agent === l.agent) ? l.agent : '';
         const mode0 = l.mode === 'report' ? 'report' : l.phase === 'plan' ? 'plan' : 'auto';
-        const modeSel = h('select', { class: 'asa-chipsel', title: S.mode, 'aria-label': S.mode }, ['plan', 'auto', 'report'].map((v) => h('option', { value: v }, S.chipModes[v])));
-        modeSel.value = mode0;
+        const modeSel = h('select', { class: 'asa-chipsel', title: S.mode, 'aria-label': S.mode });
+        // "Rapat dulu" is Shades' only: the others don't get it.
+        const fillModes = () => {
+          const cur = modeSel.value || mode0;
+          const want = ['plan', 'meeting', 'auto', 'report'].filter((v) => v !== 'meeting' || staff.find((m) => m.agent === whoSel.value)?.director);
+          modeSel.replaceChildren(...want.map((v) => h('option', { value: v }, S.chipModes[v])));
+          modeSel.value = want.includes(cur) ? cur : mode0;
+        };
         const modelSel = h('select', { class: 'asa-chipsel', title: S.modelTip, 'aria-label': S.modelTip }, h('option', { value: '' }, S.modelDefault), MODEL_CHOICES.map(([v, t]) => h('option', { value: v }, `🧠 ${t}`)));
         modelSel.value = MODEL_CHOICES.some(([v]) => v === l.model) ? l.model : '';
         const styleSel = h('select', { class: 'asa-chipsel', title: S.style, 'aria-label': S.style }, Object.entries(S.chipStyles).map(([v, t]) => h('option', { value: v }, t)));
         styleSel.value = l.style === 'delegate' ? 'delegate' : 'solo';
         const showStyle = () => { styleSel.style.display = staff.find((m) => m.agent === whoSel.value)?.director ? '' : 'none'; };
-        whoSel.onchange = showStyle;
+        whoSel.onchange = () => { showStyle(); fillModes(); };
         showStyle();
+        fillModes();
         Object.assign(controls, { whoSel, modeSel, modelSel, styleSel });
         chips.append(whoSel, h('span', { class: 'asa-pill', title: `${l.cwd}\n${S.folderLocked}` }, `📁 ${l.project}`), modeSel, modelSel, styleSel);
       }
@@ -1369,7 +1376,7 @@
       await api('POST', `/api/tasks/${l.id}/reply`, { text, images, perm: controls.permSel?.value, ...(controls.whoSel ? { agent: controls.whoSel.value, mode: controls.modeSel.value, model: controls.modelSel.value, style: controls.styleSel.value } : {}) });
       clearAtt();
       setDraft('', l.id);
-      if (isDirector(controls.whoSel ? controls.whoSel.value : l.agent)) ns.director?.expect({ cwd: l.cwd });
+      if (isDirector(controls.whoSel ? controls.whoSel.value : l.agent) && controls.modeSel?.value !== 'meeting') ns.director?.expect({ cwd: l.cwd }); // a real meeting is played from the letter itself
       await landed;
       dropLetter();
     } catch (err) {
