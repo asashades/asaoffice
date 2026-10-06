@@ -1567,7 +1567,7 @@
         ns.notify?.message?.({
           icon: l.status === 'awaiting' ? '📝' : ok ? '📬' : '⚠️',
           title: l.status === 'awaiting' ? S.planReady(name) : ok ? S.finished(name, first) : S.failedTask(name),
-          body: S.openBox, kind: ok ? 'done' : 'permission',
+          body: S.openBox, kind: ok ? 'done' : 'permission', letter: l.id,
         });
       }
       lastStatus.set(l.id, l.status);

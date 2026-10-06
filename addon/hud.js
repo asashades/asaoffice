@@ -159,20 +159,20 @@
   .hud-todo { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 4px; padding: 3px 12px; font-size: 12.5px; }
   .hud-todo.s-in_progress i { color: #3f8a36; } .hud-todo.s-completed span { opacity: 0.5; text-decoration: line-through; }
   .hud-todo i { font-style: normal; opacity: 0.7; }
-  .hud-bottom { position: fixed; left: 230px; right: 12px; bottom: 10px; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .hud-bottom { position: fixed; left: 230px; right: 12px; bottom: 8px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
   .hud-bottom > * { pointer-events: auto; }
-  .hud-cards { display: flex; gap: 8px; overflow-x: auto; padding: 0 2px 6px; scrollbar-width: thin; scrollbar-color: #b8935c transparent; }
-  .hud-card { flex: 1 1 0; min-width: 190px; max-width: 280px; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 1px 8px; padding: 6px 8px 7px;
-    text-align: left; cursor: pointer; position: relative; }
+  .hud-cards { display: flex; gap: 8px; overflow-x: auto; padding: 0 2px 4px; scrollbar-width: thin; scrollbar-color: #b8935c transparent; }
+  .hud-card { flex: 1 1 0; min-width: 150px; max-width: 232px; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 0 7px; padding: 3px 7px 3px 4px; align-items: center;
+    border-width: 2px; box-shadow: inset 0 0 0 1px #dca05f, 0 2px 0 rgba(0,0,0,0.25); text-align: left; cursor: pointer; position: relative; }
   .hud-card:hover { background: #fbf0d3; }
   .hud-card:focus-visible { outline: 3px solid #3f74b8; outline-offset: 1px; }
   .hud-card.sel { border-color: #973a2f; }
-  .hud-face { grid-row: 1 / span 3; width: 34px; height: 56px; image-rendering: pixelated; background-repeat: no-repeat; background-size: 238px 204px;
-    background-position: -34px -4px; background-color: #dca05f; border: 2px solid #744122; }
+  .hud-face { grid-row: 1 / span 2; width: 26px; height: 42px; image-rendering: pixelated; background-repeat: no-repeat; background-size: 182px 156px;
+    background-position: -26px -3px; background-color: #dca05f; border: 2px solid #744122; }
   .hud-card .h { display: flex; gap: 6px; align-items: center; min-width: 0; }
-  .hud-card .nm { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud-card .nm { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hud-card .st { margin-left: auto; flex: none; }
-  .hud-card .task { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud-card .task { font-size: 11.5px; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hud-card .act { font-size: 12px; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   @media (max-width: 1180px) { .hud-side { width: 310px; } }
   @media (max-width: 820px) {
@@ -183,9 +183,9 @@
     .hud-bottom { left: 8px; right: 8px; bottom: 62px; }
     .hud-side { position: static; width: auto; }
     .hud-side { max-height: none; } .hud-side .hud-scroll { max-height: 30vh; }
-    .hud-card { min-width: 168px; }
+    .hud-card { min-width: 140px; }
   }
-  @media (max-width: 560px) { .hud-stats { display: none; } .hud-card { min-width: 150px; } }
+  @media (max-width: 560px) { .hud-stats { display: none; } .hud-card { min-width: 128px; } }
   `;
 
   // ── State ──
@@ -437,7 +437,7 @@
       const face = `background-image:url(${esc(ns.portraitUrl(c))})${c.hueShift ? `;filter:hue-rotate(${c.hueShift}deg)` : ''}`;
       return `<button type="button" class="hud-card hud-box${sel ? ' sel' : ''}" data-id="${c.id}"><span class="hud-face" style="${face}"></span>
         <span class="h"><span class="nm">${esc(ns.villagerName(c))}</span><span class="hud-chip st" style="color:${ui.css}">${esc(ui.label)}</span></span>
-        <span class="task" title="${esc(task)}">${esc(clip(task || roleOf(office, c), 60))}</span><span class="act" title="${esc(act)}">${esc(clip(act || roleOf(office, c), 60))}</span></button>`;
+        <span class="task" title="${esc([task, act].filter(Boolean).join(' · '))}">${esc(clip(task || act || roleOf(office, c), 60))}</span></button>`;
     });
     setHtml($('hud-cards'), cards.join(''), 'cards');
 

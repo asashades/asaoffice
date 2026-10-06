@@ -37,6 +37,7 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Rangkuman harian ditulis ke catatan Jurnal Obsidian (`1-Fleeting Journal/2026-10-5, Mon.md`, plugin obsidian-journal), menggantikan laporan di folder Laporan | #59 |
 | ✅ | Ganti orang, cara kerja, dan model di tengah chat (🔁), kartu "sedang bekerja" satu baris, kotak surat lebih tinggi | #60 |
 | ✅ | Dekorasi musiman (pengeluaran harian yang tak habis) dan Shades tetap aktif selama rapat | #60 |
+| ✅ | Kartu karyawan di bawah layar lebih ringkas (dua baris), dan toast selesai membuka obrolan tugas atau sesinya, bukan karyawannya | (PR berikutnya) |
 
 ## Rencana (urutan prioritas)
 
