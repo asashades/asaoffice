@@ -508,14 +508,14 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       });
     });
   }
-  async function runMeeting(letter, text) {
+  async function runMeeting(letter, text, { task: asked, resume = false } = {}) {
     const r = roster();
     const director = r.staff.find((m) => m.agent === letter.agent && m.director);
     const staff = r.staff.filter((m) => !m.director && installed(m.agent)).map((m) => ({ ...m, name: loadNames().staff[m.agent] || m.name, role: typeof m.role === 'object' ? m.role.id ?? m.role.en : m.role }));
-    const task = letter.thread[0]?.text ?? text;
+    const task = asked ?? letter.thread[0]?.text ?? text; // a meeting held mid-chat is about the new message
     if (!director || !staff.length) { // nobody to call: it is an ordinary plan
       letter.mode = 'plan';
-      return run(letter, text, { resume: false });
+      return run(letter, text, { resume });
     }
     const dName = loadNames().staff[director.agent] || director.name;
     const ctl = { cancelled: false, child: null, kill() { this.cancelled = true; try { this.child?.kill('SIGTERM'); } catch { /* gone */ } } };
@@ -573,7 +573,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       // Shades writes the plan as an ordinary plan session: it waits for approval, and approving carries on in that same session.
       turns.unshift({ name: dName, role: 'direktur', text: open });
       reserved.delete(letter.id);
-      run(letter, mt.synthesisPrompt({ task, turns }), { resume: false });
+      run(letter, mt.synthesisPrompt({ task, turns }), { resume }); // mid-chat: the plan carries on in the same session
     } catch (err) { fail(err); }
   }
 
@@ -1168,16 +1168,18 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (cleanPerm(replyBody.perm)) letter.perm = replyBody.perm; // the mode can be changed between replies, like Shift+Tab in Claude Code
         if (letter.kind !== 'tidy' && !letter.readOnlyDir && !allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
         const changes = [];
+        let meet = false;
         if (swap) {
           if (nextAgent !== (letter.agent ?? null)) {
             Object.assign(letter, { agent: nextAgent, name: nextMember?.name ?? null });
             if (!nextMember?.director) letter.style = 'solo';
             changes.push(`👤 ${nextMember?.name ?? 'Claude'}`);
           }
-          const newMode = ['plan', 'auto', 'report'].includes(replyBody.mode) ? replyBody.mode : null;
+          const newMode = ['plan', 'auto', 'report', ...(nextMember?.director ? ['meeting'] : [])].includes(replyBody.mode) ? replyBody.mode : null;
           const curMode = letter.mode === 'report' ? 'report' : letter.phase === 'plan' ? 'plan' : 'auto';
           if (newMode && newMode !== curMode) {
-            Object.assign(letter, { mode: newMode, phase: newMode === 'plan' ? 'plan' : 'work' });
+            Object.assign(letter, { mode: newMode, phase: newMode === 'plan' || newMode === 'meeting' ? 'plan' : 'work' });
+            meet = newMode === 'meeting';
             changes.push(`mode ${newMode}`);
           }
           if (nextMember?.director && (replyBody.style === 'solo' || replyBody.style === 'delegate')) letter.style = replyBody.style;
@@ -1187,7 +1189,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           }
         }
         // A reply to a plan that's waiting for you is a revision: it stays a plan until you approve it.
-        const revise = letter.status === 'awaiting' && letter.phase === 'plan';
+        const revise = letter.status === 'awaiting' && letter.phase === 'plan' && !meet;
         if (changes.length) letter.thread.push({ from: 'you', kind: 'switch', text: `🔁 ${changes.join(' · ')}`, at: new Date().toISOString() });
         letter.thread.push({ from: 'you', text, at: new Date().toISOString(), kind: revise ? 'revise' : undefined, ...(images.length ? { images } : {}) });
         letter.read = true;
@@ -1195,6 +1197,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const fresh = !!letter.needFresh;
         if (fresh) { letter.sessionId = crypto.randomUUID(); delete letter.needFresh; }
         const lead = fresh ? 'Catatan: pekerjaan di cabang terpisah sebelumnya sudah selesai diurus (digabung, dijadikan PR, atau dibuang). Ini lanjutan baru di folder aslinya.\n\n' : '';
+        if (meet) { letter.read = true; if (fresh) delete letter.meeting; runMeeting(letter, promptWith(text, images), { task: text, resume: !fresh }); return send(res, 200, { letter }, origin); }
         run(letter, promptWith(revise ? `Komisaris minta rencananya direvisi:\n${text}\n\nTulis ulang rencananya.` : `${lead}${text}`, images), { resume: !fresh });
         return send(res, 200, { letter }, origin);
       }
