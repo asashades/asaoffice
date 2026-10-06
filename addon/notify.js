@@ -137,14 +137,22 @@
   @keyframes asa-toast-in { from { transform: translateY(-12px); opacity: 0; } to { transform: none; opacity: 1; } }
   `;
   let box = null;
-  function toast(kind, ch, title, icon) {
+  /** Where a click on a toast or system notification goes: the chat of the task or session (in the mailbox), else the villager itself. */
+  function openFor(ch) {
+    const letter = ns.data?.taskAgents?.[ch.id]?.letter;
+    const session = ns.data?.agentSessions?.[ch.id];
+    if (ns.mailbox && letter) return ns.mailbox.openLetter(letter);
+    if (ns.mailbox && session && (ns.data?.sessions ?? []).some((x) => x.id === session)) return ns.mailbox.openLetter(`session:${session}`);
+    select(ch.id);
+  }
+  function toast(kind, ch, title, icon, onOpen) {
     if (!box) {
       document.head.appendChild(h('style', {}, css));
       box = h('div', { class: 'asa-toasts', 'aria-live': 'polite' });
       document.body.appendChild(box);
     }
     const el = h('div', { class: `asa-toast ${kind}`, role: 'status' }, icon ?? (kind === 'permission' ? '✋' : '✅'), h('div', {}, title, ch?.folderName ? h('small', {}, ` · ${ch.folderName}`) : null));
-    el.onclick = () => { if (ch) select(ch.id); el.remove(); };
+    el.onclick = () => { if (onOpen) onOpen(); else if (ch) openFor(ch); el.remove(); };
     box.appendChild(el);
     while (box.children.length > 3) box.firstChild.remove();
     setTimeout(() => el.remove(), kind === 'permission' ? 12000 : 6000);
@@ -164,11 +172,12 @@
         tag: `asaoffice-${ch.id}-${kind}`,
         icon: ns.portraitUrl?.(ch),
       });
-      n.onclick = () => { window.focus(); select(ch.id); n.close(); };
+      n.onclick = () => { window.focus(); openFor(ch); n.close(); };
     } catch { /* e.g. mobile browsers that only allow notifications from a service worker */ }
   }
 
   function announce(kind, ch) {
+    if (kind === 'done' && ns.mailbox && ns.data?.taskAgents?.[ch.id]?.letter) return; // a mailbox task: the mailbox announces it itself (one toast, which opens its chat)
     const name = ns.villagerName(ch);
     const title = kind === 'permission' ? S.permission(name) : S.done(name);
     toast(kind, ch, title);
@@ -220,9 +229,9 @@
     get enabled() { return enabled; },
     test: (kind = 'permission') => { const ch = ns.view?.office?.characters.values().next().value; if (ch) announce(kind, ch); },
     /** Office-wide message (e.g. the Pomodoro timer): toast + chime + system notification, muted by 🔕. */
-    message({ icon, title, body = '', kind = 'done' }) {
+    message({ icon, title, body = '', kind = 'done', letter = null }) {
       if (!enabled) return;
-      toast(kind, null, title, icon);
+      toast(kind, null, title, icon, letter && ns.mailbox ? () => ns.mailbox.openLetter(letter) : null);
       chime(kind);
       navigator.vibrate?.([60, 40, 60]);
       if (!('Notification' in window) || Notification.permission !== 'granted' || (!document.hidden && document.hasFocus())) return;

@@ -86,8 +86,14 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
   const script = path.join(root, 'tools', 'lib', 'mac-calendar.js');
 
   const stats = new ClaudeStats();
+  const stateFile = path.join(os.homedir(), '.pixel-agents', 'standalone-state.json');
+  const agentSessions = () => {
+    const out = {};
+    try { for (const a of JSON.parse(fs.readFileSync(stateFile, 'utf8')).agents ?? []) if (a.sessionId) out[a.id] = a.sessionId; } catch { /* no state yet */ }
+    return out;
+  };
   const data = {
-    version: 1, generatedAt: null, schedules: [], names: loadNames(), looks: wornLooks(), archive: loadArchive(), stats: null, tasks: [], sessions: [], runs: [], subagents: {}, staff: [], mail: [], taskAgents: {}, taskServer: null,
+    version: 1, generatedAt: null, schedules: [], names: loadNames(), looks: wornLooks(), archive: loadArchive(), stats: null, tasks: [], sessions: [], runs: [], subagents: {}, staff: [], mail: [], taskAgents: {}, agentSessions: {}, taskServer: null,
     calendar: { status: calendar ? 'loading' : 'off', events: [] },
   };
   // Staff roster, with which members are installed as Claude Code subagents (npm run staff).
@@ -143,6 +149,12 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
       const sessions = stats.listSessions();
       if (JSON.stringify(sessions) !== JSON.stringify(data.sessions)) {
         data.sessions = sessions;
+        changed = true;
+      }
+      // Which Claude Code session each villager plays (so a toast can open that session's chat).
+      const bySession = agentSessions();
+      if (JSON.stringify(bySession) !== JSON.stringify(data.agentSessions)) {
+        data.agentSessions = bySession;
         changed = true;
       }
       if (taskApi) {
