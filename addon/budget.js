@@ -1,7 +1,8 @@
-// asaoffice budget (💰 in the mailbox): limits on what tasks may cost. A per-run limit (every message you send starts one run) and a
-// per-day limit for the whole office. A run is given what is left of the smaller one (`claude --max-budget-usd`), no run starts when
-// today's budget is used up, and the office tells you (a macOS notification at 80% of the day, and on the letter when a run is stopped).
-// The numbers are Claude Code's own cost estimates; the limit is checked between steps, so a run can overshoot it a little.
+// asaoffice budget (💰 in the mailbox): limits on how much tasks may use, in tokens (a subscription has no price per run). A per-run limit
+// (every message you send starts one run) and a per-day limit for the whole office. A run is stopped when it passes what is left of the
+// smaller one, no run starts when today's budget is used up, and the office tells you (a macOS notification at 80% of the day, and on the
+// letter when a run is stopped). A token count here = new input + output + cache written (the server counts it from each step of the run), so
+// a run can overshoot a little. The numbers are entered in thousands (rb).
 // The settings live on the Mac (POST /api/settings); a phone only sees a hint.
 (() => {
   'use strict';
@@ -9,16 +10,16 @@
   const h = ns.h;
   const S = ns.t({
     id: {
-      title: 'Batas biaya', today: 'Hari ini', of: (a, b) => `$${a.toFixed(2)} dari $${b.toFixed(2)}`, spentOnly: (a) => `$${a.toFixed(2)} (tanpa batas harian)`, left: (v) => `Sisa untuk hari ini: $${v.toFixed(2)}`,
+      title: 'Batas token', today: 'Hari ini', of: (a, b) => `${ns.fmtTokens(a)} dari ${ns.fmtTokens(b)} token`, spentOnly: (a) => `${ns.fmtTokens(a)} token (tanpa batas harian)`, left: (v) => `Sisa untuk hari ini: ${ns.fmtTokens(v)} token`, unit: 'ribu token',
       task: 'Batas per tugas (sekali jalan)', day: 'Batas per hari', none: 'Tanpa batas', save: 'Simpan', saved: 'Tersimpan.', failed: 'Gagal menyimpan: ',
-      note: 'Setiap pesan yang kamu kirim memulai satu kali jalan. Claude diberi sisa dari batas yang lebih kecil dan berhenti kalau tercapai; kalau batas hari ini habis, tugas baru tidak dimulai (termasuk jadwal). Batas dicek di antara langkah Claude, jadi bisa terlewati sedikit. Angkanya perkiraan dari Claude Code, bukan tagihan: kalau kamu memakai langganan, ini hanya ukuran pemakaian.',
-      min: 'Minimal $0,25.', offline: 'Batas biaya hanya bisa diatur dari Mac yang menjalankan kantor.',
+      note: 'Setiap pesan yang kamu kirim memulai satu kali jalan. Claude diberi sisa dari batas yang lebih kecil dan berhenti kalau tercapai; kalau batas hari ini habis, tugas baru tidak dimulai (termasuk jadwal). Batas dicek di antara langkah Claude, jadi bisa terlewati sedikit. Satu token di sini = masukan baru + keluaran + cache yang ditulis (membaca ulang cache tidak dihitung). Langgananmu tidak ditagih per token, jadi ini cuma ukuran seberapa berat pekerjaannya. Sebagai gambaran: satu tugas biasa sekitar 100 sampai 400 ribu token.',
+      min: 'Minimal 50 ribu token.', offline: 'Batas token hanya bisa diatur dari Mac yang menjalankan kantor.',
     },
     en: {
-      title: 'Cost limits', today: 'Today', of: (a, b) => `$${a.toFixed(2)} of $${b.toFixed(2)}`, spentOnly: (a) => `$${a.toFixed(2)} (no daily limit)`, left: (v) => `Left for today: $${v.toFixed(2)}`,
+      title: 'Token limits', today: 'Today', of: (a, b) => `${ns.fmtTokens(a)} of ${ns.fmtTokens(b)} tokens`, spentOnly: (a) => `${ns.fmtTokens(a)} tokens (no daily limit)`, left: (v) => `Left for today: ${ns.fmtTokens(v)} tokens`, unit: 'thousand tokens',
       task: 'Limit per task (one run)', day: 'Limit per day', none: 'No limit', save: 'Save', saved: 'Saved.', failed: 'Could not save: ',
-      note: 'Every message you send starts one run. Claude is given what is left of the smaller limit and stops when it is reached; when today\'s budget is used up, no new task starts (schedules included). The limit is checked between Claude\'s steps, so a run can overshoot a little. The numbers are Claude Code\'s estimates, not a bill: on a subscription they are just a measure of use.',
-      min: 'At least $0.25.', offline: 'Cost limits can only be set from the Mac that runs the office.',
+      note: 'Every message you send starts one run. Claude is given what is left of the smaller limit and stops when it is reached; when today\'s budget is used up, no new task starts (schedules included). The limit is checked between Claude\'s steps, so a run can overshoot a little. One token here = new input + output + cache written (re-reading the cache is not counted). A subscription is not billed per token, so this is just a measure of how heavy the work is. For scale: an ordinary task is about 100 to 400 thousand tokens.',
+      min: 'At least 50 thousand tokens.', offline: 'Token limits can only be set from the Mac that runs the office.',
     },
   });
   const css = `
@@ -43,11 +44,12 @@
     const cur = state.info[key];
     const none = h('input', { type: 'checkbox' });
     none.checked = cur == null;
-    const num = h('input', { type: 'number', min: '0.25', max: '1000', step: '0.25', value: cur == null ? '' : String(cur) });
+    // Entered in thousands of tokens (the server keeps whole tokens).
+    const num = h('input', { type: 'number', min: '50', max: '1000000', step: '50', value: cur == null ? '' : String(Math.round(cur / 1000)) });
     num.disabled = none.checked;
-    none.onchange = () => { num.disabled = none.checked; if (!none.checked && !num.value) num.value = key === 'day' ? '15' : '3'; };
-    state.fields[key] = () => (none.checked ? null : Number(num.value));
-    return h('label', {}, label, h('div', { class: 'asa-bud-row' }, h('span', {}, '$'), num, h('label', { style: { flexDirection: 'row', gap: '4px', alignItems: 'center' } }, none, S.none)));
+    none.onchange = () => { num.disabled = none.checked; if (!none.checked && !num.value) num.value = key === 'day' ? '3000' : '500'; };
+    state.fields[key] = () => (none.checked ? null : Math.round(Number(num.value) * 1000));
+    return h('label', {}, label, h('div', { class: 'asa-bud-row' }, num, h('span', {}, S.unit), h('label', { style: { flexDirection: 'row', gap: '4px', alignItems: 'center' } }, none, S.none)));
   }
 
   function open() {
@@ -66,7 +68,7 @@
         const save = h('button', { type: 'button', class: 'asa-btn primary' }, S.save);
         save.onclick = async () => {
           const budget = { task: state.fields.task(), day: state.fields.day() };
-          if ((budget.task != null && !(budget.task >= 0.25)) || (budget.day != null && !(budget.day >= 0.25))) { state.msg.textContent = S.min; return; }
+          if ((budget.task != null && !(budget.task >= 50_000)) || (budget.day != null && !(budget.day >= 50_000))) { state.msg.textContent = S.min; return; }
           save.disabled = true;
           try { await ns.localApi('POST', '/api/settings', { budget }); await reload(); if (state?.msg) state.msg.textContent = S.saved; } catch (err) { if (state?.msg) state.msg.textContent = `${S.failed}${err.message}`; }
           save.disabled = false;

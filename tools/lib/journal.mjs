@@ -8,6 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import * as vault from './vault.mjs';
+import { fmtTokens } from './usage.mjs';
 
 const configFile = () => path.join(os.homedir(), '.pixel-agents', 'asaoffice-journal.json');
 export const DEFAULT_FOLDER = '1-Fleeting Journal';
@@ -17,7 +18,7 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const pad = (n) => String(n).padStart(2, '0');
 const dayKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const clock = (iso) => { const d = new Date(iso); return Number.isFinite(d.getTime()) ? `${pad(d.getHours())}.${pad(d.getMinutes())}` : ''; };
-const money = (n) => `$${Number(n).toFixed(2)}`;
+const tok = (n) => `${fmtTokens(n)} token`;
 
 export function getConfig() {
   let c = {};
@@ -56,7 +57,7 @@ export function buildBlock({ date, stats, letters = [], spend = null, now = new 
   if (snap?.edit) bits.push(`${snap.edit} edit`);
   if (snap?.files) bits.push(`${snap.files} file diedit`);
   if (mine.length) bits.push(`${mine.length} tugas kotak surat${done ? ` (${done} selesai)` : ''}`);
-  if (spend > 0) bits.push(`biaya ±${money(spend)}`);
+  if (spend > 0) bits.push(`±${tok(spend)}`);
   const lines = [BEGIN, '## Asa Office: rangkuman hari ini', '', '> Ditulis otomatis oleh Asa Office. Hanya bagian di antara dua penanda ini yang ditimpa; tulis catatanmu di luarnya.', '', `**Ringkasan:** ${bits.join(' · ') || 'belum ada aktivitas'}`];
   if (mine.length) {
     lines.push('', '### Tugas di kotak surat');
@@ -65,7 +66,7 @@ export function buildBlock({ date, stats, letters = [], spend = null, now = new 
       const [icon, label] = STATUS[l.status] ?? ['•', l.status];
       const meet = l.meeting?.participants?.length ? ` · rapat dengan ${l.meeting.participants.map((p) => p.name).join(', ')}` : '';
       const wt = l.wt?.branch ? ` · cabang ${l.wt.branch}` : '';
-      const cost = l.cost ? ` · ${money(l.cost)}` : '';
+      const cost = l.tokens ? ` · ${tok(l.tokens)}` : '';
       lines.push(`- ${icon} **${String(l.title ?? '').replace(/\s+/g, ' ').slice(0, 90)}**: ${[l.name, l.project].filter(Boolean).join(' · ') || 'Claude'}${meet}${wt} · ${label}${l.finishedAt ? ` ${clock(l.finishedAt)}` : ''}${cost}`);
     }
   }

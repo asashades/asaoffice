@@ -38,6 +38,7 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Ganti orang, cara kerja, dan model di tengah chat (🔁), kartu "sedang bekerja" satu baris, kotak surat lebih tinggi | #60 |
 | ✅ | Dekorasi musiman (pengeluaran harian yang tak habis) dan Shades tetap aktif selama rapat | #60 |
 | ✅ | Kartu karyawan di bawah layar lebih ringkas (dua baris), dan toast selesai membuka obrolan tugas atau sesinya, bukan karyawannya | (PR berikutnya) |
+| ✅ | Batas dan pemakaian dihitung dalam token, bukan dolar (cocok untuk langganan) | (PR berikutnya) |
 
 ## Rencana (urutan prioritas)
 

@@ -28,7 +28,7 @@
       reportMix: (d) => `Rinciannya: ${d.edit} edit, ${d.search} baca/cari, ${d.command} command, ${d.web} web, ${d.agent} sub-agent.`,
       reportTokens: (i, o) => `Token: ${i} masuk, ${o} keluar.`, reportModel: (m) => `Model paling sering: ${m}.`,
       reportTasks: (n) => `Tugas dari kotak surat: ${n} selesai.`, reportStreak: (n) => `Streak kerja: ${n} hari 🔥`,
-      reportNone: 'Kemarin kantor sepi, gak ada sesi Claude. Selamat istirahat! 🌻', cost: (c) => `biaya ±$${c.toFixed(2)}`,
+      tokenTip: 'Token yang dipakai tugas ini: masukan baru + keluaran + cache yang ditulis (membaca ulang cache tidak dihitung). Langgananmu tidak ditagih per token; ini cuma ukuran seberapa berat tugasnya.', reportNone: 'Kemarin kantor sepi, gak ada sesi Claude. Selamat istirahat! 🌻', cost: (c) => `±${fmtTok(c)} token`,
       awaiting: '📝 Nunggu persetujuan', rejected: '❌ Ditolak', mode: 'Cara kerja',
       modes: { plan: '📝 Rencana dulu — kamu setujui dulu', auto: '⚡ Langsung jalan', report: '👀 Cuma laporan — gak ngubah apa-apa' },
       modeShort: { plan: 'rencana dulu', meeting: 'rapat dulu', auto: 'langsung jalan', report: 'cuma laporan' },
@@ -51,8 +51,8 @@
       attach: 'Lampirkan gambar', attachTip: 'Lampirkan gambar (atau tempel / seret ke sini)', attachFail: 'Gambar gak bisa dilampirkan (png, jpg, gif, webp; maks 8 MB, 4 gambar).', lookAtImages: 'Tolong lihat gambar terlampir.', remove: 'Hapus',
       denied: (n) => `⛔ ${n} langkah ditolak otomatis (di luar izin tugas ini)`, allowOnce: 'Izinkan sekali', cantAllow: 'terlalu berisiko dari sini, jalankan sendiri di Terminal', copyCmd: 'Salin', copied: 'Tersalin ✓', allowExact: 'Izinkan persis…', exactTitle: 'Perintah lengkap yang dibuka, sekali, persis seperti ini:', exactRun: 'Yang dijalankan (tanpa cd):', exactYes: 'Ya, izinkan sekali', exactNo: 'Batal', cantAllowRo: 'Downloads baca-saja, jalankan sendiri di Terminal', dismiss: 'Abaikan', dismissAll: 'Abaikan semua',
       schedBtn: '⏰ Jadwal', schedTip: 'Tugas yang jalan sendiri pada jam tertentu',
-      folderLocked: 'Foldernya tetap: satu sesi tinggal di satu folder. Buat chat baru kalau mau folder lain.', sideHide: 'Ciutkan daftar chat', sideShow: 'Tampilkan daftar chat', filterTip: 'Tampilkan: semua, berjalan, menunggu, selesai, atau arsip', menuBtn: 'Alat', menuTip: 'Jadwal, batas biaya, dan merapikan Downloads', menuSched: 'Jadwal tugas', menuBudget: 'Batas biaya', menuTidy: 'Rapikan Downloads',
-      soulTip: 'Jiwa (kepribadian) dan ingatan staf', budgetTip: 'Batas biaya per tugas dan per hari', budgetFull: 'Batas biaya hari ini sudah tercapai, jadi tugas baru belum bisa dimulai. Naikkan batasnya di 💰 atau coba lagi besok.',
+      folderLocked: 'Foldernya tetap: satu sesi tinggal di satu folder. Buat chat baru kalau mau folder lain.', sideHide: 'Ciutkan daftar chat', sideShow: 'Tampilkan daftar chat', filterTip: 'Tampilkan: semua, berjalan, menunggu, selesai, atau arsip', menuBtn: 'Alat', menuTip: 'Jadwal, batas biaya, dan merapikan Downloads', menuSched: 'Jadwal tugas', menuBudget: 'Batas token', menuTidy: 'Rapikan Downloads',
+      soulTip: 'Jiwa (kepribadian) dan ingatan staf', budgetTip: 'Batas token per tugas dan per hari', budgetFull: 'Batas token hari ini sudah tercapai, jadi tugas baru belum bisa dimulai. Naikkan batasnya di 💰 atau coba lagi besok.',
       tidyBtn: '🧹', tidyTip: 'Tanya atau rapikan folder Downloads (file baru dipindah setelah kamu setujui)', dlName: 'Downloads', tidyDraft: 'Rapikan file lepas di Downloads', dlPh: 'Tanya soal Downloads atau minta dirapikan, mis. "cari invoice bulan lalu" atau "rapikan file PDF"', tidyNoFolder: 'Folder Downloads tidak ditemukan di Mac ini.',
       tidyMoves: (n) => `📦 ${n} file akan dipindah (hilangkan centang yang tidak mau dipindah)`, tidyTo: 'ke', tidyUndo: '↩️ Kembalikan semua', tidyUndone: 'Sudah dikembalikan.',
       meetRound: (n) => `putaran ${n}`, meetTip: 'Shades memimpin rapat: dia memilih 2-3 staf, masing-masing menjawab sebagai dirinya sendiri (dua putaran), lalu Shades menulis rencananya dari isi rapat. Butuh beberapa menit dan beberapa panggilan Claude.',
@@ -99,7 +99,7 @@
       reportMix: (d) => `Breakdown: ${d.edit} edits, ${d.search} reads/searches, ${d.command} commands, ${d.web} web, ${d.agent} sub-agents.`,
       reportTokens: (i, o) => `Tokens: ${i} in, ${o} out.`, reportModel: (m) => `Most used model: ${m}.`,
       reportTasks: (n) => `Tasks from the mailbox: ${n} done.`, reportStreak: (n) => `Work streak: ${n} days 🔥`,
-      reportNone: 'The office was quiet yesterday, no Claude sessions. Enjoy the rest! 🌻', cost: (c) => `cost ≈ $${c.toFixed(2)}`,
+      tokenTip: 'Tokens this task used: new input + output + cache written (re-reading the cache is not counted). A subscription is not billed per token; this just shows how heavy the task was.', reportNone: 'The office was quiet yesterday, no Claude sessions. Enjoy the rest! 🌻', cost: (c) => `≈ ${fmtTok(c)} tokens`,
       awaiting: '📝 Waiting for approval', rejected: '❌ Rejected', mode: 'How to work',
       modes: { plan: '📝 Plan first — you approve it', auto: '⚡ Just do it', report: "👀 Report only — doesn't change anything" },
       modeShort: { plan: 'plan first', meeting: 'meeting first', auto: 'just do it', report: 'report only' },
@@ -122,8 +122,8 @@
       attach: 'Attach an image', attachTip: 'Attach an image (or paste / drag it here)', attachFail: 'Could not attach the image (png, jpg, gif, webp; max 8 MB, 4 images).', lookAtImages: 'Please look at the attached images.', remove: 'Remove',
       denied: (n) => `⛔ ${n} step(s) refused automatically (outside this task's permissions)`, allowOnce: 'Allow once', cantAllow: 'too risky from here, run it yourself in Terminal', copyCmd: 'Copy', copied: 'Copied ✓', allowExact: 'Allow exactly…', exactTitle: 'The full command being opened, once, exactly as written:', exactRun: 'What will run (without the cd):', exactYes: 'Yes, allow once', exactNo: 'Cancel', cantAllowRo: 'Downloads is read-only, run it yourself in Terminal', dismiss: 'Dismiss', dismissAll: 'Dismiss all',
       schedBtn: '⏰ Schedules', schedTip: 'Tasks that run by themselves at a set time',
-      folderLocked: 'The folder stays: a session lives in its folder. Start a new chat for another one.', sideHide: 'Collapse the chat list', sideShow: 'Show the chat list', filterTip: 'Show: all, running, waiting, done, or archived', menuBtn: 'Tools', menuTip: 'Schedules, cost limits and tidying Downloads', menuSched: 'Schedules', menuBudget: 'Cost limits', menuTidy: 'Tidy Downloads',
-      soulTip: 'Staff souls (personality) and memories', budgetTip: 'Cost limits per task and per day', budgetFull: 'Today\'s cost limit is reached, so no new task can start. Raise it in 💰 or try again tomorrow.',
+      folderLocked: 'The folder stays: a session lives in its folder. Start a new chat for another one.', sideHide: 'Collapse the chat list', sideShow: 'Show the chat list', filterTip: 'Show: all, running, waiting, done, or archived', menuBtn: 'Tools', menuTip: 'Schedules, cost limits and tidying Downloads', menuSched: 'Schedules', menuBudget: 'Token limits', menuTidy: 'Tidy Downloads',
+      soulTip: 'Staff souls (personality) and memories', budgetTip: 'Token limits per task and per day', budgetFull: 'Today\'s token limit is reached, so no new task can start. Raise it in 💰 or try again tomorrow.',
       tidyBtn: '🧹', tidyTip: 'Ask about or tidy the Downloads folder (files only move after you approve)', dlName: 'Downloads', tidyDraft: 'Tidy the loose files in Downloads', dlPh: 'Ask about Downloads or ask for a tidy-up, e.g. "find last month\'s invoice" or "tidy the PDFs"', tidyNoFolder: 'The Downloads folder was not found on this Mac.',
       tidyMoves: (n) => `📦 ${n} file(s) will be moved (untick the ones to leave)`, tidyTo: 'to', tidyUndo: '↩️ Put everything back', tidyUndone: 'Put back.',
       meetRound: (n) => `round ${n}`, meetTip: 'Shades leads the meeting: he picks 2-3 staff, each answers as themselves (two rounds), then Shades writes the plan from what was said. It takes a few minutes and several Claude calls.',
@@ -393,6 +393,7 @@
   };
   const unread = () => letters().filter((l) => !l.read && !l.archived && l.status !== 'running').length;
   const staffFor = (l) => (l.agent ? (ns.data?.staff ?? []).find((m) => m.agent === l.agent) : null);
+  const fmtTok = (n) => ns.fmtTokens(n);
   const who = (l) => (l.report ? S.reportFrom : l.name ?? S.general);
   const face = (l) => {
     const m = staffFor(l);
@@ -759,7 +760,7 @@
     const paintToggle = () => { toggle.textContent = prefs.sideMin ? '»' : '«'; toggle.title = prefs.sideMin ? S.sideShow : S.sideHide; toggle.setAttribute('aria-label', toggle.title); };
     toggle.onclick = () => { prefs.sideMin = !prefs.sideMin; savePrefs(); paintToggle(); syncLayout(); };
     paintToggle();
-    // The tools (schedules, cost limits, tidy Downloads) live in one labelled menu instead of a row of icon-only buttons.
+    // The tools (schedules, token limits, tidy Downloads) live in one labelled menu instead of a row of icon-only buttons.
     const closeMenu = () => ui.side.querySelector('.asa-menu')?.remove();
     const menuItems = [
       { icon: '⏰', label: S.menuSched, desc: S.schedTip, run: () => ns.schedule?.open() },
@@ -895,7 +896,7 @@
       fillHead(l);
     }
     // Thread
-    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.cost, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join(), (l?.asks ?? []).map((d) => d.id + d.state).join(), l?.wt?.state, JSON.stringify(l?.wtSummary?.files ?? []).length, wtOpen.has(l?.id), [...exactOpen].join()]);
+    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.tokens, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join(), (l?.asks ?? []).map((d) => d.id + d.state).join(), l?.wt?.state, JSON.stringify(l?.wtSummary?.files ?? []).length, wtOpen.has(l?.id), [...exactOpen].join()]);
     if (force || ui.keys.thread !== threadKey) {
       ui.keys.thread = threadKey;
       const box = ui.thread;
@@ -1030,7 +1031,7 @@
       if (l.status === 'queued') out.push(h('div', { class: 'asa-sys' }, S.queuedNote(isDirector(l.agent) ? '' : l.name ?? '')));
       if (l.status === 'running') out.push(h('div', { class: 'asa-working', role: 'status' }, h('span', { class: 'asa-dots' }, h('i'), h('i'), h('i')), h('span', { class: 'asa-working-t' }, `${l.name ?? S.general} · ${progressText(l).replace(/^⏳\s*/, '')}`)));
       if (l.error) out.push(h('div', { class: 'asa-warn' }, l.error));
-      if (l.cost) out.push(h('div', { class: 'asa-note' }, S.cost(l.cost)));
+      if (l.tokens) out.push(h('div', { class: 'asa-note', title: S.tokenTip }, S.cost(l.tokens)));
     }
     if (notice) out.push(h('div', { class: 'asa-warn' }, notice));
     box.replaceChildren(...out);
