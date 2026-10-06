@@ -229,9 +229,9 @@
     get enabled() { return enabled; },
     test: (kind = 'permission') => { const ch = ns.view?.office?.characters.values().next().value; if (ch) announce(kind, ch); },
     /** Office-wide message (e.g. the Pomodoro timer): toast + chime + system notification, muted by 🔕. */
-    message({ icon, title, body = '', kind = 'done', letter = null }) {
+    message({ icon, title, body = '', kind = 'done', letter = null, onOpen = null }) {
       if (!enabled) return;
-      toast(kind, null, title, icon, letter && ns.mailbox ? () => ns.mailbox.openLetter(letter) : null);
+      toast(kind, null, title, icon, onOpen ?? (letter && ns.mailbox ? () => ns.mailbox.openLetter(letter) : null));
       chime(kind);
       navigator.vibrate?.([60, 40, 60]);
       if (!('Notification' in window) || Notification.permission !== 'granted' || (!document.hidden && document.hasFocus())) return;

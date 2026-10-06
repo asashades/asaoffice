@@ -873,7 +873,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         }
         return send(res, 200, { perms: { bypass: settings.allowBypass }, notifyMac: settings.notifyMac !== false, budget: budgetInfo() }, origin);
       }
-      // The daily summary in the Obsidian journal (journal.mjs, driven by office-data.mjs): settings, and "write today's now".
+      // The daily report in the Obsidian journal (journal.mjs, driven by office-data.mjs): settings, and the day's report.
       if (journal && url.pathname === '/api/journal') {
         if (req.method === 'GET') return send(res, 200, { ...journal.config(), today: journal.todayRel(), vault: journal.vault() }, origin);
         if (req.method === 'POST') {
@@ -881,10 +881,17 @@ export async function startTaskServer({ root, token, officePort, port, projects,
           return send(res, 200, { ...journal.setConfig({ enabled: typeof body.enabled === 'boolean' ? body.enabled : undefined, folder: typeof body.folder === 'string' ? body.folder : undefined }), today: journal.todayRel() }, origin);
         }
       }
-      if (journal && req.method === 'POST' && url.pathname === '/api/journal/today') {
-        const results = journal.now();
-        const r = results[results.length - 1] ?? { reason: 'quiet' };
-        return send(res, 200, { rel: r.rel ?? journal.todayRel(), wrote: !!r.wrote, reason: r.reason }, origin);
+      // The day's report: GET is the draft (what the office worked out, over what the Commissioner already wrote), POST saves it and writes the journal note.
+      if (journal && url.pathname === '/api/journal/day') {
+        if (req.method === 'GET') {
+          const view = journal.day(url.searchParams.get('day') ?? '');
+          return view ? send(res, 200, { ...view, ...journal.config() }, origin) : send(res, 400, { error: 'day' }, origin);
+        }
+        if (req.method === 'POST') {
+          const body = await readBody(req);
+          const out = journal.save(typeof body.day === 'string' ? body.day : '', body);
+          return out ? send(res, 200, out, origin) : send(res, 400, { error: 'day' }, origin);
+        }
       }
       // Souls: each staff member's personality and memories (souls.mjs): read, edit, forget.
       const soulM = /^\/api\/souls(?:\/([\w-]+)(?:\/(memory)(?:\/([\w-]+))?)?)?$/.exec(url.pathname);

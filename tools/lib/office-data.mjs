@@ -185,22 +185,21 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
   };
 
   refreshStats();
-  let journalNow = null; // set once the task server is up (it holds the letters)
-  let journalSoon = null;
   if (tasks) {
     try {
-      // The daily summary goes into the Obsidian journal note of the day (journal.mjs): every 5 minutes, soon after a task changes, and on demand.
-      let lastJournalDay = null;
-      journalNow = () => {
-        const now = new Date();
-        const dayStamp = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
-        const results = journal.sync({ stats, letters: taskApi?.letters?.() ?? [], spendOn: (d) => taskApi?.spendOn?.(d) ?? null, now, includeYesterday: lastJournalDay !== dayStamp });
-        lastJournalDay = dayStamp;
-        return results;
+      // The daily report (journal.mjs): the office drafts the day from the tasks and sessions; the Commissioner words it and saves, and only then it goes into the journal note.
+      const dayData = (text) => {
+        const date = journal.parseDay(text);
+        if (!date) return null;
+        const letters = taskApi?.letters?.() ?? [];
+        return { date, letters, spend: taskApi?.spendOn?.(journal.dayKey(date)) ?? null };
       };
-      const journalLater = () => { if (!journalSoon) journalSoon = setTimeout(() => { journalSoon = null; try { journalNow(); } catch { /* the journal must never hurt the office */ } }, 30_000); };
       taskApi = await startTaskServer({
-        journal: { now: journalNow, config: journal.getConfig, setConfig: journal.setConfig, todayRel: () => journal.noteRel(new Date()), vault: () => vaultMod.usable() },
+        journal: {
+          config: journal.getConfig, setConfig: journal.setConfig, todayRel: () => journal.noteRel(new Date()), vault: () => vaultMod.usable(),
+          day: (text) => { const d = dayData(text); return d && { ...journal.dayView({ date: d.date, stats, letters: d.letters, spend: d.spend }), vault: vaultMod.usable().reason }; },
+          save: (text, payload) => { const d = dayData(text); return d ? journal.saveDay({ date: d.date, stats, letters: d.letters, spend: d.spend, payload }) : null; },
+        },
         root, token, officePort: Number(port), port: taskPort ?? Number(port) + 1,
         projects: () => stats.projects(), sessions: () => stats.listSessions(300, 365), extraDirs: [workspace], log,
         onNamesChange: () => refreshStats(),
@@ -210,7 +209,6 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
           data.mail = (taskApi?.letters() ?? []).map((l) => (l.agent && chosen[l.agent] ? { ...l, name: chosen[l.agent] } : l));
           data.taskAgents = taskApi?.agentMap() ?? {};
           write();
-          journalLater();
         },
       });
       data.taskServer = { port: taskApi.port };
@@ -222,7 +220,6 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
     }
   }
   const timers = [setInterval(refreshStats, STATS_EVERY_MS), setInterval(refreshSpawns, SPAWNS_EVERY_MS)];
-  if (journalNow) { timers.push(setInterval(() => { try { journalNow(); } catch { /* the journal must never hurt the office */ } }, 5 * 60_000)); setTimeout(() => { try { journalNow(); } catch { /* same */ } }, 20_000); }
   if (calendar) {
     refreshCalendar();
     timers.push(setInterval(refreshCalendar, CALENDAR_EVERY_MS));
@@ -232,7 +229,6 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
   return () => {
     stopped = true;
     timers.forEach(clearInterval);
-    clearTimeout(journalSoon);
     taskApi?.stop();
     fs.rmSync(file, { force: true });
   };
