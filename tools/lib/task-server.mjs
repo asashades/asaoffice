@@ -1153,12 +1153,42 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         if (running.has(letter.id) || letter.status === 'queued') return send(res, 409, { error: 'running' }, origin);
         if (running.size >= MAX_RUNNING) return send(res, 429, { error: 'busy' }, origin);
         if (!budgetOk()) return send(res, 429, { error: 'budget' }, origin);
-        if (directorBusy(letter.agent)) return send(res, 429, { error: 'director busy' }, origin);
+        // Between replies the Commissioner may also hand the chat to someone else, change how it is done, or pick another model: every reply is a new
+        // `claude --resume` run, so this takes effect on the next one. The folder stays (a session lives in its folder). Not for Downloads chats.
+        const swap = letter.kind !== 'tidy' && !letter.readOnlyDir;
+        let nextAgent = letter.agent ?? null;
+        let nextMember = letter.agent ? roster().staff.find((s) => s.agent === letter.agent) ?? null : null;
+        if (swap && typeof replyBody.agent === 'string' && (replyBody.agent || null) !== nextAgent) {
+          nextAgent = replyBody.agent || null;
+          nextMember = nextAgent ? roster().staff.find((s) => s.agent === nextAgent) ?? null : null;
+          if (nextAgent && (!nextMember || !installed(nextAgent))) return send(res, 400, { error: 'agent' }, origin);
+        }
+        if (directorBusy(nextAgent)) return send(res, 429, { error: 'director busy' }, origin);
         if (replyBody.perm === 'bypass' && !settings.allowBypass) return send(res, 400, { error: 'bypass' }, origin);
         if (cleanPerm(replyBody.perm)) letter.perm = replyBody.perm; // the mode can be changed between replies, like Shift+Tab in Claude Code
         if (letter.kind !== 'tidy' && !letter.readOnlyDir && !allowedDirs().some((p) => p.cwd === letter.cwd)) return send(res, 400, { error: 'cwd' }, origin);
+        const changes = [];
+        if (swap) {
+          if (nextAgent !== (letter.agent ?? null)) {
+            Object.assign(letter, { agent: nextAgent, name: nextMember?.name ?? null });
+            if (!nextMember?.director) letter.style = 'solo';
+            changes.push(`👤 ${nextMember?.name ?? 'Claude'}`);
+          }
+          const newMode = ['plan', 'auto', 'report'].includes(replyBody.mode) ? replyBody.mode : null;
+          const curMode = letter.mode === 'report' ? 'report' : letter.phase === 'plan' ? 'plan' : 'auto';
+          if (newMode && newMode !== curMode) {
+            Object.assign(letter, { mode: newMode, phase: newMode === 'plan' ? 'plan' : 'work' });
+            changes.push(`mode ${newMode}`);
+          }
+          if (nextMember?.director && (replyBody.style === 'solo' || replyBody.style === 'delegate')) letter.style = replyBody.style;
+          if (typeof replyBody.model === 'string' && (cleanModel(replyBody.model) ?? null) !== (letter.model ?? null)) {
+            letter.model = cleanModel(replyBody.model);
+            changes.push(`🧠 ${letter.model ?? 'default'}`);
+          }
+        }
         // A reply to a plan that's waiting for you is a revision: it stays a plan until you approve it.
-        const revise = letter.status === 'awaiting';
+        const revise = letter.status === 'awaiting' && letter.phase === 'plan';
+        if (changes.length) letter.thread.push({ from: 'you', kind: 'switch', text: `🔁 ${changes.join(' · ')}`, at: new Date().toISOString() });
         letter.thread.push({ from: 'you', text, at: new Date().toISOString(), kind: revise ? 'revise' : undefined, ...(images.length ? { images } : {}) });
         letter.read = true;
         // After the branch was merged, turned into a PR or thrown away, the old session's folder is gone: continue in a fresh session in the real folder.
