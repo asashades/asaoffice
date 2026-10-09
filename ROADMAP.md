@@ -43,14 +43,15 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Pesan jelas kalau login Claude Code kedaluwarsa (kartu dengan perintah `claude auth login`); highlight laporan: baris kosong = callout baru; baris "Diperbarui" dihapus | (PR berikutnya) |
 | ✅ | Pilihan browser untuk app Asa Office (`npm run browser -- Safari`), tidak harus Chrome | (PR berikutnya) |
 | ✅ | Catatan staf di vault dikenali lewat `agent:` (bukan nama file) dan ikut berganti nama saat karyawan di-rename; tidak lagi membuat catatan nama lama | (PR berikutnya) |
+| ✅ | Pembaca PDF dan Word bawaan (`tools/doc-read.mjs`): teks per halaman, hemat token, baca-saja, juga di Downloads | (PR berikutnya) |
 
 ## Rencana (urutan prioritas)
 
-Butir 1 (notifikasi macOS) sudah selesai (#51); nomor lainnya dibiarkan agar rujukannya tetap sama. Butir 2 (cabang terpisah, #52) dan 3 (batas biaya, #53) juga selesai. Rapat sungguhan (#54) juga selesai. Jiwa agent (butir 11, #57) juga selesai. Berikutnya: butir 4 (PDF dan Word) atau butir 5 (templat tugas).
+Butir 1 (notifikasi macOS) sudah selesai (#51); nomor lainnya dibiarkan agar rujukannya tetap sama. Butir 2 (cabang terpisah, #52) dan 3 (batas biaya, #53) juga selesai. Rapat sungguhan (#54) juga selesai. Jiwa agent (butir 11, #57) juga selesai. Pembaca PDF dan Word (butir 4) juga selesai. Berikutnya: butir 5 (templat tugas).
 
 | | # | Butir | Catatan |
 |---|---|---|---|
-| ⬜ | 4 | **Pembaca PDF dan Word bawaan** (baca-saja) | Seperti pembaca Excel; bahan kuliah di Downloads banyak PDF dan docx. |
+| ✅ | 4 | **Pembaca PDF dan Word bawaan** (baca-saja) | Selesai: `tools/doc-read.mjs` (PDFKit untuk PDF, `textutil` untuk Word). PDF scan belum dibaca (butuh OCR). |
 | ⬜ | 5 | **Templat tugas** (satu tombol) dan jadwal dengan model pilihan | |
 | ⬜ | 6 | **Cari lintas semua sesi dan surat** | Termasuk transkrip Claude Code, bukan hanya judul surat. |
 | ⬜ | 7 | **Villager ikut sibuk** saat tugas "Claude (umum)"; **deteksi Claude Cowork** | Cowork: cek apakah menyimpan `.jsonl` di `~/Library/Application Support/Claude/…`. |
