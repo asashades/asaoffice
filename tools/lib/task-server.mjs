@@ -1017,6 +1017,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         const renameable = roster().staff.filter((m) => !m.director).map((m) => m.agent);
         const names = setName(b.kind, b.key, b.name, renameable);
         if (!names) return send(res, 400, { error: 'name' }, origin);
+        if (b.kind === 'staff') { try { souls.onRenamed(String(b.key)); } catch { /* the vault is not allowed to move a note: leave it */ } }
         onNamesChange();
         return send(res, 200, { names }, origin);
       }

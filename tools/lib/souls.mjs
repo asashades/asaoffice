@@ -12,6 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import * as vault from './vault.mjs';
+import { loadNames } from './names.mjs';
 
 const settingsFile = () => path.join(os.homedir(), '.pixel-agents', 'asaoffice-souls.json');
 const FOLDER = 'Staf';
@@ -30,8 +31,43 @@ export function vaultPath() { return vault.usable().dir; }
 export const vaultReason = () => vault.usable().reason;
 export const available = () => !!vaultPath();
 
-/** The note of one staff member, relative to the vault ("Staf/Gus.md"), named after the roster name (not a nickname, so it never moves). */
-export const fileOf = (agent) => `${FOLDER}/${safeName(roster().find((m) => m.agent === agent)?.name ?? agent)}.md`;
+/** The name a staff member goes by now: the nickname the Commissioner gave, else the roster name. */
+const displayName = (agent) => loadNames().staff?.[agent] || roster().find((m) => m.agent === agent)?.name || agent;
+/** Where a new note for this agent goes: "Staf/Alisa.md" (named after what the office calls them now). */
+const desiredRel = (agent) => `${FOLDER}/${safeName(displayName(agent))}.md`;
+
+// A note belongs to an agent by the `agent: <id>` line in its front matter, not by its file name, so renaming or moving it in Obsidian keeps working
+// (and the office never makes a second note under the old name). The place found is remembered for a little while.
+const located = new Map(); // agent -> { rel, at }
+const LOCATE_MS = 30_000;
+const absOf = (rel) => { const d = vaultPath(); return d ? path.join(d, ...rel.split('/')) : null; };
+function scan(agent) {
+  const d = vaultPath();
+  if (!d) return null;
+  const dir = path.join(d, FOLDER);
+  let names = [];
+  try { names = fs.readdirSync(dir); } catch { return null; }
+  const want = new RegExp(`^agent:[ \t]*${String(agent).replace(/[^\w-]/g, '')}[ \t]*$`, 'm');
+  const found = [];
+  for (const f of names.filter((n) => n.toLowerCase().endsWith('.md')).sort()) {
+    try {
+      const head = fs.readFileSync(path.join(dir, f), 'utf8').slice(0, 600);
+      if (/^---\s*\n/.test(head) && want.test(head.split(/\n---/)[0])) found.push(`${FOLDER}/${f}`);
+    } catch { /* unreadable file: not this one */ }
+  }
+  // If two notes claim the same agent (an older version made a second one under the old name), the one with the name it goes by now wins.
+  return found.find((r) => r === desiredRel(agent)) ?? found[0] ?? null;
+}
+/** The note of one staff member, relative to the vault ("Staf/Gus.md"), wherever it now is; null when there is none yet. */
+function locate(agent) {
+  const hit = located.get(agent);
+  if (hit && Date.now() - hit.at < LOCATE_MS) { const a = absOf(hit.rel); if (a && fs.existsSync(a)) return hit.rel; }
+  const rel = scan(agent);
+  if (rel) located.set(agent, { rel, at: Date.now() }); else located.delete(agent);
+  return rel;
+}
+/** The note's path (where it is, or where a new one would go). */
+export const fileOf = (agent) => locate(agent) ?? desiredRel(agent);
 
 const defaultSoul = (agent) => {
   try { return fs.readFileSync(path.join(ROOT, 'staff', 'souls', `${String(agent).replace(/[^\w-]/g, '')}.md`), 'utf8').trim(); } catch { return ''; }
@@ -65,8 +101,10 @@ function parse(text) {
   return { soul: hasSoul ? soul.join('\n').trim() : null, memories };
 }
 
-function render(agent, soul, memories) {
-  const name = roster().find((m) => m.agent === agent)?.name ?? agent;
+function render(agent, soul, memories, rel) {
+  // The heading is the name the note goes by now; a note the Commissioner renamed in Obsidian keeps the name they gave it.
+  const stem = rel ? path.basename(rel, '.md') : null;
+  const name = stem && stem !== safeName(displayName(agent)) && stem !== safeName(roster().find((m) => m.agent === agent)?.name ?? agent) ? stem : displayName(agent);
   const list = memories.map((m) => `- ${m.text} <!--m:${m.id}|${m.at ?? ''}|${(m.project ?? '').replace(/[|<>]/g, '')}|${m.manual ? 'manual' : 'agent'}-->`).join('\n');
   return `---\ntipe: staf\nagent: ${agent}\n---\n# ${name}\n\n> Catatan ini dibaca dan ditulis oleh Asa Office. Ubah Jiwa atau Ingatan di sini atau dari panel 🧠 di kantor; perubahan dipakai di tugas berikutnya.\n\n## Jiwa\n\n${soul}\n\n## Ingatan\n\n${list || '_Belum ada ingatan._'}\n`;
 }
@@ -81,7 +119,10 @@ function readNote(agent) {
 function writeNote(agent, soul, memories) {
   if (!available()) return false;
   try {
-    return vault.write(fileOf(agent), render(agent, soul || defaultSoul(agent), memories.slice(-MAX_MEMORIES)));
+    const rel = fileOf(agent);
+    const ok = vault.write(rel, render(agent, soul || defaultSoul(agent), memories.slice(-MAX_MEMORIES), rel));
+    if (ok) located.set(agent, { rel, at: Date.now() });
+    return ok;
   } catch { return false; } // e.g. the vault went away or is not allowed: nothing is lost that was already there
 }
 
@@ -99,8 +140,7 @@ function setup() {
   let old = null;
   try { old = JSON.parse(fs.readFileSync(settingsFile(), 'utf8')); } catch { /* no older data */ }
   for (const m of roster()) {
-    const exists = vault.read(fileOf(m.agent)) != null;
-    if (exists) continue;
+    if (locate(m.agent)) continue; // there already (under whatever name it has now)
     const oldMem = Array.isArray(old?.memories?.[m.agent]) ? old.memories[m.agent] : [];
     const oldSoul = typeof old?.souls?.[m.agent] === 'string' ? old.souls[m.agent] : '';
     writeNote(m.agent, oldSoul, oldMem.filter((x) => x && typeof x.text === 'string').map((x) => ({ id: x.id || crypto.randomUUID().slice(0, 6), text: cleanMemory(x.text), at: x.at ?? null, project: x.project, manual: !!x.manual })));
@@ -108,6 +148,32 @@ function setup() {
   if (old && (old.souls || old.memories)) { // moved: keep only the switch, and a copy of the old file next to it
     try { fs.copyFileSync(settingsFile(), `${settingsFile()}.bak`); fs.writeFileSync(settingsFile(), JSON.stringify({ auto: old.auto !== false }, null, 2)); } catch { /* not worth stopping for */ }
   }
+}
+
+/**
+ * The Commissioner renamed a staff member in the office: the note follows (file and heading), unless a note with the new name is already there.
+ * A note the Commissioner renamed themselves in Obsidian is only touched here, when they rename in the office.
+ */
+export function onRenamed(agent) {
+  try {
+    if (!available()) return null;
+    const cur = locate(agent);
+    if (!cur) return null; // no note yet: it will be made under the new name
+    const want = desiredRel(agent);
+    if (cur === want || vault.read(want) != null) return null;
+    const text = vault.read(cur);
+    const r = vault.move(cur, want);
+    if (r.error) return null;
+    located.delete(agent);
+    if (text != null) {
+      const fresh = vault.read(want) ?? text;
+      const oldStem = path.basename(cur, '.md');
+      const swapped = fresh.replace(/^# (.+)$/m, (line, h) => (norm(h) === norm(oldStem) || norm(h) === norm(roster().find((m) => m.agent === agent)?.name) ? `# ${displayName(agent)}` : line));
+      if (swapped !== fresh) vault.write(want, swapped);
+    }
+    located.set(agent, { rel: want, at: Date.now() });
+    return want;
+  } catch { return null; }
 }
 
 export function load() {
