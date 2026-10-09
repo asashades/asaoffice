@@ -44,6 +44,7 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Pilihan browser untuk app Asa Office (`npm run browser -- Safari`), tidak harus Chrome | (PR berikutnya) |
 | ✅ | Catatan staf di vault dikenali lewat `agent:` (bukan nama file) dan ikut berganti nama saat karyawan di-rename; tidak lagi membuat catatan nama lama | (PR berikutnya) |
 | ✅ | Pembaca PDF dan Word bawaan (`tools/doc-read.mjs`): teks per halaman, hemat token, baca-saja, juga di Downloads | (PR berikutnya) |
+| ✅ | HUD dirombak: kolom kiri ramping (hero dengan tombol 3×2, jam di kanan, menunggu kamu, meter token, to-do; izin dan rencana ringkas; notifikasi meluncur dari kiri), satu kartu kanan setinggi isinya (tab Sekarang dan Selesai), kartu orang kecil dengan popup hover; panel dock di sebelah kolom kiri | (PR berikutnya) |
 
 ## Rencana (urutan prioritas)
 

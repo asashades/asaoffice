@@ -1408,6 +1408,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     port: actualPort,
     letters: () => letters,
     spendOn: (day) => (spend[day] ? Number(spend[day]) : null),
+    budget: budgetInfo,
     agentMap,
     schedules: schedView,
     stop() {

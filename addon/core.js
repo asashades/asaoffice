@@ -226,12 +226,21 @@
       const body = document.createElement('div');
       el.append(head, close, body);
       if (docked) {
-        // Under the hero card (the HUD's top-left card), or at the top when the HUD is hidden or missing.
+        // Beside the HUD's left column (hero card and notices, which stay in view while the panel is open), or at the top left when the HUD is hidden or missing.
+        // On a narrow screen the old way: under the hero card.
         const place = () => {
+          const narrow = matchMedia('(max-width: 720px)').matches;
+          const col = document.querySelector('.hud-left');
+          const r = col && col.getClientRects().length ? col.getBoundingClientRect() : null; // (a fixed element has no offsetParent)
           const hero = document.querySelector('.hud-hero');
-          const r = hero && hero.offsetParent !== null ? hero.getBoundingClientRect() : null;
-          const top = r ? Math.round(r.bottom + 6) : 8;
+          const hr = hero && hero.offsetParent !== null ? hero.getBoundingClientRect() : null;
+          const top = narrow ? (hr ? Math.round(hr.bottom + 6) : 8) : 8;
           el.style.top = `${top}px`;
+          if (!narrow) {
+            const left = r ? Math.round(r.right + 10) : 64;
+            el.style.left = `${left}px`;
+            el.style.width = `min(960px, ${Math.max(320, window.innerWidth - left - 12)}px)`;
+          }
           el.style.maxHeight = `calc(100vh - ${top + 76}px)`;
           el.style.setProperty('--asa-dockbody', `${Math.max(380, window.innerHeight - top - 76 - 112)}px`); // the room left for a panel's body
         };

@@ -146,6 +146,8 @@
     select(ch.id);
   }
   function toast(kind, ch, title, icon, onOpen) {
+    // With the HUD on, notices come out of its left column (under the permission cards); the old top-centre toast is the fallback.
+    if (ns.hud?.notice && !ns.hud.hidden && ns.hud.notice({ kind, icon: icon ?? (kind === 'permission' ? '✋' : '✅'), title, body: ch?.folderName ?? '', onOpen: onOpen ?? (ch ? () => openFor(ch) : null), ms: kind === 'permission' ? 15_000 : 10_000 })) return;
     if (!box) {
       document.head.appendChild(h('style', {}, css));
       box = h('div', { class: 'asa-toasts', 'aria-live': 'polite' });

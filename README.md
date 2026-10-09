@@ -286,16 +286,8 @@ An always-on overview around the office (`addon/hud.js`), in the same cozy look 
 HUD with live counters, a feed, a sub-agent history and per-character cards is inspired by
 [kantor-agent](https://github.com/humaedihume/kantor-agent) (no code taken from it).
 
-- **Hero card (top left):** a square pixel card whose background is a live sky that follows your clock and the season
-  (dawn, day, golden hour, dusk, night; a square-pixel sun or moon crosses an arc like the Stardew clock, with clouds,
-  stars and hills tinted by the season). It shows the time, date and season, one sentence about what the office is doing
-  ("Lagi kerja: Shades · 2 asisten ikut bantu"), and two buttons: **📮 Mailbox** (with a red badge for unread letters) and
-  **📚 Bookshelf**. They open as panels that grow out of the card and float over the office with no dimming, so the
-  office stays visible and clickable (full-width on phones). Top right: whether the data feed is alive and counters
-  (sessions working, helpers working, sub-agents started today).
-- **Plans waiting for you:** a card under the hero card for each plan waiting for approval (up to 3), with **✅ Setujui**,
-  **❌ Tolak** and **Buka**, so you can approve without opening the mailbox. The side panel's **Izin** tab lists steps
-  refused automatically (see "Refused steps" under the mailbox).
+- **Left column (hero card + notices):** a narrow (196 px) column at the top left. The **hero card** has a live pixel sky behind it (it follows your clock and the season: dawn, day, golden hour, dusk, night, with a sun or moon on an arc, clouds, stars and hills tinted by the season), six buttons in a 3×2 grid (**📮 Mailbox** with a red badge for unread letters, **📚 Bookshelf**, **👥 Employees**, **💡 Idea (N)**, **🌙 Yesterday's income**, **📜 Daily report**), the time, date and season at the right, the one-sentence state of the office, **what waits for you** as small chips (🔐 permission questions, 📝 plans, 📮 unread letters, 💡 open ideas/TODO in the bookshelf; each opens the first one), a **token meter** for today against the daily limit (orange from 80%, red at the limit; click for the 💰 limits; data feed `budget`), the 💰 Kas chip, and, when a session has a TodoWrite list, its current step with `done/total` (click opens the **Sekarang** tab). 💡 (or **N**) opens the one-line idea box at the top of the card's lower part; Enter saves it into `Ide-TODO.md`. The panels (mailbox, bookshelf…) open **beside** this column, from the top of the screen, so the notices stay in view while one is open (under 720 px they open under the hero card as before).
+- **Notices (below the hero card), compact:** permission questions (**✅ Izinkan** / **⛔ Tolak** / **Buka**: a title line, the command on one line, three small buttons) and plans waiting for approval (**✅ Setujui** / **❌ Tolak** / **Buka**, up to 3) stay until you answer. Below them, notices slide in from the left for finished tasks, failures and a villager waiting for permission (`ns.hud.notice`, used by `addon/notify.js` instead of the old top-centre toast when the HUD is on): they go away by themselves after about 10 s (15 s for a permission), at most 3 at a time, and a click opens the task's or session's chat.
 - **Yesterday's income, paid in the morning (Stardew-style):** what you ship today is paid **tomorrow morning**. The first time the
   office is opened on a new day, a **Selamat pagi** card shows yesterday's work as goods shipped: 🌾 files edited ×12g,
   🍄 files read ×3g, ⛏️ commands ×8g, 🎣 web searches ×6g, ⚔️ sub-agents ×25g and 🧾 mailbox tasks finished ×100g. The rows ping in
@@ -316,12 +308,8 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   refused steps, unread letters, open to-dos in the bookshelf, today's calendar events; each a link). The 🌙 button on the hero card
   replays it without paying again and pulses until you've seen this morning's payout. `?brief=off` turns the automatic card off. The
   numbers come from the data feed, so they cost no tokens.
-- **Cards along the bottom:** one per villager (Shades, sessions, helpers, staff acting for Shades) with its state
-  (Bekerja, Santai, Selesai for 45 s after work, Nunggu kamu, Butuh izin), its project or task and what it's doing right
-  now. Click a card to select and follow that villager.
-- **Side panel, three tabs:** **Aktivitas** (live feed of tool calls, helpers coming and going, waiting for you; it
-  starts when the page opens), **Riwayat** (sub-agents of the last 24 hours with their task, working or done) and
-  **Tugas** (TodoWrite lists of the latest sessions). The panel can be minimised.
+- **Small cards along the bottom:** one capsule per villager (Shades, sessions, helpers, staff acting for Shades): face, a status dot (green working, amber permission, blue waiting, teal done for 45 s, grey idle, purple standby) and the name. The details (role, status, the task, what it is doing right now, the folder) open as a popup while the pointer is on the capsule or it has keyboard focus. Click one to select and follow that villager.
+- **One card on the right (numbers + two tabs), as tall as its content:** three numbers (data feed alive, **working now**, **done today**) and two tabs. **Sekarang** lists who is working, waiting for permission or waiting for you, with the task, what they are doing right now and the open steps of that session's to-do; click a row to follow that villager. **Selesai** lists the mailbox tasks finished today (time, who, project, tokens); click one to open its chat. The tab badges show the counts (none when 0). The card grows with the list (it scrolls beyond the screen height), and ▾ minimises it to the numbers and the tab row. The old raw activity feed, sub-agent history, to-do tab and refused-steps tab are gone (refused steps are still on their letters in the mailbox).
 - **H** or the 🧭 button under the zoom buttons hides the HUD for a clear view. On phones the panel sits above the
   cards and starts minimised. `?hud=off` turns the HUD off (remembered; `?hud=on` brings it back).
 
