@@ -1,5 +1,5 @@
 // asaoffice HUD: an always-on overview around the office, in the same cozy look as the other panels.
-//   - Left column: the hero card (live sky, six buttons, time and date, one sentence about the office, what waits for you, today's tokens, the
+//   - Left column: the hero card (live sky, six buttons, time and date, one sentence about the office, today's tokens, the
 //     to-do of the session in front) and below it the notices: permission questions and plans (until answered) and finished tasks, failures
 //     and a villager asking for permission (they slide in from the left and go away by themselves).
 //   - Right: one card with a few numbers (data alive, working now, done today) and two tabs: Sekarang (who is working on what, with the session's
@@ -26,7 +26,7 @@
       atDesk: 'Di meja direktur', noProject: 'Sesi Claude Code', chatWith: (n) => `Ngobrol sama ${n}`,
       planReady: 'Rencana siap', askReady: 'Claude minta izin', askAllowBtn: '✅ Izinkan', askDenyBtn: '⛔ Tolak', approveBtn: '✅ Setujui', rejectBtn: '❌ Tolak', openBtn: 'Buka', morePlans: (n) => `+${n} rencana lagi di kotak surat`,
       perm: 'Izin', emptyPerm: 'Belum ada langkah yang ditolak otomatis.', permSource: 'Langkah yang ditolak otomatis karena di luar izin tugas. Klik buat buka suratnya.', stOpen: 'menunggu', stTerminal: 'jalankan sendiri', stRo: 'Downloads baca-saja', stAllowed: 'diizinkan sekali', clearPerm: 'Abaikan semua',
-      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', statLive: 'Data', statNow: 'Sedang bekerja', statDone: 'Selesai hari ini', tabNow: 'Sekarang', tabDone: 'Selesai', emptyNow: 'Semua santai ☕ Tidak ada yang lagi bekerja.', emptyDone: 'Belum ada tugas yang selesai hari ini.', doneSource: 'Tugas kotak surat yang selesai hari ini (klik buat buka obrolannya)', openReport: 'Tulis laporan harian', waitAsk: (n) => `${n} izin menunggu jawabanmu`, waitPlan: (n) => `${n} rencana menunggu persetujuanmu`, waitMail: (n) => `${n} surat belum dibaca`, waitIdea: (n) => `${n} ide/TODO belum selesai di Rak Buku`, nothingWaits: 'Tidak ada yang menunggu ☕', tokToday: (a, b) => (b ? `Token ${a} / ${b}` : `Token ${a} hari ini`), tokTip: 'Token yang dipakai hari ini dibanding batas harian (klik buat atur)', popFolder: 'Folder', popTask: 'Tugas', popNow: 'Sekarang', openShelf: 'Rak Buku', openStaff: 'Data karyawan (jiwa dan ingatan staf)', openEnd: 'Pendapatan kemarin', kasTip: 'Kas kantor · klik buat ke Toko', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
+      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', statLive: 'Data', statNow: 'Sedang bekerja', statDone: 'Selesai hari ini', tabNow: 'Sekarang', tabDone: 'Selesai', emptyNow: 'Semua santai ☕ Tidak ada yang lagi bekerja.', emptyDone: 'Belum ada tugas yang selesai hari ini.', doneSource: 'Tugas kotak surat yang selesai hari ini (klik buat buka obrolannya)', openReport: 'Tulis laporan harian', tokToday: (a, b) => (b ? `Token ${a} / ${b}` : `Token ${a} hari ini`), tokTip: 'Token yang dipakai hari ini dibanding batas harian (klik buat atur)', popFolder: 'Folder', popTask: 'Tugas', popNow: 'Sekarang', openShelf: 'Rak Buku', openStaff: 'Data karyawan (jiwa dan ingatan staf)', openEnd: 'Pendapatan kemarin', kasTip: 'Kas kantor · klik buat ke Toko', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
     },
     en: {
       title: 'Asa Office', live: 'Connected', dead: 'Data offline', nodata: 'No data', sessions: 'Sessions working', helpers: 'Helpers', today: 'Sub-agents today',
@@ -42,7 +42,7 @@
       atDesk: "At the director's desk", noProject: 'Claude Code session', chatWith: (n) => `Chatting with ${n}`,
       planReady: 'Plan ready', askReady: 'Claude asks permission', askAllowBtn: '✅ Allow', askDenyBtn: '⛔ Deny', approveBtn: '✅ Approve', rejectBtn: '❌ Reject', openBtn: 'Open', morePlans: (n) => `+${n} more plans in the mailbox`,
       perm: 'Permissions', emptyPerm: 'Nothing has been refused automatically.', permSource: 'Steps refused automatically because they were outside the task’s permissions. Click to open the letter.', stOpen: 'waiting', stTerminal: 'run it yourself', stRo: 'Downloads read-only', stAllowed: 'allowed once', clearPerm: 'Dismiss all',
-      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', statLive: 'Data', statNow: 'Working now', statDone: 'Done today', tabNow: 'Now', tabDone: 'Done', emptyNow: 'Everyone is relaxing ☕ Nobody is working.', emptyDone: 'No task has finished today.', doneSource: 'Mailbox tasks finished today (click to open the chat)', openReport: 'Write the daily report', waitAsk: (n) => `${n} permission question(s) waiting for you`, waitPlan: (n) => `${n} plan(s) waiting for your approval`, waitMail: (n) => `${n} unread letter(s)`, waitIdea: (n) => `${n} open idea(s)/TODO in the Bookshelf`, nothingWaits: 'Nothing is waiting ☕', tokToday: (a, b) => (b ? `Tokens ${a} / ${b}` : `Tokens ${a} today`), tokTip: 'Tokens used today against the daily limit (click to set)', popFolder: 'Folder', popTask: 'Task', popNow: 'Now', openShelf: 'Bookshelf', openStaff: 'Employee records (staff souls and memories)', openEnd: "Yesterday's income", kasTip: 'Office cash · click to open the shop', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
+      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', statLive: 'Data', statNow: 'Working now', statDone: 'Done today', tabNow: 'Now', tabDone: 'Done', emptyNow: 'Everyone is relaxing ☕ Nobody is working.', emptyDone: 'No task has finished today.', doneSource: 'Mailbox tasks finished today (click to open the chat)', openReport: 'Write the daily report', tokToday: (a, b) => (b ? `Tokens ${a} / ${b}` : `Tokens ${a} today`), tokTip: 'Tokens used today against the daily limit (click to set)', popFolder: 'Folder', popTask: 'Task', popNow: 'Now', openShelf: 'Bookshelf', openStaff: 'Employee records (staff souls and memories)', openEnd: "Yesterday's income", kasTip: 'Office cash · click to open the shop', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
     },
   });
 
@@ -100,11 +100,6 @@
   .hud-idea { order: -1; width: 100%; height: 28px; box-sizing: border-box; border: 2px solid #744122; padding: 0 8px; background: #fffbe9; color: #3a2117;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 14px; outline: 0; }
   .hud-idea[hidden] { display: none; }
-  .hud-wait { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 22px; }
-  .hud-wait .none { font-size: 11.5px; opacity: 0.65; }
-  .hud-wait button { padding: 1px 7px; font-size: 12.5px; cursor: pointer; background: #fffbe9; border: 2px solid #744122; box-shadow: 0 2px 0 #744122; line-height: 1.35; }
-  .hud-wait button.hot { background: #c8503c; color: #fff6dc; border-color: #973a2f; box-shadow: 0 2px 0 #973a2f; }
-  .hud-wait button:hover { filter: brightness(1.06); }
   .hud-meta { display: flex; gap: 6px; align-items: center; }
   .hud-tok { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 11.5px; }
   .hud-tok[hidden] { display: none; }
@@ -207,7 +202,6 @@
   #asa-hud .hud-tabs button { font-size: 12px; }
   #asa-hud .hud-quick button { font-size: 17px; }
   #asa-hud .hud-plan button { font-size: 11.5px; display: inline-flex; align-items: center; gap: 3px; }
-  #asa-hud .hud-wait button { font-size: 12.5px; }
   #asa-hud .hud-todo1 { font-size: 12px; }
   #asa-hud .hud-note .x { font-size: 15px; }
   #asa-hud .hud-clear { font-size: 11px; }
@@ -248,7 +242,6 @@
         <div class="hud-plate"><b id="hud-time"></b><span id="hud-date"></span><span id="hud-season"></span></div>
         <div class="hud-status">
           <span class="hud-phase" id="hud-phase"></span>
-          <div class="hud-wait" id="hud-wait"></div>
           <div class="hud-meta">
             <div class="hud-tok" id="hud-tok" hidden><div class="hud-tokbar"><i id="hud-tokfill"></i></div><span id="hud-toktxt"></span></div>
             <span class="hud-kas" id="hud-kas" hidden title="${esc(S.kasTip)}"></span>
@@ -318,16 +311,6 @@
     if (permRow) { ns.mailbox?.openLetter(permRow.dataset.letter); return; }
     if (e.target.closest('#hud-kas')) { ns.shop?.open(); return; }
     if (e.target.closest('#hud-tok')) { ns.budget?.open(); return; }
-    const waitBtn = e.target.closest('[data-wait]');
-    if (waitBtn) {
-      const mail = ns.data?.mail ?? [];
-      const kind = waitBtn.dataset.wait;
-      if (kind === 'ask') { const l = mail.find((x) => !x.archived && x.status === 'running' && (x.asks ?? []).some((a) => a.state === 'open')); if (l) ns.mailbox?.openLetter(l.id); else ns.mailbox?.open(); }
-      else if (kind === 'plan') { const l = mail.find((x) => x.status === 'awaiting' && !x.report && !x.archived); if (l) ns.mailbox?.openLetter(l.id); else ns.mailbox?.open(); }
-      else if (kind === 'idea') ns.shelf?.open();
-      else ns.mailbox?.open();
-      return;
-    }
     const tabOpen = e.target.closest('[data-opentab]');
     if (tabOpen) { tab = tabOpen.dataset.opentab; min = false; ns.store.set('hudMin', '0'); applyChrome(); return; }
     const openBtn = e.target.closest('[data-open]');
@@ -418,7 +401,7 @@
   }
 
   // ── Rendering (only touches the DOM when the text changed) ──
-  const last = { cards: '', now: '', done: '', phase: '', pending: '', wait: '', tok: '', todo1: '' };
+  const last = { cards: '', now: '', done: '', phase: '', pending: '', tok: '', todo1: '' };
   function setHtml(el, html, key) {
     if (last[key] !== html) { el.innerHTML = html; last[key] = html; }
   }
@@ -469,15 +452,7 @@
     });
     setHtml($('hud-cards'), cards.join(''), 'cards');
 
-    // Hero card: what waits for you, today's tokens, and the to-do of the session in front
-    const mail = (ns.data?.mail ?? []).filter((l) => !l.report && !l.archived);
-    const asks = mail.filter((l) => l.status === 'running').reduce((n, l) => n + (l.asks ?? []).filter((a) => a.state === 'open').length, 0);
-    const plans = mail.filter((l) => l.status === 'awaiting').length;
-    const unread = ns.mailbox?.unread?.() ?? 0;
-    const chip = (kind, icon, n, tip, hot) => (n > 0 ? `<button type="button" data-wait="${kind}" class="${hot ? 'hot' : ''}" title="${esc(tip(n))}" aria-label="${esc(tip(n))}">${icon} ${n}</button>` : '');
-    const waitHtml = chip('ask', '🔐', asks, S.waitAsk, true) + chip('plan', '📝', plans, S.waitPlan, true) + chip('mail', '📮', unread, S.waitMail, false) + chip('idea', '💡', ideaCount, S.waitIdea, false)
-      || `<span class="none">${esc(S.nothingWaits)}</span>`;
-    setHtml($('hud-wait'), waitHtml, 'wait');
+    // Hero card: today's tokens and the to-do of the session in front (what waits for you has its own cards below, and the mailbox button its badge)
     const b = ns.data?.budget;
     const tokEl = $('hud-tok');
     if (!b) { if (!tokEl.hidden) tokEl.hidden = true; last.tok = ''; } else {
@@ -596,14 +571,6 @@
     if (kas != null && kasEl.dataset.v !== String(kas)) { kasEl.dataset.v = String(kas); kasEl.textContent = `💰 ${kas.toLocaleString(locale)}g`; }
     ns.sky?.draw($('hud-sky'), ns.dayNight?.hour?.() ?? d.getHours() + d.getMinutes() / 60, seasonNow());
   }
-
-  // Open ideas/TODO in the bookshelf (Ide-TODO.md): looked up now and then, not every frame.
-  let ideaCount = 0;
-  async function refreshIdeas() {
-    try { ideaCount = (await ns.localApi('GET', '/api/vault')).notes.find((n) => n.path === 'Ide-TODO.md')?.open ?? 0; } catch { ideaCount = 0; }
-  }
-  setTimeout(refreshIdeas, 8000);
-  setInterval(refreshIdeas, 5 * 60_000);
 
   // Notices in the left column (finished tasks, failures, a villager asking for permission): they slide in under the permission and plan cards and go away by themselves.
   const MAX_NOTES = 3;
