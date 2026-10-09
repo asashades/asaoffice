@@ -79,7 +79,7 @@ npm run app        # builds ~/Applications/Asa Office.app (re-run after moving t
 Open **Asa Office** from Spotlight or Finder, then right-click its Dock icon → **Options → Keep in Dock**. Clicking
 it starts the office in the background if it isn't running (log: `~/Library/Logs/asaoffice/office.log`) and opens
 it with the current token in its own window: an app-mode window of Chrome, Edge, or Brave if one is installed,
-otherwise your default browser. Click the Dock icon again to reopen the window. Quit the app (⌘Q) to stop the
+otherwise your default browser. To pick another one (Safari, Firefox, Arc…) or always use the Mac's default browser: `npm run browser -- Safari` / `npm run browser -- default` / `npm run browser -- auto` (`npm run browser` shows the choice and what is installed; it is saved in `~/.pixel-agents/asaoffice-app.json`, or set `ASAOFFICE_BROWSER`, and takes effect on the next click, no rebuild of the app). Chrome, Edge, Brave and Chromium open a window of their own, the others a tab. Click the Dock icon again to reopen the window. Quit the app (⌘Q) to stop the
 office it started; an office you started from Terminal is left alone. The first time, macOS asks whether
 **Asa Office** may access your calendars. `npm run app -- --remove` deletes the app.
 

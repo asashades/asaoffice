@@ -3,6 +3,7 @@
 //                             in its own app window (Chrome/Edge/Brave --app, else the default browser)
 //   node tools/app.mjs stop   stop the office this app started (one started from Terminal is left alone)
 //   node tools/app.mjs url    print the running office's URL (it contains the secret token)
+//   node tools/app.mjs browser [auto|default|<app name>]   choose which browser opens the office (no value: show the choice and what is installed)
 // Env: OFFICE_PORT (default 3100), ASAOFFICE_NO_BROWSER=1 (print instead of opening; for testing).
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -16,7 +17,9 @@ const home = os.homedir();
 const stateDir = path.join(home, 'Library', 'Application Support', 'asaoffice');
 const pidFile = path.join(stateDir, 'office.pid');
 const logFile = path.join(home, 'Library', 'Logs', 'asaoffice', 'office.log');
-const APP_BROWSERS = ['Google Chrome', 'Microsoft Edge', 'Brave Browser', 'Chromium'];
+const APP_BROWSERS = ['Google Chrome', 'Microsoft Edge', 'Brave Browser', 'Chromium']; // these can open a window of their own (--app=…)
+const OTHER_BROWSERS = ['Safari', 'Firefox', 'Arc', 'Vivaldi', 'Opera', 'Zen'];
+const settingFile = path.join(home, '.pixel-agents', 'asaoffice-app.json');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const alive = (pid) => {
@@ -68,6 +71,18 @@ async function waitForServer(timeoutMs = 45_000) {
   throw new Error(`the office didn't start within ${timeoutMs / 1000}s — see ${logFile}`);
 }
 
+/** Whether macOS can find an app by this name (Safari lives outside /Applications on recent macOS, so ask Launch Services). */
+function hasApp(name) {
+  try { execFileSync('open', ['-Ra', name], { stdio: 'ignore' }); return true; } catch { return false; }
+}
+
+/** The browser choice: 'auto' (a Chromium-family browser in its own window, else the default one), 'default' (the Mac's default browser), or an app name. */
+function chosenBrowser() {
+  if (process.env.ASAOFFICE_BROWSER) return process.env.ASAOFFICE_BROWSER;
+  try { const b = JSON.parse(fs.readFileSync(settingFile, 'utf8')).browser; if (typeof b === 'string' && b.trim()) return b.trim(); } catch { /* none chosen */ }
+  return 'auto';
+}
+
 function appBrowser() {
   for (const name of APP_BROWSERS) {
     for (const dir of ['/Applications', path.join(home, 'Applications')]) {
@@ -82,12 +97,35 @@ function openWindow(url) {
     console.log(url);
     return;
   }
+  const choice = chosenBrowser();
+  if (choice === 'default') return void execFileSync('open', [url]);
+  if (choice !== 'auto') {
+    // A named browser: Chromium-family ones get a window of their own, the others open a tab. If it is gone, the default browser takes over.
+    if (APP_BROWSERS.includes(choice) && hasApp(choice)) return void execFileSync('open', ['-na', choice, '--args', `--app=${url}`, '--window-size=1280,860']);
+    if (hasApp(choice)) return void execFileSync('open', ['-a', choice, url]);
+    return void execFileSync('open', [url]);
+  }
   const browser = appBrowser();
   if (browser) {
     execFileSync('open', ['-na', browser, '--args', `--app=${url}`, '--window-size=1280,860']);
   } else {
     execFileSync('open', [url]);
   }
+}
+
+/** `browser`: show the choice and the installed browsers; `browser <value>`: save it (auto, default, or an app name that exists). */
+function browserCmd(value) {
+  if (!value) {
+    const installed = [...APP_BROWSERS, ...OTHER_BROWSERS].filter(hasApp);
+    console.log(`Browser for the Asa Office app: ${chosenBrowser()}\nInstalled: ${installed.join(', ') || '(none found)'}\nChange it: npm run browser -- <auto | default | ${installed[0] ?? 'Safari'}>`);
+    return;
+  }
+  const v = value.trim();
+  const canon = /^auto$/i.test(v) ? 'auto' : /^(default|bawaan)$/i.test(v) ? 'default' : v;
+  if (canon !== 'auto' && canon !== 'default' && !hasApp(canon)) throw new Error(`no app named "${canon}" was found (names are like "Safari" or "Google Chrome")`);
+  fs.mkdirSync(path.dirname(settingFile), { recursive: true });
+  fs.writeFileSync(settingFile, JSON.stringify({ browser: canon }, null, 2));
+  console.log(`Saved: the Asa Office app now opens in ${canon === 'auto' ? 'auto mode (Chrome, Edge or Brave window if installed, else the default browser)' : canon === 'default' ? 'the default browser of this Mac' : canon}. Takes effect the next time you click the app.`);
 }
 
 async function open() {
@@ -112,12 +150,13 @@ const cmd = process.argv[2];
 try {
   if (cmd === 'open') await open();
   else if (cmd === 'stop') await stop();
+  else if (cmd === 'browser') browserCmd(process.argv.slice(3).join(' '));
   else if (cmd === 'url') {
     const server = runningServer();
     if (!server) throw new Error('the office is not running');
     console.log(officeUrl(server));
   } else {
-    console.error('usage: node tools/app.mjs open | stop | url');
+    console.error('usage: node tools/app.mjs open | stop | url | browser [auto|default|<app name>]');
     process.exit(2);
   }
 } catch (err) {
