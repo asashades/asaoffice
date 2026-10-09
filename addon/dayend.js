@@ -25,6 +25,7 @@
       total: 'Uang masuk pagi ini', totalReplay: 'Pendapatan kemarin', vsPrev: (d) => (d > 0 ? `▲ ${d}g lebih banyak dari hari sebelumnya` : d < 0 ? `▼ ${-d}g lebih sedikit dari hari sebelumnya` : 'sama seperti hari sebelumnya'),
       firstDay: 'Hari pertama yang tercatat!', quiet: 'Kemarin sepi, belum ada barang yang dikirim. Hari baru, lembaran baru 🌻', skip: 'klik untuk melewati animasi',
       kas: 'Kas kantor', paidAlready: 'sudah cair pagi ini', noLedger: 'Kas hanya dicatat dari Mac yang menjalankan kantor.',
+      trend: (g, n) => g > 0 ? `📈 Kas naik rata-rata ${Math.round(g).toLocaleString('id-ID')}g/hari (${n} hari terakhir)` : g < 0 ? `📉 Kas turun rata-rata ${Math.round(-g).toLocaleString('id-ID')}g/hari (${n} hari terakhir)` : `➖ Kas rata-rata tetap (${n} hari terakhir)`,
       awBusiest: 'Hari tersibuk', awStreak: (n) => `Streak ${n} hari`, awTasks: (n) => `${n} tugas selesai`,
       hello: ['Selamat pagi', 'Selamat siang', 'Selamat sore', 'Selamat malam'], waiting: 'Hari ini menunggu',
       todayTally: (g) => `Hari ini tercatat ${g} · cair besok pagi`,
@@ -40,6 +41,7 @@
       total: 'Paid this morning', totalReplay: "Yesterday's income", vsPrev: (d) => (d > 0 ? `▲ ${d}g more than the day before` : d < 0 ? `▼ ${-d}g less than the day before` : 'same as the day before'),
       firstDay: 'First recorded day!', quiet: 'Yesterday was quiet, nothing shipped. A new day, a clean page 🌻', skip: 'click to skip the animation',
       kas: 'Office cash', paidAlready: 'already paid this morning', noLedger: 'Cash is only recorded from the Mac that runs the office.',
+      trend: (g, n) => g > 0 ? `📈 Cash growing ${Math.round(g).toLocaleString('en-US')}g/day on average (last ${n} days)` : g < 0 ? `📉 Cash shrinking ${Math.round(-g).toLocaleString('en-US')}g/day on average (last ${n} days)` : `➖ Cash flat on average (last ${n} days)`,
       awBusiest: 'Busiest day', awStreak: (n) => `${n}-day streak`, awTasks: (n) => `${n} tasks finished`,
       hello: ['Good morning', 'Good afternoon', 'Good evening', 'Good night'], waiting: 'Waiting today',
       todayTally: (g) => `Earned so far today: ${g} · paid tomorrow morning`,
@@ -95,6 +97,7 @@
   .asa-day-kas { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; padding: 6px 10px; background: #f4e6c4; border: 2px dashed #b8935c; opacity: 0; transition: opacity 0.3s; }
   .asa-day-kas.on { opacity: 1; }
   .asa-day-kas b { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .asa-day-trend { font-size: 12px; opacity: 0.65; margin-top: 4px; }
   .asa-day-pay { margin-top: 6px; opacity: 0; transition: opacity 0.3s; }
   .asa-day-pay.on { opacity: 1; }
   .asa-day-pay .l { display: flex; justify-content: space-between; gap: 8px; padding: 3px 4px; font-size: 14px; border-bottom: 1px dashed #d9c49a; }
@@ -202,16 +205,23 @@
       // Pay it out (once). If it fails, the card still shows the numbers.
       let kasBefore = ledger?.kas ?? null;
       let kasAfter = ledger?.kas ?? null;
+      let trendLog = ledger?.log ?? [];
       if (ledger && !paidAlready) {
         try {
           const res = await ns.localApi('POST', '/api/ledger/collect', { through: yKey, income: total, salary: pay.total });
           kasAfter = res.kas;
           kasBefore = res.before ?? res.kas;
           upkeep = res.upkeep ?? 0; // what the server billed for décor upkeep that day
+          trendLog = res.log ?? trendLog;
           ledgerCache = res;
         } catch { /* keep the old numbers */ }
       }
       const netProfit = total - pay.total - upkeep;
+      // How the Kas has been moving lately — the last up to 7 settled days' `net` (what each day actually changed
+      // the Kas by, upkeep already included), averaged. Purely informational: no sink is sized off this number yet,
+      // it's here so the Komisaris can see the pile-up trend before we touch any rate (see shop.mjs's UPKEEP_PER_DECOR).
+      const recentNet = trendLog.slice(-7).map((e) => e.net).filter((n) => Number.isFinite(n));
+      const avgTrend = recentNet.length ? recentNet.reduce((a, b) => a + b, 0) / recentNet.length : null;
 
       // What waits today
       const mail = (ns.data?.mail ?? []).filter((l) => !l.report && !l.archived);
@@ -269,12 +279,15 @@
           const awards = h('div', { class: 'asa-day-awards' });
           const kasNum = h('b', {}, kasBefore == null ? '' : fmtG(kasBefore));
           const kasEl = ledger ? h('div', { class: 'asa-day-kas' }, h('span', {}, `💰 ${S.kas}`), kasNum) : h('p', { class: 'asa-muted' }, S.noLedger);
+          // Purely informational (see the comment above `avgTrend`): how the Kas has moved lately, so the trend is
+          // visible before anyone decides a sink needs retuning.
+          const trendEl = ledger && avgTrend != null ? h('div', { class: 'asa-day-trend' }, S.trend(avgTrend, recentNet.length)) : null;
           const quiet = total === 0 ? h('p', { class: 'asa-muted' }, `🌻 ${S.quiet}`) : null;
           const next = h('button', { type: 'button', class: 'asa-btn primary', onclick: () => p.close() }, S.start);
           const mailBtn = h('button', { type: 'button', class: 'asa-btn', onclick: () => { p.close(); ns.mailbox?.open(); } }, S.openMail);
           body.append(h('div', { class: 'asa-day' },
             h('div', { class: 'asa-day-date' }, `${S.yesterdayOn} · ${date}`),
-            total === 0 ? null : rowsEl, quiet, total === 0 ? null : totalEl, delta, awards, pay.total > 0 || upkeep > 0 || total > 0 ? payEl : null, kasEl,
+            total === 0 ? null : rowsEl, quiet, total === 0 ? null : totalEl, delta, awards, pay.total > 0 || upkeep > 0 || total > 0 ? payEl : null, kasEl, trendEl,
             h('div', { class: 'asa-day-tally' }, S.todayTally(fmtG(todayTotal))),
             h('h3', {}, S.waiting), lines.length ? h('ul', { class: 'asa-day-list' }, lines) : h('p', {}, S.allClear),
             h('div', { class: 'asa-day-actions' }, h('span', { class: 'asa-day-hint' }, reduced || total === 0 ? '' : S.skip), h('span', {}, mailBtn, ' ', next))));

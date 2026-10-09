@@ -310,6 +310,8 @@ HUD with live counters, a feed, a sub-agent history and per-character cards is i
   then upkeep (only when non-zero), then the **net profit** (income − payroll − upkeep), and that is what changes the Kas. A quiet day
   can be a loss, but the Kas never goes below 0 (salary and upkeep are cut from the same pool, so a very poor day can shortchange both).
   The salary is charged for yesterday and for the earlier unpaid days on which something was done (being away doesn't drain the till).
+  Below the Kas line, a small **trend note** ("📈 Kas naik rata-rata Ng/hari") averages the last up to 7 settled days' `net` from the ledger
+  log — purely informational, no sink is sized off it; it's there so a pile-up is visible before anyone decides a rate needs retuning.
   The Kas also shows as a 💰 chip on the hero card. Below it: what is earned so far today ("cair besok pagi") and what waits today (plans to approve,
   refused steps, unread letters, open to-dos in the bookshelf, today's calendar events; each a link). The 🌙 button on the hero card
   replays it without paying again and pulses until you've seen this morning's payout. `?brief=off` turns the automatic card off. The
