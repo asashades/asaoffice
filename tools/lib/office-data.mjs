@@ -93,7 +93,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
     return out;
   };
   const data = {
-    version: 1, generatedAt: null, schedules: [], names: loadNames(), looks: wornLooks(), archive: loadArchive(), stats: null, tasks: [], sessions: [], runs: [], subagents: {}, staff: [], mail: [], taskAgents: {}, agentSessions: {}, taskServer: null,
+    version: 1, generatedAt: null, schedules: [], names: loadNames(), looks: wornLooks(), archive: loadArchive(), stats: null, tasks: [], sessions: [], runs: [], subagents: {}, staff: [], mail: [], taskAgents: {}, agentSessions: {}, budget: null, taskServer: null,
     calendar: { status: calendar ? 'loading' : 'off', events: [] },
   };
   // Staff roster, with which members are installed as Claude Code subagents (npm run staff).
@@ -158,6 +158,8 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
         changed = true;
       }
       if (taskApi) {
+        const budget = taskApi.budget?.() ?? null;
+        if (JSON.stringify(budget) !== JSON.stringify(data.budget)) { data.budget = budget; changed = true; }
         const map = taskApi.agentMap();
         if (JSON.stringify(map) !== JSON.stringify(data.taskAgents)) {
           data.taskAgents = map;
@@ -208,6 +210,7 @@ export async function startOfficeData({ root, webviewDir, pid, port, calendar = 
           data.schedules = taskApi?.schedules?.() ?? [];
           data.mail = (taskApi?.letters() ?? []).map((l) => (l.agent && chosen[l.agent] ? { ...l, name: chosen[l.agent] } : l));
           data.taskAgents = taskApi?.agentMap() ?? {};
+          data.budget = taskApi?.budget?.() ?? null;
           write();
         },
       });

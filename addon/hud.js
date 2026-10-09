@@ -27,7 +27,7 @@
       atDesk: 'Di meja direktur', noProject: 'Sesi Claude Code', chatWith: (n) => `Ngobrol sama ${n}`,
       planReady: 'Rencana siap', askReady: 'Claude minta izin', askAllowBtn: '✅ Izinkan', askDenyBtn: '⛔ Tolak', approveBtn: '✅ Setujui', rejectBtn: '❌ Tolak', openBtn: 'Buka', morePlans: (n) => `+${n} rencana lagi di kotak surat`,
       perm: 'Izin', emptyPerm: 'Belum ada langkah yang ditolak otomatis.', permSource: 'Langkah yang ditolak otomatis karena di luar izin tugas. Klik buat buka suratnya.', stOpen: 'menunggu', stTerminal: 'jalankan sendiri', stRo: 'Downloads baca-saja', stAllowed: 'diizinkan sekali', clearPerm: 'Abaikan semua',
-      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openShelf: 'Rak Buku', openStaff: 'Data karyawan (jiwa dan ingatan staf)', openEnd: 'Pendapatan kemarin', kasTip: 'Kas kantor · klik buat ke Toko', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
+      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', openReport: 'Tulis laporan harian', waitAsk: (n) => `${n} izin menunggu jawabanmu`, waitPlan: (n) => `${n} rencana menunggu persetujuanmu`, waitMail: (n) => `${n} surat belum dibaca`, waitIdea: (n) => `${n} ide/TODO belum selesai di Rak Buku`, nothingWaits: 'Tidak ada yang menunggu ☕', tokToday: (a, b) => (b ? `Token ${a} / ${b}` : `Token ${a} hari ini`), tokTip: 'Token yang dipakai hari ini dibanding batas harian (klik buat atur)', popFolder: 'Folder', popTask: 'Tugas', popNow: 'Sekarang', openShelf: 'Rak Buku', openStaff: 'Data karyawan (jiwa dan ingatan staf)', openEnd: 'Pendapatan kemarin', kasTip: 'Kas kantor · klik buat ke Toko', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
     },
     en: {
       title: 'Asa Office', live: 'Connected', dead: 'Data offline', nodata: 'No data', sessions: 'Sessions working', helpers: 'Helpers', today: 'Sub-agents today',
@@ -43,7 +43,7 @@
       atDesk: "At the director's desk", noProject: 'Claude Code session', chatWith: (n) => `Chatting with ${n}`,
       planReady: 'Plan ready', askReady: 'Claude asks permission', askAllowBtn: '✅ Allow', askDenyBtn: '⛔ Deny', approveBtn: '✅ Approve', rejectBtn: '❌ Reject', openBtn: 'Open', morePlans: (n) => `+${n} more plans in the mailbox`,
       perm: 'Permissions', emptyPerm: 'Nothing has been refused automatically.', permSource: 'Steps refused automatically because they were outside the task’s permissions. Click to open the letter.', stOpen: 'waiting', stTerminal: 'run it yourself', stRo: 'Downloads read-only', stAllowed: 'allowed once', clearPerm: 'Dismiss all',
-      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openShelf: 'Bookshelf', openStaff: 'Employee records (staff souls and memories)', openEnd: "Yesterday's income", kasTip: 'Office cash · click to open the shop', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
+      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', openReport: 'Write the daily report', waitAsk: (n) => `${n} permission question(s) waiting for you`, waitPlan: (n) => `${n} plan(s) waiting for your approval`, waitMail: (n) => `${n} unread letter(s)`, waitIdea: (n) => `${n} open idea(s)/TODO in the Bookshelf`, nothingWaits: 'Nothing is waiting ☕', tokToday: (a, b) => (b ? `Tokens ${a} / ${b}` : `Tokens ${a} today`), tokTip: 'Tokens used today against the daily limit (click to set)', popFolder: 'Folder', popTask: 'Task', popNow: 'Now', openShelf: 'Bookshelf', openStaff: 'Employee records (staff souls and memories)', openEnd: "Yesterday's income", kasTip: 'Office cash · click to open the shop', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
     },
   });
 
@@ -70,48 +70,71 @@
   #asa-hud > * { pointer-events: auto; }
   /* The full-width rows only lay their cards out: the empty space between the cards must let clicks through to the office
      (the wall's mailbox and boards sit right under the top row). The id selector is needed to beat the rule above. */
-  #asa-hud > .hud-top, #asa-hud > .hud-bottom, #asa-hud > .hud-pending { pointer-events: none; }
+  #asa-hud > .hud-left, #asa-hud > .hud-bottom { pointer-events: none; }
   .hud-cards { pointer-events: none; } .hud-card { pointer-events: auto; }
   #asa-hud button { font: inherit; color: inherit; }
   .hud-box { background: #f4e6c4; border: 3px solid #744122; box-shadow: inset 0 0 0 2px #dca05f, 0 4px 0 rgba(0,0,0,0.25); }
-  .hud-top { position: fixed; top: 8px; left: 64px; right: 12px; display: flex; gap: 8px; align-items: stretch; pointer-events: none; }
-  .hud-top > * { pointer-events: auto; }
-  .hud-hero { position: relative; flex: none; width: 360px; height: 120px; overflow: hidden; padding: 0; }
-  .hud-sky { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; display: block; }
-  .hud-quick { position: absolute; top: 6px; left: 6px; display: flex; gap: 4px; }
-  .hud-quick button { position: relative; width: 36px; height: 36px; padding: 0; cursor: pointer; font-size: 18px; line-height: 1;
+  /* Left column: the hero card (clock, to-do, what waits for you, tokens), and below it the notices: permission questions, plans, finished tasks. */
+  .hud-left { position: fixed; top: 8px; left: 64px; width: 252px; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .hud-left > * { pointer-events: auto; }
+  .hud-hero { position: relative; flex: none; overflow: hidden; padding: 0; }
+  .hud-sky { position: absolute; top: 0; left: 0; width: 100%; height: 92px; image-rendering: pixelated; display: block; }
+  .hud-quick { position: absolute; top: 5px; left: 5px; display: flex; gap: 3px; }
+  .hud-quick button { position: relative; width: 34px; height: 34px; padding: 0; cursor: pointer; font-size: 18px; line-height: 1;
     background: rgba(244,230,196,0.93); border: 2px solid #744122; box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
   .hud-quick button:hover { background: #fbf0d3; }
   .hud-quick button.attn { animation: hud-pulse 1.5s ease-in-out infinite; }
   @keyframes hud-pulse { 0%, 100% { box-shadow: 0 2px 0 rgba(0,0,0,0.25), 0 0 0 0 rgba(242,201,76,0.9); } 50% { box-shadow: 0 2px 0 rgba(0,0,0,0.25), 0 0 0 5px rgba(242,201,76,0); } }
   @media (prefers-reduced-motion: reduce) { .hud-quick button.attn { animation: none; outline: 3px solid #f2c94c; } }
-  .hud-kas { height: 36px; padding: 0 7px; display: inline-flex; align-items: center; font-size: 13px; background: rgba(244,230,196,0.93); border: 2px solid #744122; box-shadow: 0 2px 0 rgba(0,0,0,0.25); white-space: nowrap; }
+  .hud-kas { flex: none; height: 24px; padding: 0 6px; display: inline-flex; align-items: center; font-size: 12px; background: #fffbe9; border: 2px solid #744122; box-shadow: 0 2px 0 rgba(0,0,0,0.25); white-space: nowrap; }
   .hud-kas[hidden] { display: none; }
   .hud-kas { cursor: pointer; }
   .hud-kas:hover { background: #fff4d0; }
   .hud-badge { position: absolute; top: -7px; right: -7px; min-width: 17px; height: 17px; padding: 0 3px; background: #c8503c; color: #fff6dc;
     font-size: 11px; line-height: 17px; text-align: center; border: 2px solid #973a2f; box-sizing: content-box; }
   .hud-badge:empty { display: none; }
-  .hud-plate { position: absolute; top: 6px; right: 6px; padding: 3px 9px 4px; text-align: right; background: rgba(244,230,196,0.93);
+  .hud-plate { position: absolute; top: 48px; left: 6px; right: 6px; display: flex; align-items: baseline; gap: 8px; padding: 2px 8px 3px; background: rgba(244,230,196,0.93);
     border: 2px solid #744122; box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
-  .hud-plate b { display: block; font-weight: normal; font-size: 22px; line-height: 1.05; color: #3a2117; }
-  .hud-plate span { display: block; font-size: 12px; line-height: 1.25; color: #744122; white-space: nowrap; }
-  .hud-status { position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 10px 5px; background: rgba(244,230,196,0.95); border-top: 3px solid #744122;
-    font-size: 12.5px; line-height: 1.3; display: flex; flex-direction: column; }
-  .hud-status b { font-weight: normal; font-size: 13px; color: #744122; }
+  .hud-plate b { display: inline; font-weight: normal; font-size: 21px; line-height: 1.05; color: #3a2117; }
+  .hud-plate span { display: inline; font-size: 12px; line-height: 1.25; color: #744122; white-space: nowrap; }
+  .hud-status { position: relative; margin-top: 92px; padding: 5px 8px 6px; background: rgba(244,230,196,0.97); border-top: 3px solid #744122; font-size: 12.5px; line-height: 1.3; display: flex; flex-direction: column; gap: 4px; }
+  .hud-phase { display: block; font-size: 12px; color: #744122; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hud-idea { position: absolute; inset: 0; width: 100%; box-sizing: border-box; border: 0; padding: 0 10px; background: #fffbe9; color: #3a2117;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 14px; outline: 0; }
   .hud-idea[hidden] { display: none; }
-  .hud-status span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .hud-stats { display: flex; flex: none; margin-left: auto; align-self: flex-start; }
-  .hud-stat { padding: 6px 12px; border-left: 2px dashed #c9a877; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+  .hud-wait { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 22px; }
+  .hud-wait .none { font-size: 11.5px; opacity: 0.65; }
+  .hud-wait button { padding: 1px 7px; font-size: 12.5px; cursor: pointer; background: #fffbe9; border: 2px solid #744122; box-shadow: 0 2px 0 #744122; line-height: 1.35; }
+  .hud-wait button.hot { background: #c8503c; color: #fff6dc; border-color: #973a2f; box-shadow: 0 2px 0 #973a2f; }
+  .hud-wait button:hover { filter: brightness(1.06); }
+  .hud-meta { display: flex; gap: 6px; align-items: center; }
+  .hud-tok { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 11.5px; }
+  .hud-tok[hidden] { display: none; }
+  .hud-tokbar { height: 7px; background: #d9c49a; border: 1px solid #744122; }
+  .hud-tokbar i { display: block; height: 100%; background: #4a8a52; }
+  .hud-tok.warn .hud-tokbar i { background: #c8801f; } .hud-tok.over .hud-tokbar i { background: #c8503c; }
+  .hud-tok span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud-todo1 { display: block; width: 100%; text-align: left; padding: 2px 0 0; border: 0; border-top: 1px dashed #c9a877; background: none; cursor: pointer; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud-todo1[hidden] { display: none; }
+  .hud-stats { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1.2fr; border-bottom: 2px solid #c9a877; flex: none; }
+  .hud-stat { padding: 5px 7px; border-left: 2px dashed #c9a877; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
   .hud-stat:first-child { border-left: 0; }
-  .hud-stat small { font-size: 11px; opacity: 0.7; white-space: nowrap; }
-  .hud-stat b { font-weight: normal; font-size: 17px; }
+  .hud-stat small { font-size: 10.5px; opacity: 0.7; line-height: 1.15; }
+  .hud-stat b { font-weight: normal; font-size: 16px; white-space: nowrap; }
+  #hud-live { font-size: 11.5px; }
   .hud-dot { display: inline-block; width: 8px; height: 8px; margin-right: 5px; background: #4f9a45; }
   .hud-dot.off { background: #c8503c; } .hud-dot.none { background: #9a8a7a; }
-  .hud-pending { position: fixed; top: 136px; left: 64px; width: 360px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
-  .hud-pending > * { pointer-events: auto; }
+  .hud-pending, .hud-notes { display: flex; flex-direction: column; gap: 6px; }
+  .hud-pending:empty, .hud-notes:empty { display: none; }
+  .hud-pending > *, .hud-notes > * { pointer-events: auto; }
+  .hud-note { position: relative; padding: 6px 24px 7px 9px; cursor: pointer; border-color: #3f8a36; box-shadow: inset 0 0 0 2px #a9d49b, 0 4px 0 rgba(0,0,0,0.25); animation: hud-note-in 0.22s ease-out; }
+  .hud-note.permission { border-color: #c8801f; box-shadow: inset 0 0 0 2px #f0c987, 0 4px 0 rgba(0,0,0,0.25); }
+  .hud-note b { display: block; font-weight: normal; font-size: 13.5px; line-height: 1.3; }
+  .hud-note small { display: block; font-size: 11.5px; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hud-note .x { position: absolute; top: 2px; right: 3px; width: 20px; height: 20px; padding: 0; line-height: 1; font-size: 15px; cursor: pointer; background: none; border: 0; opacity: 0.6; }
+  .hud-note .x:hover { opacity: 1; }
+  @keyframes hud-note-in { from { transform: translateX(-28px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .hud-note { animation: none; } }
   .hud-plan { padding: 7px 10px 8px; border-color: #3f74b8; box-shadow: inset 0 0 0 2px #9fc2ea, 0 4px 0 rgba(0,0,0,0.25); animation: hud-plan-in 0.2s ease-out; }
   .hud-plan.hud-ask { border-color: #c8801f; box-shadow: inset 0 0 0 2px #f0c987, 0 4px 0 rgba(0,0,0,0.25); }
   .hud-plan.hud-ask small { color: #a8650f; }
@@ -125,11 +148,14 @@
   .hud-more { font-size: 12px; opacity: 0.75; padding: 0 4px; }
   @keyframes hud-plan-in { from { transform: translateY(-6px); opacity: 0; } to { transform: none; opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .hud-plan { animation: none; } }
-  .hud-side { position: fixed; top: 74px; right: 12px; width: 320px; max-height: calc(100vh - 74px - 128px); display: flex; flex-direction: column; overflow: hidden; }
+  .hud-side { position: fixed; top: 8px; right: 12px; width: 294px; max-height: calc(100vh - 80px); display: flex; flex-direction: column; overflow: hidden; }
+  .hud-side:not(.min) { height: min(calc(100vh - 80px), 560px); }
+  .hud-side:not(.min) .hud-scroll { flex: 1 1 auto; min-height: 0; }
   .hud-tabs { display: flex; align-items: stretch; border-bottom: 2px solid #c9a877; }
-  .hud-tabs button { flex: 1 1 auto; min-width: 0; background: none; border: 0; border-bottom: 3px solid transparent; padding: 7px 2px; font-size: 12px; cursor: pointer; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud-tabs button { flex: 1 1 auto; min-width: 0; background: none; border: 0; border-bottom: 3px solid transparent; padding: 7px 1px; font-size: 11.5px; cursor: pointer; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hud-tabs button.on { opacity: 1; border-bottom-color: #973a2f; }
-  .hud-tabs .n { display: inline-block; min-width: 16px; margin-left: 2px; padding: 0 3px; background: #e6d3a6; font-size: 11px; line-height: 15px; }
+  .hud-tabs .n[hidden] { display: none; }
+  .hud-tabs .n { display: inline-block; min-width: 14px; margin-left: 2px; padding: 0 2px; background: #e6d3a6; font-size: 11px; line-height: 15px; }
   .hud-tabs .min { flex: none; width: 34px; border-left: 2px solid #c9a877; cursor: pointer; }
   .hud-side.min .hud-scroll { display: none; }
   .hud-side.min .hud-tabs { border-bottom: 0; }
@@ -161,31 +187,44 @@
   .hud-todo i { font-style: normal; opacity: 0.7; }
   .hud-bottom { position: fixed; left: 230px; right: 12px; bottom: 8px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
   .hud-bottom > * { pointer-events: auto; }
-  .hud-cards { display: flex; gap: 8px; overflow-x: auto; padding: 0 2px 4px; scrollbar-width: thin; scrollbar-color: #b8935c transparent; }
-  .hud-card { flex: 1 1 0; min-width: 150px; max-width: 232px; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 0 7px; padding: 3px 7px 3px 4px; align-items: center;
-    border-width: 2px; box-shadow: inset 0 0 0 1px #dca05f, 0 2px 0 rgba(0,0,0,0.25); text-align: left; cursor: pointer; position: relative; }
-  .hud-card:hover { background: #fbf0d3; }
+  .hud-cards { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px 2px; overflow: visible; }
+  /* A small capsule per person: face, status dot, name. The details open as a popup while the pointer is on it. */
+  .hud-card { flex: none; position: relative; display: inline-flex; align-items: center; gap: 6px; max-width: 170px; padding: 3px 9px 3px 4px; text-align: left; cursor: pointer;
+    border-width: 2px; box-shadow: inset 0 0 0 1px #dca05f, 0 2px 0 rgba(0,0,0,0.25); }
+  .hud-card:hover, .hud-card:focus-visible { background: #fbf0d3; }
   .hud-card:focus-visible { outline: 3px solid #3f74b8; outline-offset: 1px; }
   .hud-card.sel { border-color: #973a2f; }
-  .hud-face { grid-row: 1 / span 2; width: 26px; height: 42px; image-rendering: pixelated; background-repeat: no-repeat; background-size: 182px 156px;
-    background-position: -26px -3px; background-color: #dca05f; border: 2px solid #744122; }
-  .hud-card .h { display: flex; gap: 6px; align-items: center; min-width: 0; }
-  .hud-card .nm { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hud-card .st { margin-left: auto; flex: none; }
-  .hud-card .task { font-size: 11.5px; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hud-card .act { font-size: 12px; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  @media (max-width: 1180px) { .hud-side { width: 310px; } }
+  .hud-face { flex: none; width: 22px; height: 36px; image-rendering: pixelated; background-repeat: no-repeat; background-size: 154px 132px;
+    background-position: -22px -3px; background-color: #dca05f; border: 2px solid #744122; box-sizing: content-box; }
+  .hud-card .nm { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .hud-sdot { flex: none; width: 9px; height: 9px; border: 1px solid rgba(58,33,23,0.55); }
+  .hud-card .pop { display: none; position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 6; width: 250px; padding: 8px 10px 9px; pointer-events: none; cursor: default;
+    background: #f4e6c4; border: 3px solid #744122; box-shadow: inset 0 0 0 2px #dca05f, 0 4px 0 rgba(0,0,0,0.25); font-size: 12.5px; line-height: 1.35; white-space: normal; }
+  .hud-card:nth-last-child(-n+2) .pop { left: auto; right: 0; }
+  .hud-card:hover .pop, .hud-card:focus-visible .pop { display: block; }
+  .hud-pop-h { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .hud-pop-h b { font-weight: normal; font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hud-pop .role { display: block; color: #973a2f; font-size: 12px; }
+  .hud-pop .row { display: block; margin-top: 3px; overflow-wrap: anywhere; }
+  .hud-pop .row small { opacity: 0.65; margin-right: 4px; }
+  /* The rule "#asa-hud button { font: inherit }" above beats the class rules, and the page's own font size is 22px: the buttons that need their own size say it with the id too. */
+  #asa-hud .hud-tabs button { font-size: 12px; }
+  #asa-hud .hud-quick button { font-size: 17px; }
+  #asa-hud .hud-plan button { font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px; }
+  #asa-hud .hud-wait button { font-size: 12.5px; }
+  #asa-hud .hud-todo1 { font-size: 12px; }
+  #asa-hud .hud-note .x { font-size: 15px; }
+  #asa-hud .hud-clear { font-size: 11px; }
+  #asa-hud .hud-card { font-size: 13px; }
+  @media (max-width: 1180px) { .hud-side { width: 280px; } }
   @media (max-width: 820px) {
-    .hud-top { flex-wrap: wrap; left: 60px; right: 8px; gap: 6px; }
-    .hud-hero { flex: 1 1 100%; width: auto; height: 108px; }
-    .hud-pending { left: 60px; right: 8px; width: auto; top: 124px; }
-    .hud-stats { flex: 1 1 100%; } .hud-stat { flex: 1 1 0; padding: 4px 8px; } .hud-stat b { font-size: 15px; }
+    .hud-left { left: 60px; right: 8px; width: auto; }
+    .hud-hero { width: auto; }
     .hud-bottom { left: 8px; right: 8px; bottom: 62px; }
-    .hud-side { position: static; width: auto; }
-    .hud-side { max-height: none; } .hud-side .hud-scroll { max-height: 30vh; }
-    .hud-card { min-width: 140px; }
+    .hud-side { position: static; width: auto; height: auto !important; max-height: none; }
+    .hud-side .hud-scroll { max-height: 30vh; min-height: 0; }
   }
-  @media (max-width: 560px) { .hud-stats { display: none; } .hud-card { min-width: 128px; } }
+  @media (max-width: 560px) { .hud-stats { display: none; } }
   `;
 
   // ── State ──
@@ -226,7 +265,7 @@
   const root = document.createElement('div');
   root.id = 'asa-hud';
   root.innerHTML = `
-    <div class="hud-top">
+    <div class="hud-left">
       <div class="hud-hero hud-box">
         <canvas class="hud-sky" id="hud-sky" width="120" height="40" aria-hidden="true"></canvas>
         <div class="hud-quick">
@@ -235,21 +274,30 @@
           <button type="button" data-open="staff" title="${esc(S.openStaff)}" aria-label="${esc(S.openStaff)}">👥</button>
           <button type="button" data-open="idea" title="${esc(S.idea)}" aria-label="${esc(S.idea)}">💡</button>
           <button type="button" id="hud-end" data-open="end" title="${esc(S.openEnd)}" aria-label="${esc(S.openEnd)}">🌙</button>
-          <span class="hud-kas" id="hud-kas" hidden title="${esc(S.kasTip)}"></span>
+          <button type="button" data-open="report" title="${esc(S.openReport)}" aria-label="${esc(S.openReport)}">📜</button>
         </div>
         <div class="hud-plate"><b id="hud-time"></b><span id="hud-date"></span><span id="hud-season"></span></div>
-        <div class="hud-status"><b>${esc(S.title)}</b><span id="hud-phase"></span>
-          <input class="hud-idea" id="hud-idea" type="text" maxlength="500" hidden placeholder="${esc(S.ideaPh)}" aria-label="${esc(S.idea)}"></div>
+        <div class="hud-status">
+          <span class="hud-phase" id="hud-phase"></span>
+          <div class="hud-wait" id="hud-wait"></div>
+          <div class="hud-meta">
+            <div class="hud-tok" id="hud-tok" hidden><div class="hud-tokbar"><i id="hud-tokfill"></i></div><span id="hud-toktxt"></span></div>
+            <span class="hud-kas" id="hud-kas" hidden title="${esc(S.kasTip)}"></span>
+          </div>
+          <button type="button" class="hud-todo1" id="hud-todo1" data-opentab="todos" hidden></button>
+          <input class="hud-idea" id="hud-idea" type="text" maxlength="500" hidden placeholder="${esc(S.ideaPh)}" aria-label="${esc(S.idea)}">
+        </div>
       </div>
-      <div class="hud-stats hud-box">
+      <div class="hud-pending" id="hud-pending"></div>
+      <div class="hud-notes" id="hud-notes" aria-live="polite"></div>
+    </div>
+    <aside class="hud-side hud-box">
+      <div class="hud-stats">
         <div class="hud-stat"><small></small><b id="hud-live"></b></div>
         <div class="hud-stat"><small>${esc(S.sessions)}</small><b id="hud-sessions">0</b></div>
         <div class="hud-stat"><small>${esc(S.helpers)}</small><b id="hud-helpers">0</b></div>
         <div class="hud-stat"><small>${esc(S.today)}</small><b id="hud-today">0</b></div>
       </div>
-    </div>
-    <div class="hud-pending" id="hud-pending"></div>
-    <aside class="hud-side hud-box">
       <div class="hud-tabs" role="tablist">
         <button type="button" role="tab" data-tab="feed">${esc(S.feed)}<span class="n" id="hud-n-feed">0</span></button>
         <button type="button" role="tab" data-tab="runs">${esc(S.history)}<span class="n" id="hud-n-runs">0</span></button>
@@ -305,10 +353,24 @@
     const permRow = e.target.closest('[data-letter]');
     if (permRow) { ns.mailbox?.openLetter(permRow.dataset.letter); return; }
     if (e.target.closest('#hud-kas')) { ns.shop?.open(); return; }
+    if (e.target.closest('#hud-tok')) { ns.budget?.open(); return; }
+    const waitBtn = e.target.closest('[data-wait]');
+    if (waitBtn) {
+      const mail = ns.data?.mail ?? [];
+      const kind = waitBtn.dataset.wait;
+      if (kind === 'ask') { const l = mail.find((x) => !x.archived && x.status === 'running' && (x.asks ?? []).some((a) => a.state === 'open')); if (l) ns.mailbox?.openLetter(l.id); else ns.mailbox?.open(); }
+      else if (kind === 'plan') { const l = mail.find((x) => x.status === 'awaiting' && !x.report && !x.archived); if (l) ns.mailbox?.openLetter(l.id); else ns.mailbox?.open(); }
+      else if (kind === 'idea') ns.shelf?.open();
+      else ns.mailbox?.open();
+      return;
+    }
+    const tabOpen = e.target.closest('[data-opentab]');
+    if (tabOpen) { tab = tabOpen.dataset.opentab; min = false; ns.store.set('hudMin', '0'); applyChrome(); return; }
     const openBtn = e.target.closest('[data-open]');
     if (openBtn) {
       if (openBtn.dataset.open === 'idea') toggleIdea(true);
       else if (openBtn.dataset.open === 'end') ns.dayEnd?.open();
+      else if (openBtn.dataset.open === 'report') ns.report?.open();
       else if (openBtn.dataset.open === 'staff') ns.souls?.open();
       else (openBtn.dataset.open === 'mail' ? ns.mailbox : ns.shelf)?.open();
       return;
@@ -392,7 +454,7 @@
   }
 
   // ── Rendering (only touches the DOM when the text changed) ──
-  const last = { cards: '', feed: '', runs: '', todos: '', phase: '', pending: '', perm: '' };
+  const last = { cards: '', feed: '', runs: '', todos: '', phase: '', pending: '', perm: '', wait: '', tok: '', todo1: '' };
   function setHtml(el, html, key) {
     if (last[key] !== html) { el.innerHTML = html; last[key] = html; }
   }
@@ -435,11 +497,53 @@
       const { task, act } = lines(office, c, st);
       const sel = office.selectedAgentId === c.id;
       const face = `background-image:url(${esc(ns.portraitUrl(c))})${c.hueShift ? `;filter:hue-rotate(${c.hueShift}deg)` : ''}`;
-      return `<button type="button" class="hud-card hud-box${sel ? ' sel' : ''}" data-id="${c.id}"><span class="hud-face" style="${face}"></span>
-        <span class="h"><span class="nm">${esc(ns.villagerName(c))}</span><span class="hud-chip st" style="color:${ui.css}">${esc(ui.label)}</span></span>
-        <span class="task" title="${esc([task, act].filter(Boolean).join(' · '))}">${esc(clip(task || act || roleOf(office, c), 60))}</span></button>`;
+      const nm = ns.villagerName(c);
+      const proj = !c.isSubagent && !c.asaShades ? c.folderName || '' : '';
+      const detail = [
+        `<span class="hud-pop-h"><b>${esc(nm)}</b><span class="hud-chip" style="color:${ui.css}">${esc(ui.label)}</span></span>`,
+        `<span class="role">${esc(roleOf(office, c))}</span>`,
+        task ? `<span class="row"><small>${esc(S.popTask)}</small>${esc(clip(task, 140))}</span>` : '',
+        act ? `<span class="row"><small>${esc(S.popNow)}</small>${esc(clip(act, 140))}</span>` : '',
+        proj && proj !== task ? `<span class="row"><small>${esc(S.popFolder)}</small>${esc(proj)}</span>` : '',
+      ].join('');
+      return `<button type="button" class="hud-card hud-box${sel ? ' sel' : ''}" data-id="${c.id}" aria-label="${esc(`${nm}: ${ui.label}`)}"><span class="hud-face" style="${face}"></span><span class="nm">${esc(nm)}</span><i class="hud-sdot" style="background:${ui.css}"></i><span class="pop hud-pop">${detail}</span></button>`;
     });
     setHtml($('hud-cards'), cards.join(''), 'cards');
+
+    // Hero card: what waits for you, today's tokens, and the to-do of the session in front
+    const mail = (ns.data?.mail ?? []).filter((l) => !l.report && !l.archived);
+    const asks = mail.filter((l) => l.status === 'running').reduce((n, l) => n + (l.asks ?? []).filter((a) => a.state === 'open').length, 0);
+    const plans = mail.filter((l) => l.status === 'awaiting').length;
+    const unread = ns.mailbox?.unread?.() ?? 0;
+    const chip = (kind, icon, n, tip, hot) => (n > 0 ? `<button type="button" data-wait="${kind}" class="${hot ? 'hot' : ''}" title="${esc(tip(n))}" aria-label="${esc(tip(n))}">${icon} ${n}</button>` : '');
+    const waitHtml = chip('ask', '🔐', asks, S.waitAsk, true) + chip('plan', '📝', plans, S.waitPlan, true) + chip('mail', '📮', unread, S.waitMail, false) + chip('idea', '💡', ideaCount, S.waitIdea, false)
+      || `<span class="none">${esc(S.nothingWaits)}</span>`;
+    setHtml($('hud-wait'), waitHtml, 'wait');
+    const b = ns.data?.budget;
+    const tokEl = $('hud-tok');
+    if (!b) { if (!tokEl.hidden) tokEl.hidden = true; last.tok = ''; } else {
+      const spent = b.spentToday ?? 0;
+      const pct = b.day ? Math.min(100, (spent / b.day) * 100) : 0;
+      const key = `${spent}|${b.day}`;
+      if (last.tok !== key) {
+        last.tok = key;
+        tokEl.hidden = false;
+        tokEl.title = S.tokTip;
+        tokEl.classList.toggle('warn', pct >= 80 && pct < 100);
+        tokEl.classList.toggle('over', pct >= 100);
+        $('hud-tokfill').style.width = `${b.day ? pct : 0}%`;
+        $('hud-toktxt').textContent = S.tokToday(ns.fmtTokens(spent), b.day ? ns.fmtTokens(b.day) : null);
+        tokEl.querySelector('.hud-tokbar').hidden = !b.day;
+      }
+    }
+    const withOpen = (ns.data?.tasks ?? []).find((x) => x.todos?.some((t) => t.status !== 'completed'));
+    let todoHtml = '';
+    if (withOpen) {
+      const doneN = withOpen.todos.filter((t) => t.status === 'completed').length;
+      const cur = withOpen.todos.find((t) => t.status === 'in_progress') ?? withOpen.todos.find((t) => t.status !== 'completed');
+      todoHtml = `▶ ${esc(clip(cur.status === 'in_progress' && cur.activeForm ? cur.activeForm : cur.content, 60))} <small style="opacity:.65">${doneN}/${withOpen.todos.length}</small>`;
+    }
+    if (last.todo1 !== todoHtml) { last.todo1 = todoHtml; const t1 = $('hud-todo1'); t1.innerHTML = todoHtml; t1.hidden = !todoHtml; }
 
     // Feed
     const feedHtml = feed.map((e) => {
@@ -497,6 +601,7 @@
       : `<div class="hud-empty">${esc(S.emptyTodos)}</div>`;
     setHtml($('hud-todos'), todosHtml, 'todos');
     $('hud-n-todos').textContent = String(openCount);
+    for (const n of root.querySelectorAll('.hud-tabs .n')) n.hidden = n.textContent === '0';
   }
 
   // ── Quick capture: one line into the bookshelf's Ide-TODO.md without opening anything ──
@@ -553,6 +658,32 @@
     ns.sky?.draw($('hud-sky'), ns.dayNight?.hour?.() ?? d.getHours() + d.getMinutes() / 60, seasonNow());
   }
 
+  // Open ideas/TODO in the bookshelf (Ide-TODO.md): looked up now and then, not every frame.
+  let ideaCount = 0;
+  async function refreshIdeas() {
+    try { ideaCount = (await ns.localApi('GET', '/api/vault')).notes.find((n) => n.path === 'Ide-TODO.md')?.open ?? 0; } catch { ideaCount = 0; }
+  }
+  setTimeout(refreshIdeas, 8000);
+  setInterval(refreshIdeas, 5 * 60_000);
+
+  // Notices in the left column (finished tasks, failures, a villager asking for permission): they slide in under the permission and plan cards and go away by themselves.
+  const MAX_NOTES = 3;
+  function notice({ kind = 'done', icon = '✅', title = '', body = '', onOpen = null, ms = 10_000 }) {
+    if (hidden) return false;
+    const box = $('hud-notes');
+    if (!box) return false;
+    const el = document.createElement('div');
+    el.className = `hud-note hud-box ${kind === 'permission' ? 'permission' : ''}`;
+    el.setAttribute('role', 'status');
+    el.innerHTML = `<b>${esc(icon)} ${esc(title)}</b>${body ? `<small>${esc(body)}</small>` : ''}<button type="button" class="x" aria-label="×">×</button>`;
+    const close = () => el.remove();
+    el.addEventListener('click', (e) => { if (e.target.closest('.x')) return close(); try { onOpen?.(); } catch { /* the target is gone */ } close(); });
+    box.prepend(el);
+    while (box.children.length > MAX_NOTES) box.lastChild.remove();
+    setTimeout(close, ms);
+    return true;
+  }
+
   let lastRender = 0;
   ns.onFrame((canvas, office) => {
     if (performance.now() - lastSky > 1000 && !hidden) { lastSky = performance.now(); tickHero(); }
@@ -561,5 +692,5 @@
     lastRender = now;
     render(office);
   });
-  ns.hud = { hide: () => setHidden(true), show: () => setHidden(false), get hidden() { return hidden; } };
+  ns.hud = { hide: () => setHidden(true), show: () => setHidden(false), get hidden() { return hidden; }, notice };
 })();
