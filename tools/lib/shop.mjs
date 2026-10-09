@@ -45,6 +45,17 @@ export const DECOR = {
   bookshelf: { type: 'COZY_BOOKSHELF', zone: 'wall', price: 450, max: 3, w: 2, h: 2, bg: 0, icon: '📚' },
 };
 
+// Upkeep: a small, flat, recurring sink so the Kas doesn't just pile up once every permanent piece is bought.
+// Charged once a day per owned décor piece (not seasonal — that already wilts), from dayend.js via ledger.collect().
+// Flat on purpose (not progressive/inflating): easy for the Komisaris to audit as "N decor × tarif" — see shop meeting notes.
+export const UPKEEP_PER_DECOR = 6; // gold/item/day — well under the cheapest décor price (bush, 80g)
+
+/** The daily upkeep bill for a `decor` map ({ <item id>: count }): flat rate × total owned pieces. Read-only, no side effects. */
+export function dailyUpkeep(decor) {
+  const n = Object.values(decor ?? {}).reduce((sum, c) => sum + (Number.isInteger(c) && c > 0 ? c : 0), 0);
+  return n * UPKEEP_PER_DECOR;
+}
+
 // Seasonal décor: a sink that never "finishes" — bought and placed exactly like DECOR, but capped per day
 // (dailyMax) instead of forever, and wiped (state + layout) the next time the shop is read on a new day.
 export const SEASONAL = {

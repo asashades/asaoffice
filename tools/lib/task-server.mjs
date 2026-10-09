@@ -28,7 +28,7 @@ import path from 'node:path';
 import * as vault from './vault.mjs';
 import { collect as collectIncome, loadLedger } from './ledger.mjs';
 import { setArchived } from './archive.mjs';
-import { buy as shopBuy, shopInfo } from './shop.mjs';
+import { buy as shopBuy, dailyUpkeep, loadShop, shopInfo } from './shop.mjs';
 import { loadNames, setName } from './names.mjs';
 import * as tidy from './tidy.mjs';
 import { createNotifier } from './macnotify.mjs';
@@ -993,8 +993,11 @@ export async function startTaskServer({ root, token, officePort, port, projects,
       if (url.pathname === '/api/ledger' && req.method === 'GET') return send(res, 200, loadLedger(), origin);
       if (url.pathname === '/api/ledger/collect' && req.method === 'POST') {
         const b = await readBody(req);
-        const r = collectIncome(b.through, b.income ?? b.amount, b.salary ?? 0);
-        return r ? send(res, 200, { ...r.ledger, paid: r.paid, before: r.before ?? r.ledger.kas }, origin) : send(res, 400, { error: 'collect' }, origin);
+        // Décor upkeep is computed here from the server's own shop state, not trusted from the client: it's a small,
+        // flat daily bill (see shop.mjs's dailyUpkeep) for every permanent décor piece already owned.
+        const upkeep = dailyUpkeep(loadShop().decor);
+        const r = collectIncome(b.through, b.income ?? b.amount, b.salary ?? 0, upkeep);
+        return r ? send(res, 200, { ...r.ledger, paid: r.paid, before: r.before ?? r.ledger.kas, upkeep }, origin) : send(res, 400, { error: 'collect' }, origin);
       }
       // Archiving chats that aren't mailbox letters (outside Claude Code sessions, daily reports): { kind: 'sessions' | 'reports', id, archived }
       if (url.pathname === '/api/archive' && req.method === 'POST') {

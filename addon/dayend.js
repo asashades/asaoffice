@@ -5,8 +5,9 @@
 //     appear. The money goes into the office's Kas (tools/lib/ledger.mjs, once per day, so a second tab or a phone can't pay it
 //     twice); days the office wasn't opened are paid together as one extra row (up to two weeks back).
 //   - Then the payroll: every staff member has a daily salary (staff/roster.json), +30% for those who worked on a mailbox task that
-//     day; the day's income minus the payroll is the net profit, and that is what changes the Kas (never below 0, and a quiet day
-//     can be a loss). Days the office wasn't opened only cost salaries on the days something was done.
+//     day; plus a flat décor upkeep bill (shop.mjs, UPKEEP_PER_DECOR × pieces owned — kept separate from salary so a replay never
+//     shows it as someone's pay). Income minus payroll minus upkeep is the net profit, and that is what changes the Kas (never
+//     below 0, and a quiet day can be a loss). Days the office wasn't opened only cost salaries on the days something was done.
 //   - Below that: what is waiting today (plans to approve, refused steps, unread letters, open to-dos, calendar events) and
 //     what has been earned so far today ("cair besok pagi").
 //   - The 🌙 button on the hero card replays it (never pays twice); it pulses until you've looked at this morning's payout.
@@ -27,7 +28,7 @@
       awBusiest: 'Hari tersibuk', awStreak: (n) => `Streak ${n} hari`, awTasks: (n) => `${n} tugas selesai`,
       hello: ['Selamat pagi', 'Selamat siang', 'Selamat sore', 'Selamat malam'], waiting: 'Hari ini menunggu',
       todayTally: (g) => `Hari ini tercatat ${g} · cair besok pagi`,
-      payroll: (n, d) => `👥 Gaji tim (${n} orang${d > 1 ? `, ${d} hari` : ''})`, bonus: (names) => `⭐ Bonus rajin: ${names}`, net: 'Laba bersih', loss: 'Rugi hari ini', noNeg: 'Kas tidak bisa di bawah 0g.', salaryTip: 'Gaji tiap anggota tim ada di staff/roster.json (salary).',
+      payroll: (n, d) => `👥 Gaji tim (${n} orang${d > 1 ? `, ${d} hari` : ''})`, bonus: (names) => `⭐ Bonus rajin: ${names}`, upkeep: '🏡 Upkeep dekorasi', net: 'Laba bersih', loss: 'Rugi hari ini', noNeg: 'Kas tidak bisa di bawah 0g.', salaryTip: 'Gaji tiap anggota tim ada di staff/roster.json (salary); upkeep dekorasi ada di shop.mjs (UPKEEP_PER_DECOR).',
       plans: (n) => `📝 ${n} rencana menunggu persetujuanmu`, denials: (n) => `⛔ ${n} langkah ditolak otomatis (buka suratnya)`, unread: (n) => `📮 ${n} surat belum dibaca`,
       todos: (n) => `💡 ${n} ide/TODO belum selesai di Rak Buku`, events: (n) => `📅 ${n} acara hari ini`, allClear: 'Tidak ada yang menunggu. Santai dulu ☕',
       allDay: 'sepanjang hari', schedules: (n) => `⏰ ${n} jadwal hari ini`,
@@ -42,7 +43,7 @@
       awBusiest: 'Busiest day', awStreak: (n) => `${n}-day streak`, awTasks: (n) => `${n} tasks finished`,
       hello: ['Good morning', 'Good afternoon', 'Good evening', 'Good night'], waiting: 'Waiting today',
       todayTally: (g) => `Earned so far today: ${g} · paid tomorrow morning`,
-      payroll: (n, d) => `👥 Team payroll (${n} people${d > 1 ? `, ${d} days` : ''})`, bonus: (names) => `⭐ Hard-work bonus: ${names}`, net: 'Net profit', loss: 'Loss for the day', noNeg: 'The cash can’t go below 0g.', salaryTip: 'Each member’s salary is in staff/roster.json (salary).',
+      payroll: (n, d) => `👥 Team payroll (${n} people${d > 1 ? `, ${d} days` : ''})`, bonus: (names) => `⭐ Hard-work bonus: ${names}`, upkeep: '🏡 Décor upkeep', net: 'Net profit', loss: 'Loss for the day', noNeg: 'The cash can’t go below 0g.', salaryTip: 'Each member’s salary is in staff/roster.json (salary); décor upkeep is in shop.mjs (UPKEEP_PER_DECOR).',
       plans: (n) => `📝 ${n} plan(s) waiting for your approval`, denials: (n) => `⛔ ${n} step(s) refused automatically (open the letter)`, unread: (n) => `📮 ${n} unread letter(s)`,
       todos: (n) => `💡 ${n} open idea(s)/TODO in the Bookshelf`, events: (n) => `📅 ${n} event(s) today`, allClear: 'Nothing is waiting. Relax for a bit ☕',
       allDay: 'all day', schedules: (n) => `⏰ ${n} schedule(s) today`,
@@ -192,20 +193,25 @@
       const chargedDays = [yKey, ...earlier.filter((k) => (ns.data?.stats?.days?.[k]?.tools ?? 0) > 0)];
       let pay = payrollFor(chargedDays);
       const logged = ledger?.log?.find((e) => e.day === yKey && e.salary != null);
-      if (paidAlready && logged) pay = { people: pay.people, days: 1, base: logged.salary, bonus: 0, names: [], total: logged.salary }; // what was really paid back then
+      let upkeep = 0; // décor upkeep billed that day — kept apart from `pay` so it never gets shown as if it were someone's salary
+      if (paidAlready && logged) {
+        pay = { people: pay.people, days: 1, base: logged.salary, bonus: 0, names: [], total: logged.salary }; // what was really paid back then
+        upkeep = logged.upkeep ?? 0; // 0 for log entries from before upkeep existed
+      }
 
       // Pay it out (once). If it fails, the card still shows the numbers.
       let kasBefore = ledger?.kas ?? null;
       let kasAfter = ledger?.kas ?? null;
-      const netProfit = total - pay.total;
       if (ledger && !paidAlready) {
         try {
           const res = await ns.localApi('POST', '/api/ledger/collect', { through: yKey, income: total, salary: pay.total });
           kasAfter = res.kas;
           kasBefore = res.before ?? res.kas;
+          upkeep = res.upkeep ?? 0; // what the server billed for décor upkeep that day
           ledgerCache = res;
         } catch { /* keep the old numbers */ }
       }
+      const netProfit = total - pay.total - upkeep;
 
       // What waits today
       const mail = (ns.data?.mail ?? []).filter((l) => !l.report && !l.archived);
@@ -254,7 +260,8 @@
           const delta = h('div', { class: 'asa-day-delta' });
           const payEl = h('div', { class: 'asa-day-pay', title: S.salaryTip },
             h('div', { class: 'l' }, h('span', {}, S.payroll(pay.people, pay.days)), h('b', {}, `−${fmtG(pay.base)}`)),
-            pay.bonus > 0 ? h('div', { class: 'l' }, h('span', {}, S.bonus(pay.names.join(', '))), h('b', {}, `−${fmtG(pay.bonus)}`)) : null);
+            pay.bonus > 0 ? h('div', { class: 'l' }, h('span', {}, S.bonus(pay.names.join(', '))), h('b', {}, `−${fmtG(pay.bonus)}`)) : null,
+            upkeep > 0 ? h('div', { class: 'l' }, h('span', {}, S.upkeep), h('b', {}, `−${fmtG(upkeep)}`)) : null);
           const netNum = h('b', {}, '0g');
           const netEl = h('div', { class: `asa-day-net ${netProfit >= 0 ? 'gain' : 'lose'}` }, h('span', {}, netProfit >= 0 ? S.net : S.loss), netNum);
           const netNote = h('div', { class: 'asa-day-note' });
@@ -267,7 +274,7 @@
           const mailBtn = h('button', { type: 'button', class: 'asa-btn', onclick: () => { p.close(); ns.mailbox?.open(); } }, S.openMail);
           body.append(h('div', { class: 'asa-day' },
             h('div', { class: 'asa-day-date' }, `${S.yesterdayOn} · ${date}`),
-            total === 0 ? null : rowsEl, quiet, total === 0 ? null : totalEl, delta, awards, pay.total > 0 || total > 0 ? payEl : null, kasEl,
+            total === 0 ? null : rowsEl, quiet, total === 0 ? null : totalEl, delta, awards, pay.total > 0 || upkeep > 0 || total > 0 ? payEl : null, kasEl,
             h('div', { class: 'asa-day-tally' }, S.todayTally(fmtG(todayTotal))),
             h('h3', {}, S.waiting), lines.length ? h('ul', { class: 'asa-day-list' }, lines) : h('p', {}, S.allClear),
             h('div', { class: 'asa-day-actions' }, h('span', { class: 'asa-day-hint' }, reduced || total === 0 ? '' : S.skip), h('span', {}, mailBtn, ' ', next))));

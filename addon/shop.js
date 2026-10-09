@@ -2,7 +2,9 @@
 //   - Dekorasi: pieces for the garden and walls. Each purchase lands on a spot the server has checked to be free and out of the
 //     way (tools/lib/shop.mjs), the layout is saved, and the new piece sparkles for a moment. Musiman, in the same tab, is the
 //     same thing but cheap and capped per day instead of forever — it wilts out of the layout the next morning, so there's
-//     always somewhere for the day's Kas to go instead of just piling up once every permanent piece is bought.
+//     always somewhere for the day's Kas to go instead of just piling up once every permanent piece is bought. Owned décor also
+//     costs a small flat upkeep every morning (tools/lib/shop.mjs's UPKEEP_PER_DECOR, charged via dayend.js) — another small
+//     recurring sink so the Kas doesn't just sit there once the garden fills up.
 //   - Penampilan: an outfit colour or a title for a villager's face (kept in the data feed, so every view of the office shows it).
 // The money is the office's Kas (dayend.js). Buying needs the Mac that runs the office; the layout editor must be closed.
 (() => {
