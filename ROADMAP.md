@@ -42,6 +42,7 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Laporan harian yang manusiawi: draf dari kantor, kamu ubah kalimatnya dan tulis highlight (callout Obsidian), baru masuk Jurnal; pengingat sore sekali sehari | (PR berikutnya) |
 | ✅ | Pesan jelas kalau login Claude Code kedaluwarsa (kartu dengan perintah `claude auth login`); highlight laporan: baris kosong = callout baru; baris "Diperbarui" dihapus | (PR berikutnya) |
 | ✅ | Pilihan browser untuk app Asa Office (`npm run browser -- Safari`), tidak harus Chrome | (PR berikutnya) |
+| ✅ | Catatan staf di vault dikenali lewat `agent:` (bukan nama file) dan ikut berganti nama saat karyawan di-rename; tidak lagi membuat catatan nama lama | (PR berikutnya) |
 
 ## Rencana (urutan prioritas)
 
