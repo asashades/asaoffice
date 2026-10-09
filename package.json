@@ -19,6 +19,7 @@
     "preview": "node tools/preview.mjs",
     "layout": "node tools/install-layout.mjs",
     "app": "node tools/install-app.mjs",
+    "browser": "node tools/app.mjs browser",
     "staff": "node tools/install-staff.mjs"
   },
   "devDependencies": {

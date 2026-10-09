@@ -34,6 +34,7 @@ Terus buka **Asa Office** lewat Spotlight (⌘ Spasi, ketik `Asa Office`). Biar 
 - **Klik ikonnya** → kantor nyala sendiri di background, terus kebuka di jendela sendiri. Gak perlu Terminal,
   gak perlu copy link.
 - Jendelanya ketutup? Klik lagi ikon Asa Office di Dock.
+- **Maunya bukan Chrome?** Defaultnya kantor dibuka di jendela Chrome, Edge, atau Brave kalau ada. Mau Safari atau browser bawaan Mac: `npm run browser -- Safari` (atau `npm run browser -- default` untuk browser bawaan, `npm run browser -- auto` untuk balik ke cara awal). `npm run browser` saja menampilkan pilihan sekarang dan browser apa saja yang terpasang. Berlaku di klik aplikasi berikutnya, tidak perlu `npm run app` lagi. Chrome, Edge, dan Brave membuka jendela sendiri; browser lain membuka tab biasa.
 - **Mau matiin kantor?** Klik kanan ikon Asa Office di Dock → **Quit** (atau ⌘Q).
 - Pertama kali, Mac bakal nanya **"Asa Office ingin mengakses kalender"**. Klik **Izinkan**.
 - Pindahin folder `asaoffice` atau update Node.js? Jalanin `npm run app` lagi.

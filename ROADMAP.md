@@ -41,6 +41,7 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Batas dan pemakaian dihitung dalam token, bukan dolar (cocok untuk langganan) | (PR berikutnya) |
 | ✅ | Laporan harian yang manusiawi: draf dari kantor, kamu ubah kalimatnya dan tulis highlight (callout Obsidian), baru masuk Jurnal; pengingat sore sekali sehari | (PR berikutnya) |
 | ✅ | Pesan jelas kalau login Claude Code kedaluwarsa (kartu dengan perintah `claude auth login`); highlight laporan: baris kosong = callout baru; baris "Diperbarui" dihapus | (PR berikutnya) |
+| ✅ | Pilihan browser untuk app Asa Office (`npm run browser -- Safari`), tidak harus Chrome | (PR berikutnya) |
 
 ## Rencana (urutan prioritas)
 
