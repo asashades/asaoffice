@@ -69,13 +69,13 @@
 
   const css = `
   .asa-shelf { display: flex; flex-direction: column; gap: 8px; min-height: 380px; }
-  .asa-shelf input[type=search], .asa-shelf input[type=text], .asa-shelf textarea { font: inherit; font-size: 15px; padding: 8px 10px; background: #fffbe9; color: #3a2117;
+  .asa-shelf input[type=search], .asa-shelf input[type=text], .asa-shelf textarea { font: inherit; font-size: 15px; padding: 8px 10px; background: #fff; color: #3a2117;
     border: 2px solid #744122; width: 100%; box-sizing: border-box; }
   .asa-shelf input[type=search] { font-size: 16px; }
   .asa-panel.asa-plain .asa-shelf textarea { flex: 1; min-height: 330px; resize: vertical; font-family: ui-monospace, Menlo, monospace; font-size: 13.5px; line-height: 1.5; }
   .asa-shelf-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .asa-shelf-bar .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .asa-shelf-list { overflow: auto; max-height: 52vh; border: 2px solid #d9c49a; background: #fffbe9; }
+  .asa-shelf-list { overflow: auto; max-height: 52vh; border: 2px solid #d9c49a; background: #fff; }
   .asa-shelf-group { display: flex; width: 100%; align-items: center; gap: 6px; font: inherit; font-size: 13px; padding: 7px 10px; cursor: pointer; text-align: left;
     background: #f4e6c4; color: #973a2f; border: 0; border-bottom: 1px solid #e6d3a6; position: sticky; top: 0; z-index: 1; }
   .asa-shelf-group small { opacity: 0.7; margin-left: auto; }
@@ -87,12 +87,12 @@
   .asa-shelf-row small { font-size: 12px; opacity: 0.6; white-space: nowrap; align-self: start; }
   .asa-shelf-row span { grid-column: 1 / 3; font-size: 13px; opacity: 0.75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .asa-shelf-row.create b { color: #3f8a36; }
-  .asa-shelf-doc { border: 2px solid #d9c49a; background: #fffbe9; padding: 12px 16px; overflow: auto; max-height: 56vh; font-size: 15px; }
+  .asa-shelf-doc { border: 2px solid #d9c49a; background: #fff; padding: 12px 16px; overflow: auto; max-height: 56vh; font-size: 15px; }
   .asa-shelf-doc h1, .asa-shelf-doc h2, .asa-shelf-doc h3 { font-weight: 600; margin: 12px 0 4px; color: #973a2f; }
   .asa-shelf-doc h1 { font-size: 21px; margin-top: 2px; } .asa-shelf-doc h2 { font-size: 18px; } .asa-shelf-doc h3 { font-size: 16px; }
   .asa-shelf-doc p, .asa-shelf-doc li { margin: 4px 0; }
   .asa-shelf-doc ul { margin: 4px 0; padding-left: 20px; }
-  .asa-shelf-doc code { background: #f0e2bb; padding: 0 3px; }
+  .asa-shelf-doc code { background: #f1f1f1; padding: 0 3px; }
   .asa-shelf-doc .tag { color: #4a86d8; } .asa-shelf-doc .wiki { color: #7a4fb8; }
   .asa-shelf-task { display: flex; gap: 8px; align-items: baseline; margin: 5px 0; }
   .asa-shelf-task.done span { text-decoration: line-through; opacity: 0.55; }
@@ -111,7 +111,20 @@
   .asa-shelf-gal { overflow: auto; max-height: 54vh; padding: 2px; }
   .asa-shelf-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; padding: 2px; }
   .asa-ncard { display: flex; flex-direction: column; gap: 4px; min-height: 132px; padding: 10px 12px 8px; text-align: left; font: inherit; cursor: pointer; color: inherit;
-    background: #fffbe9; border: 2px solid #d9c49a; box-shadow: 0 2px 0 rgba(116,65,34,0.22); min-width: 0; }
+    background: #fff; border: 2px solid #d9c49a; box-shadow: 0 2px 0 rgba(116,65,34,0.22); min-width: 0; }
+  /* The card shows the start of the note rendered as Markdown (not the raw text), with a fade at the bottom. */
+  .asa-cmd { flex: 1; position: relative; max-height: 118px; overflow: hidden; font-size: 12.5px; line-height: 1.4; pointer-events: none; }
+  .asa-cmd::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 26px; background: linear-gradient(rgba(255,255,255,0), #fff); }
+  .asa-cmd h1, .asa-cmd h2, .asa-cmd h3, .asa-cmd h4 { font-size: 13.5px; font-weight: 600; margin: 5px 0 2px; color: #973a2f; }
+  .asa-cmd > :first-child { margin-top: 0; }
+  .asa-cmd p, .asa-cmd li { margin: 2px 0; }
+  .asa-cmd ul, .asa-cmd ol { margin: 2px 0; padding-left: 17px; }
+  .asa-cmd code { background: #f1f1f1; padding: 0 3px; }
+  .asa-cmd pre { margin: 3px 0; padding: 4px 6px; background: #f6f6f6; font-size: 11.5px; overflow: hidden; }
+  .asa-cmd blockquote { margin: 3px 0; padding-left: 8px; border-left: 3px solid #d9c49a; opacity: 0.85; }
+  .asa-cmd table { border-collapse: collapse; font-size: 11.5px; } .asa-cmd td, .asa-cmd th { border: 1px solid #e3e3e3; padding: 1px 5px; }
+  .asa-cmd .tag { color: #4a86d8; } .asa-cmd .wiki { color: #7a4fb8; }
+  .asa-cmd .asa-shelf-task { margin: 2px 0; gap: 5px; }
   .asa-ncard:hover { border-color: #b8935c; }
   .asa-ncard.cur { border-color: #c8503c; box-shadow: 0 0 0 2px #c8503c, 0 2px 0 rgba(116,65,34,0.22); }
   .asa-ncard b { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -119,12 +132,8 @@
   .asa-ncard small { font-size: 11.5px; opacity: 0.6; }
   .asa-ncard.new { align-items: center; justify-content: center; border-style: dashed; color: #3f8a36; background: transparent; box-shadow: none; }
   .asa-ncard.new b { font-size: 26px; font-weight: normal; line-height: 1; }
-  .asa-ncard.ideas { background: #f1f6e0; border-color: #9ab87a; }
-  .asa-ncard ul { list-style: none; margin: 0; padding: 0; flex: 1; font-size: 13px; line-height: 1.45; overflow: hidden; }
-  .asa-ncard li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .asa-ncard li::before { content: '☐ '; opacity: 0.6; }
   .asa-shelf-split { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 10px; min-height: 380px; }
-  .asa-tree { overflow: auto; max-height: 54vh; border: 2px solid #d9c49a; background: #fffbe9; padding: 4px 0; }
+  .asa-tree { overflow: auto; max-height: 54vh; border: 2px solid #d9c49a; background: #fff; padding: 4px 0; }
   .asa-tnode { display: flex; align-items: center; gap: 4px; width: 100%; font: inherit; font-size: 13.5px; text-align: left; padding: 4px 8px 4px 6px; background: none; border: 0; border-left: 3px solid transparent; color: inherit; cursor: pointer; white-space: nowrap; }
   .asa-tnode:hover { background: #f9f0d6; }
   .asa-tnode.on { background: #f4e6c4; border-left-color: #c8503c; font-weight: 600; }
@@ -135,8 +144,8 @@
   .asa-tnode .caret:hover { opacity: 1; }
   .asa-tnode.pin { padding-left: 10px; }
   .asa-tsep { border-top: 1px dashed #d9c49a; margin: 4px 8px; }
-  .asa-content { overflow: auto; max-height: 54vh; border: 2px solid #d9c49a; background: #fffbe9; padding: 8px 10px; min-width: 0; }
-  .asa-chead { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; position: sticky; top: -8px; background: #fffbe9; padding: 4px 0; z-index: 2; }
+  .asa-content { overflow: auto; max-height: 54vh; border: 2px solid #d9c49a; background: #fff; padding: 8px 10px; min-width: 0; }
+  .asa-chead { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; position: sticky; top: -8px; background: #fff; padding: 4px 0; z-index: 2; }
   .asa-chead .grow { flex: 1; min-width: 0; }
   .asa-chead .asa-btn { padding: 3px 9px; font-size: 13px; }
   .asa-chead .trail { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-size: 14px; }
@@ -146,9 +155,9 @@
   .asa-rows { display: flex; flex-direction: column; }
   .asa-treebtn { display: none; padding: 4px 10px; }
   .asa-shelf-cards .asa-ncard { position: relative; cursor: pointer; }
-  .asa-ncard.dir { min-height: 84px; background: #f9f0d6; border-color: #c9a877; }
+  .asa-ncard.dir { min-height: 84px; background: #fff; border-color: #c9a877; }
   .asa-ncard.dir.drop, .asa-fold-row.drop { background: #e8f2d4; outline: 2px dashed #3f8a36; outline-offset: -2px; }
-  .asa-ncard .acts { position: absolute; top: 4px; right: 4px; display: flex; gap: 2px; opacity: 0; transition: opacity 0.12s; background: rgba(255,251,233,0.95); }
+  .asa-ncard .acts { position: absolute; top: 4px; right: 4px; display: flex; gap: 2px; opacity: 0; transition: opacity 0.12s; background: rgba(255,255,255,0.95); }
   .asa-ncard:hover .acts, .asa-ncard:focus-within .acts { opacity: 1; }
   @media (hover: none) { .asa-ncard .acts { opacity: 0.8; } }
   .asa-fold-row { display: flex; align-items: center; gap: 4px; padding: 0 6px 0 0; border-bottom: 1px solid #f0e4c4; border-left: 4px solid transparent; }
@@ -160,11 +169,11 @@
   .asa-fold-row .main small { font-size: 12px; opacity: 0.6; white-space: nowrap; }
   .asa-fold-row .acts { display: flex; gap: 2px; flex: none; }
   .acts button { font: inherit; font-size: 14px; background: none; border: 1px solid transparent; cursor: pointer; padding: 1px 5px; opacity: 0.6; }
-  .acts button:hover { opacity: 1; border-color: #c9a877; background: #fffbe9; }
+  .acts button:hover { opacity: 1; border-color: #c9a877; background: #fff; }
   .acts .lock { opacity: 0.35; font-size: 13px; padding: 1px 6px; }
   .asa-editbox { display: flex; align-items: center; gap: 6px; padding: 6px 8px; margin: 2px 0; background: #f9f0d6; border: 1px dashed #c9a877; grid-column: 1 / -1; }
   .asa-editbox input[type=text], .asa-editbox select { flex: 1; min-width: 0; padding: 4px 8px; font-size: 14px; }
-  .asa-editbox select { font: inherit; background: #fffbe9; color: #3a2117; border: 2px solid #744122; }
+  .asa-editbox select { font: inherit; background: #fff; color: #3a2117; border: 2px solid #744122; }
   .asa-fold-empty { padding: 14px; opacity: 0.6; font-size: 14px; }
   @media (max-width: 720px) {
     .asa-shelf-split { grid-template-columns: 1fr; }
@@ -219,6 +228,13 @@
       newNote(target, dir);
       say(S.wikiMissing(target));
     } catch (err) { say(S.failed + err.message); }
+  }
+  /** The body of a gallery card: the start of the note rendered as Markdown; "Kosong" when there is nothing yet. */
+  function cardBody(n) {
+    if (!n.excerpt?.trim() || !ns.markdown?.render) return h('p', {}, n.preview || S.emptyCard);
+    const box = h('div', { class: 'asa-cmd' });
+    try { ns.markdown.render(box, n.excerpt, { dir: dirOf(n.path) }); } catch { return h('p', {}, n.preview || S.emptyCard); }
+    return box;
   }
   function renderNote(el, text, rel) {
     const dir = dirOf(rel);
@@ -521,7 +537,7 @@
       if (grid) {
         node = isDir
           ? h('div', { class: `asa-ncard dir${cur}`, onclick: click }, h('b', {}, `📁 ${it.name}`), h('p', {}, S.noteCount(it.count)))
-          : h('div', { class: `asa-ncard${cur}`, onclick: click }, h('b', {}, `${it.n.context ? '🔖 ' : ''}${nameOf(it.n)}`), h('p', {}, it.n.preview || S.emptyCard), h('small', {}, `${where}${S.ago(mins)}`));
+          : h('div', { class: `asa-ncard${cur}`, onclick: click }, h('b', {}, `${it.n.context ? '🔖 ' : ''}${nameOf(it.n)}`), cardBody(it.n), h('small', {}, `${where}${S.ago(mins)}`));
         node.append(entryActions(node, isDir ? 'dir' : 'note', rel, name));
       } else {
         node = h('div', { class: `asa-fold-row${cur}` });

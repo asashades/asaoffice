@@ -139,6 +139,20 @@ function previewOf(text) {
   return out.length > 240 ? `${out.slice(0, 239)}…` : out;
 }
 
+/** The start of a note as Markdown for its card (the card renders it): no front matter, no title line, no pictures, a dozen lines at most. */
+function excerptOf(text) {
+  let lines = String(text).replace(/\r\n?/g, '\n').split('\n');
+  if (lines[0]?.trim() === '---') {
+    const end = lines.findIndex((l, k) => k > 0 && /^(---|\.\.\.)\s*$/.test(l));
+    if (end > 0) lines = lines.slice(end + 1);
+  }
+  const title = lines.findIndex((l) => /^\s*#\s/.test(l));
+  if (title >= 0 && lines.slice(0, title).every((l) => !l.trim())) lines.splice(title, 1);
+  const out = lines.map((l) => l.replace(/!\[\[[^\]]*\]\]|!\[[^\]]*\]\([^)]*\)/g, '').replace(/\s*#konteks\b/g, '').replace(/\s+$/, ''))
+    .join('\n').replace(/^\s+/, '').replace(/\n{3,}/g, '\n\n').split('\n').slice(0, 12).join('\n');
+  return out.length > 600 ? `${out.slice(0, 599)}…` : out;
+}
+
 /** Every note, newest first: { path, title, mtime, size, context }. With `q`, only notes whose name or text contains it. */
 export function list(q = '') {
   const root = ensureVault();
@@ -156,7 +170,7 @@ export function list(q = '') {
     const open = [...text.matchAll(/^\s*[-*]\s+\[ \]\s+(.+)$/gm)].map((m) => m[1].replace(/\s*#konteks\b/g, '').trim());
     out.push({
       path: rel, title: heading || path.basename(rel, '.md'), mtime: st.mtimeMs, size: st.size, context: text.includes(CONTEXT_TAG),
-      snippet: snippetOf(text, needle), preview: previewOf(text), open: open.length, todos: open.slice(0, 4).map((t) => (t.length > 70 ? `${t.slice(0, 69)}…` : t)),
+      snippet: snippetOf(text, needle), preview: previewOf(text), excerpt: excerptOf(text), open: open.length, todos: open.slice(0, 4).map((t) => (t.length > 70 ? `${t.slice(0, 69)}…` : t)),
     });
   }
   return out.sort((a, b) => b.mtime - a.mtime);
