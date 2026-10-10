@@ -4,6 +4,7 @@
 //     ping in one by one while coins fall, the total counts up and glows, it's compared with the day before, and a few awards
 //     appear. The money goes into the office's Kas (tools/lib/ledger.mjs, once per day, so a second tab or a phone can't pay it
 //     twice); days the office wasn't opened are paid together as one extra row (up to two weeks back).
+//   - Freelancers (the sessions that are not staff) are paid per activity (FREELANCE_RATE), as a row of their own in the same payout.
 //   - Then the payroll: every staff member has a daily salary (staff/roster.json), +30% for those who worked on a mailbox task that
 //     day; plus a flat décor upkeep bill (shop.mjs, UPKEEP_PER_DECOR × pieces owned — kept separate from salary so a replay never
 //     shows it as someone's pay). Income minus payroll minus upkeep is the net profit, and that is what changes the Kas (never
@@ -29,7 +30,7 @@
       awBusiest: 'Hari tersibuk', awStreak: (n) => `Streak ${n} hari`, awTasks: (n) => `${n} tugas selesai`,
       hello: ['Selamat pagi', 'Selamat siang', 'Selamat sore', 'Selamat malam'], waiting: 'Hari ini menunggu',
       todayTally: (g) => `Hari ini tercatat ${g} · cair besok pagi`,
-      payroll: (n, d) => `👥 Gaji tim (${n} orang${d > 1 ? `, ${d} hari` : ''})`, bonus: (names) => `⭐ Bonus rajin: ${names}`, upkeep: '🏡 Upkeep dekorasi', net: 'Laba bersih', loss: 'Rugi hari ini', noNeg: 'Kas tidak bisa di bawah 0g.', salaryTip: 'Gaji tiap anggota tim ada di staff/roster.json (salary); upkeep dekorasi ada di shop.mjs (UPKEEP_PER_DECOR).',
+      payroll: (n, d) => `👥 Gaji tim (${n} orang${d > 1 ? `, ${d} hari` : ''})`, bonus: (names) => `⭐ Bonus rajin: ${names}`, upkeep: '🏡 Upkeep dekorasi', freelance: (n) => `🧑‍💻 Freelance (${n} sesi)`, net: 'Laba bersih', loss: 'Rugi hari ini', noNeg: 'Kas tidak bisa di bawah 0g.', salaryTip: 'Gaji tiap anggota tim ada di staff/roster.json (salary); upkeep dekorasi ada di shop.mjs (UPKEEP_PER_DECOR).',
       plans: (n) => `📝 ${n} rencana menunggu persetujuanmu`, denials: (n) => `⛔ ${n} langkah ditolak otomatis (buka suratnya)`, unread: (n) => `📮 ${n} surat belum dibaca`,
       todos: (n) => `💡 ${n} ide/TODO belum selesai di Rak Buku`, events: (n) => `📅 ${n} acara hari ini`, allClear: 'Tidak ada yang menunggu. Santai dulu ☕',
       allDay: 'sepanjang hari', schedules: (n) => `⏰ ${n} jadwal hari ini`,
@@ -45,7 +46,7 @@
       awBusiest: 'Busiest day', awStreak: (n) => `${n}-day streak`, awTasks: (n) => `${n} tasks finished`,
       hello: ['Good morning', 'Good afternoon', 'Good evening', 'Good night'], waiting: 'Waiting today',
       todayTally: (g) => `Earned so far today: ${g} · paid tomorrow morning`,
-      payroll: (n, d) => `👥 Team payroll (${n} people${d > 1 ? `, ${d} days` : ''})`, bonus: (names) => `⭐ Hard-work bonus: ${names}`, upkeep: '🏡 Décor upkeep', net: 'Net profit', loss: 'Loss for the day', noNeg: 'The cash can’t go below 0g.', salaryTip: 'Each member’s salary is in staff/roster.json (salary); décor upkeep is in shop.mjs (UPKEEP_PER_DECOR).',
+      payroll: (n, d) => `👥 Team payroll (${n} people${d > 1 ? `, ${d} days` : ''})`, bonus: (names) => `⭐ Hard-work bonus: ${names}`, upkeep: '🏡 Décor upkeep', freelance: (n) => `🧑‍💻 Freelance (${n} session${n === 1 ? '' : 's'})`, net: 'Net profit', loss: 'Loss for the day', noNeg: 'The cash can’t go below 0g.', salaryTip: 'Each member’s salary is in staff/roster.json (salary); décor upkeep is in shop.mjs (UPKEEP_PER_DECOR).',
       plans: (n) => `📝 ${n} plan(s) waiting for your approval`, denials: (n) => `⛔ ${n} step(s) refused automatically (open the letter)`, unread: (n) => `📮 ${n} unread letter(s)`,
       todos: (n) => `💡 ${n} open idea(s)/TODO in the Bookshelf`, events: (n) => `📅 ${n} event(s) today`, allClear: 'Nothing is waiting. Relax for a bit ☕',
       allDay: 'all day', schedules: (n) => `⏰ ${n} schedule(s) today`,
@@ -165,6 +166,29 @@
     return { people: staff.length, days: days.length, base, bonus, names: [...names], total: base + bonus };
   }
 
+  // Freelancers are the sessions that are not staff (a session started in Claude Code itself, or "Claude (umum)" from the mailbox): paid per activity, never a fixed salary.
+  const FREELANCE_RATE = { edit: 5, search: 1, command: 3, web: 2, agent: 10 }; // gold; always well under what the same work earns (PRICE)
+  const staffSessions = () => new Set((ns.data?.mail ?? []).filter((l) => !l.report && l.agent && l.sessionId).map((l) => l.sessionId));
+  /** Who freelanced on a day and what they are owed: { rows: [{ id, title, project, counts, acts, amount }], total }. Needs the per-session counts of the data feed (the last few days). */
+  function freelanceOn(key) {
+    const by = ns.data?.stats?.days?.[key]?.bySession ?? {};
+    const staff = staffSessions();
+    const letters = new Map((ns.data?.mail ?? []).filter((l) => l.sessionId).map((l) => [l.sessionId, l]));
+    const sessions = new Map((ns.data?.sessions ?? []).map((x) => [x.id, x]));
+    const rows = [];
+    for (const [id, c] of Object.entries(by)) {
+      if (staff.has(id)) continue;
+      const amount = Object.keys(FREELANCE_RATE).reduce((n, k) => n + (c[k] ?? 0) * FREELANCE_RATE[k], 0);
+      if (!amount) continue;
+      const meta = sessions.get(id);
+      const l = letters.get(id);
+      rows.push({ id, title: meta?.title || l?.title || meta?.project || id.slice(0, 8), project: meta?.project ?? l?.project ?? '', counts: c, acts: Object.keys(FREELANCE_RATE).reduce((n, k) => n + (c[k] ?? 0), 0), amount });
+    }
+    rows.sort((a, b) => b.amount - a.amount);
+    return { rows, total: rows.reduce((n, r) => n + r.amount, 0) };
+  }
+  const freelanceFor = (days) => { const all = days.map(freelanceOn); return { sessions: new Set(all.flatMap((f) => f.rows.map((r) => r.id))).size, total: all.reduce((n, f) => n + f.total, 0) }; };
+
   /** Cash cache for the HUD (refreshed every minute, and after a payout). */
   let ledgerCache = null;
   async function refreshLedger() {
@@ -196,10 +220,12 @@
       const chargedDays = [yKey, ...earlier.filter((k) => (ns.data?.stats?.days?.[k]?.tools ?? 0) > 0)];
       let pay = payrollFor(chargedDays);
       const logged = ledger?.log?.find((e) => e.day === yKey && e.salary != null);
+      let fl = freelanceFor(chargedDays);
       let upkeep = 0; // décor upkeep billed that day — kept apart from `pay` so it never gets shown as if it were someone's salary
       if (paidAlready && logged) {
         pay = { people: pay.people, days: 1, base: logged.salary, bonus: 0, names: [], total: logged.salary }; // what was really paid back then
         upkeep = logged.upkeep ?? 0; // 0 for log entries from before upkeep existed
+        fl = { sessions: fl.sessions, total: logged.freelance ?? 0 }; // 0 for log entries from before freelancers were paid
       }
 
       // Pay it out (once). If it fails, the card still shows the numbers.
@@ -208,7 +234,7 @@
       let trendLog = ledger?.log ?? [];
       if (ledger && !paidAlready) {
         try {
-          const res = await ns.localApi('POST', '/api/ledger/collect', { through: yKey, income: total, salary: pay.total });
+          const res = await ns.localApi('POST', '/api/ledger/collect', { through: yKey, income: total, salary: pay.total, freelance: fl.total });
           kasAfter = res.kas;
           kasBefore = res.before ?? res.kas;
           upkeep = res.upkeep ?? 0; // what the server billed for décor upkeep that day
@@ -216,7 +242,7 @@
           ledgerCache = res;
         } catch { /* keep the old numbers */ }
       }
-      const netProfit = total - pay.total - upkeep;
+      const netProfit = total - pay.total - upkeep - fl.total;
       // How the Kas has been moving lately — the last up to 7 settled days' `net` (what each day actually changed
       // the Kas by, upkeep already included), averaged. Purely informational: no sink is sized off this number yet,
       // it's here so the Komisaris can see the pile-up trend before we touch any rate (see shop.mjs's UPKEEP_PER_DECOR).
@@ -271,6 +297,7 @@
           const payEl = h('div', { class: 'asa-day-pay', title: S.salaryTip },
             h('div', { class: 'l' }, h('span', {}, S.payroll(pay.people, pay.days)), h('b', {}, `−${fmtG(pay.base)}`)),
             pay.bonus > 0 ? h('div', { class: 'l' }, h('span', {}, S.bonus(pay.names.join(', '))), h('b', {}, `−${fmtG(pay.bonus)}`)) : null,
+            fl.total > 0 ? h('div', { class: 'l' }, h('span', {}, S.freelance(fl.sessions || 1)), h('b', {}, `−${fmtG(fl.total)}`)) : null,
             upkeep > 0 ? h('div', { class: 'l' }, h('span', {}, S.upkeep), h('b', {}, `−${fmtG(upkeep)}`)) : null);
           const netNum = h('b', {}, '0g');
           const netEl = h('div', { class: `asa-day-net ${netProfit >= 0 ? 'gain' : 'lose'}` }, h('span', {}, netProfit >= 0 ? S.net : S.loss), netNum);
@@ -287,7 +314,7 @@
           const mailBtn = h('button', { type: 'button', class: 'asa-btn', onclick: () => { p.close(); ns.mailbox?.open(); } }, S.openMail);
           body.append(h('div', { class: 'asa-day' },
             h('div', { class: 'asa-day-date' }, `${S.yesterdayOn} · ${date}`),
-            total === 0 ? null : rowsEl, quiet, total === 0 ? null : totalEl, delta, awards, pay.total > 0 || upkeep > 0 || total > 0 ? payEl : null, kasEl, trendEl,
+            total === 0 ? null : rowsEl, quiet, total === 0 ? null : totalEl, delta, awards, pay.total > 0 || upkeep > 0 || fl.total > 0 || total > 0 ? payEl : null, kasEl, trendEl,
             h('div', { class: 'asa-day-tally' }, S.todayTally(fmtG(todayTotal))),
             h('h3', {}, S.waiting), lines.length ? h('ul', { class: 'asa-day-list' }, lines) : h('p', {}, S.allClear),
             h('div', { class: 'asa-day-actions' }, h('span', { class: 'asa-day-hint' }, reduced || total === 0 ? '' : S.skip), h('span', {}, mailBtn, ' ', next))));
@@ -389,5 +416,13 @@
 
   /** The shop spent some: show the new balance at once. */
   const setKas = (n) => { if (Number.isFinite(n)) ledgerCache = { ...(ledgerCache ?? {}), kas: n }; };
-  ns.dayEnd = { kas: () => ledgerCache?.kas ?? null, setKas, open: () => open({ auto: false }), morning: () => open({ auto: true }), pending, summary };
+  /** Today so far, for the HUD's "Gaji" tab and the freelance page: what has been earned, what the staff will cost, who freelanced. */
+  const board = () => {
+    const key = dayKey();
+    const sum = summary(key);
+    const pay = payrollFor([key]);
+    const fl = freelanceOn(key);
+    return { key, income: sum.total, pay, freelance: fl, rates: FREELANCE_RATE, net: sum.total - pay.total - fl.total };
+  };
+  ns.dayEnd = { kas: () => ledgerCache?.kas ?? null, setKas, open: () => open({ auto: false }), morning: () => open({ auto: true }), pending, summary, board, freelanceOn, rates: FREELANCE_RATE };
 })();

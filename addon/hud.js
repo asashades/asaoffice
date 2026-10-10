@@ -22,11 +22,11 @@
       joined: 'masuk kantor', left: 'pulang', helperDone: 'asisten selesai', waitingYou: 'nunggu balasanmu', helper: 'Asisten',
       emptyFeed: 'Belum ada aktivitas sejak halaman dibuka.', emptyRuns: 'Belum ada subagent dalam 24 jam terakhir.', emptyTodos: 'Belum ada daftar tugas di sesi terbaru.',
       running: 'bekerja', finished: 'selesai', source: 'Sumber: transkrip Claude Code, 24 jam terakhir (terbaru di atas)',
-      todoSource: (n) => `Sumber: TodoWrite · ${n} sesi terbaru`, main: 'Sesi utama', director: 'Direktur', actingFor: 'Bantu Shades',
+      todoSource: (n) => `Sumber: TodoWrite · ${n} sesi terbaru`, main: 'Freelance', director: 'Direktur', actingFor: 'Bantu Shades',
       atDesk: 'Di meja direktur', noProject: 'Sesi Claude Code', chatWith: (n) => `Ngobrol sama ${n}`,
       planReady: 'Rencana siap', askReady: 'Claude minta izin', askAllowBtn: '✅ Izinkan', askDenyBtn: '⛔ Tolak', approveBtn: '✅ Setujui', rejectBtn: '❌ Tolak', openBtn: 'Buka', morePlans: (n) => `+${n} rencana lagi di kotak surat`,
       perm: 'Izin', emptyPerm: 'Belum ada langkah yang ditolak otomatis.', permSource: 'Langkah yang ditolak otomatis karena di luar izin tugas. Klik buat buka suratnya.', stOpen: 'menunggu', stTerminal: 'jalankan sendiri', stRo: 'Downloads baca-saja', stAllowed: 'diizinkan sekali', clearPerm: 'Abaikan semua',
-      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', statLive: 'Data', statNow: 'Sedang bekerja', statDone: 'Selesai hari ini', tabNow: 'Sekarang', tabDone: 'Selesai', emptyNow: 'Semua santai ☕ Tidak ada yang lagi bekerja.', emptyDone: 'Belum ada tugas yang selesai hari ini.', doneSource: 'Tugas kotak surat yang selesai hari ini (klik buat buka obrolannya)', openReport: 'Tulis laporan harian', tokToday: (a, b) => (b ? `Token ${a} / ${b}` : `Token ${a} hari ini`), tokTip: 'Token yang dipakai hari ini dibanding batas harian (klik buat atur)', popFolder: 'Folder', popTask: 'Tugas', popNow: 'Sekarang', openShelf: 'Rak Buku', openStaff: 'Data karyawan (jiwa dan ingatan staf)', openEnd: 'Pendapatan kemarin', kasTip: 'Kas kantor · klik buat ke Toko', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
+      seasons: { spring: '🌱 Semi', summer: '☀️ Panas', fall: '🍂 Gugur', winter: '❄️ Dingin' }, openMail: 'Kotak Surat', tabLog: 'Log', tabPay: 'Gaji', emptyLog: 'Belum ada kejadian hari ini.', logSource: 'Kejadian tugas kotak surat hari ini (klik buat buka obrolannya)', stDone: 'selesai', stError: 'gagal', stStopped: 'dihentikan', stAwaiting: 'rencana siap', payIncome: 'Penghasilan hari ini', payStaff: 'Gaji staf (perkiraan)', payFree: (n) => `Freelance (${n} sesi)`, payNet: 'Perkiraan laba', payNote: 'Dibayar besok pagi di kartu Selamat pagi.', payFreeTitle: 'Freelance hari ini', payNoFree: 'Belum ada freelance yang bekerja hari ini.', payRates: 'Tarif freelance per aktivitas', actKinds: { edit: 'edit', search: 'baca', command: 'perintah', web: 'web', agent: 'subagent' }, freelance: 'Freelance', openReport: 'Tulis laporan harian', tokToday: (a, b) => (b ? `Token ${a} / ${b}` : `Token ${a} hari ini`), tokTip: 'Token yang dipakai hari ini dibanding batas harian (klik buat atur)', popFolder: 'Folder', popTask: 'Tugas', popNow: 'Sekarang', openShelf: 'Rak Buku', openStaff: 'Data karyawan (jiwa dan ingatan staf)', openEnd: 'Pendapatan kemarin', kasTip: 'Kas kantor · klik buat ke Toko', idea: 'Catat ide (N)', ideaPh: '💡 Catat ide, Enter simpan, Esc batal', ideaSaved: '💡 Tersimpan di Ide & TODO', ideaFail: 'Gak bisa nyimpen: buka dari Mac yang jalanin kantor.',
     },
     en: {
       title: 'Asa Office', live: 'Connected', dead: 'Data offline', nodata: 'No data', sessions: 'Sessions working', helpers: 'Helpers', today: 'Sub-agents today',
@@ -38,11 +38,11 @@
       joined: 'came in', left: 'left', helperDone: 'helper finished', waitingYou: 'waiting for your reply', helper: 'Helper',
       emptyFeed: 'No activity since the page was opened.', emptyRuns: 'No sub-agents in the last 24 hours.', emptyTodos: 'No todo list in the latest sessions.',
       running: 'working', finished: 'done', source: 'Source: Claude Code transcripts, last 24 hours (newest first)',
-      todoSource: (n) => `Source: TodoWrite · ${n} latest sessions`, main: 'Main session', director: 'Director', actingFor: 'Helping Shades',
+      todoSource: (n) => `Source: TodoWrite · ${n} latest sessions`, main: 'Freelance', director: 'Director', actingFor: 'Helping Shades',
       atDesk: "At the director's desk", noProject: 'Claude Code session', chatWith: (n) => `Chatting with ${n}`,
       planReady: 'Plan ready', askReady: 'Claude asks permission', askAllowBtn: '✅ Allow', askDenyBtn: '⛔ Deny', approveBtn: '✅ Approve', rejectBtn: '❌ Reject', openBtn: 'Open', morePlans: (n) => `+${n} more plans in the mailbox`,
       perm: 'Permissions', emptyPerm: 'Nothing has been refused automatically.', permSource: 'Steps refused automatically because they were outside the task’s permissions. Click to open the letter.', stOpen: 'waiting', stTerminal: 'run it yourself', stRo: 'Downloads read-only', stAllowed: 'allowed once', clearPerm: 'Dismiss all',
-      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', statLive: 'Data', statNow: 'Working now', statDone: 'Done today', tabNow: 'Now', tabDone: 'Done', emptyNow: 'Everyone is relaxing ☕ Nobody is working.', emptyDone: 'No task has finished today.', doneSource: 'Mailbox tasks finished today (click to open the chat)', openReport: 'Write the daily report', tokToday: (a, b) => (b ? `Tokens ${a} / ${b}` : `Tokens ${a} today`), tokTip: 'Tokens used today against the daily limit (click to set)', popFolder: 'Folder', popTask: 'Task', popNow: 'Now', openShelf: 'Bookshelf', openStaff: 'Employee records (staff souls and memories)', openEnd: "Yesterday's income", kasTip: 'Office cash · click to open the shop', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
+      seasons: { spring: '🌱 Spring', summer: '☀️ Summer', fall: '🍂 Fall', winter: '❄️ Winter' }, openMail: 'Mailbox', tabLog: 'Log', tabPay: 'Pay', emptyLog: 'Nothing has happened yet today.', logSource: 'Mailbox task events today (click to open the chat)', stDone: 'done', stError: 'failed', stStopped: 'stopped', stAwaiting: 'plan ready', payIncome: 'Earned today', payStaff: 'Staff pay (estimate)', payFree: (n) => `Freelance (${n} session${n === 1 ? '' : 's'})`, payNet: 'Estimated profit', payNote: 'Paid tomorrow morning on the Good morning card.', payFreeTitle: 'Freelancers today', payNoFree: 'No freelancer has worked today.', payRates: 'Freelance rates per activity', actKinds: { edit: 'edits', search: 'reads', command: 'commands', web: 'web', agent: 'sub-agents' }, freelance: 'Freelance', openReport: 'Write the daily report', tokToday: (a, b) => (b ? `Tokens ${a} / ${b}` : `Tokens ${a} today`), tokTip: 'Tokens used today against the daily limit (click to set)', popFolder: 'Folder', popTask: 'Task', popNow: 'Now', openShelf: 'Bookshelf', openStaff: 'Employee records (staff souls and memories)', openEnd: "Yesterday's income", kasTip: 'Office cash · click to open the shop', idea: 'Jot an idea (N)', ideaPh: '💡 Jot an idea, Enter to save, Esc to cancel', ideaSaved: '💡 Saved to Ideas & TODO', ideaFail: 'Could not save: open it from the Mac that runs the office.',
     },
   });
 
@@ -109,12 +109,14 @@
   .hud-tok span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hud-todo1 { display: block; width: 100%; text-align: left; padding: 2px 0 0; border: 0; border-top: 1px dashed #c9a877; background: none; cursor: pointer; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hud-todo1[hidden] { display: none; }
-  .hud-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 2px solid #c9a877; flex: none; }
-  .hud-stat { padding: 5px 7px; border-left: 2px dashed #c9a877; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-  .hud-stat:first-child { border-left: 0; }
-  .hud-stat small { font-size: 10.5px; opacity: 0.7; line-height: 1.15; }
-  .hud-stat b { font-weight: normal; font-size: 16px; white-space: nowrap; }
-  #hud-live { font-size: 11.5px; }
+  .hud-livedot { flex: none; align-self: center; width: 9px; height: 9px; margin: 0 6px; background: #4f9a45; border: 1px solid rgba(58,33,23,0.5); }
+  .hud-livedot.off { background: #c8503c; } .hud-livedot.none { background: #9a8a7a; }
+  .hud-pay-row { display: flex; justify-content: space-between; gap: 8px; padding: 5px 12px; border-top: 1px dashed #dcc79a; font-size: 13px; }
+  .hud-pay-row b { font-weight: normal; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .hud-pay-row.net { border-top: 2px solid #c9a877; font-size: 14px; } .hud-pay-row.net b { font-size: 16px; }
+  .hud-pay-row.gain b { color: #b86e00; } .hud-pay-row.lose b { color: #c8503c; }
+  .hud-free { padding: 5px 12px; border-top: 1px dashed #dcc79a; } .hud-free .h { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+  .hud-free .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .hud-free .c { font-size: 11.5px; opacity: 0.7; }
   .hud-dot { display: inline-block; width: 8px; height: 8px; margin-right: 5px; background: #4f9a45; }
   .hud-dot.off { background: #c8503c; } .hud-dot.none { background: #9a8a7a; }
   .hud-pending, .hud-notes { display: flex; flex-direction: column; gap: 6px; }
@@ -166,16 +168,6 @@
   .hud-todo { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 4px; padding: 3px 12px; font-size: 12.5px; }
   .hud-todo.s-in_progress i { color: #3f8a36; } .hud-todo.s-completed span { opacity: 0.5; text-decoration: line-through; }
   .hud-todo i { font-style: normal; opacity: 0.7; }
-  .hud-now { display: flex; gap: 7px; padding: 6px 10px; border-top: 1px dashed #dcc79a; cursor: pointer; }
-  .hud-now:first-child { border-top: 0; }
-  .hud-now:hover { background: #fbf0d3; }
-  .hud-now .hud-face { width: 22px; height: 36px; }
-  .hud-now .b { min-width: 0; flex: 1; }
-  .hud-now .h { display: flex; gap: 6px; align-items: center; }
-  .hud-now .nm { font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hud-now .t { font-size: 12px; overflow-wrap: anywhere; }
-  .hud-now .a { font-size: 11.5px; opacity: 0.7; overflow-wrap: anywhere; }
-  .hud-now .hud-todo { padding: 1px 0 0; font-size: 11.5px; }
   .hud-bottom { position: fixed; left: 230px; right: 12px; bottom: 8px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
   .hud-bottom > * { pointer-events: auto; }
   .hud-cards { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px 2px; overflow: visible; }
@@ -185,6 +177,7 @@
   .hud-card:hover, .hud-card:focus-visible { background: #fbf0d3; }
   .hud-card:focus-visible { outline: 3px solid #3f74b8; outline-offset: 1px; }
   .hud-card.sel { border-color: #973a2f; }
+  .hud-card.fl { border-style: dashed; }
   .hud-face { flex: none; width: 22px; height: 36px; image-rendering: pixelated; background-repeat: no-repeat; background-size: 154px 132px;
     background-position: -22px -3px; background-color: #dca05f; border: 2px solid #744122; box-sizing: content-box; }
   .hud-card .nm { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
@@ -214,13 +207,12 @@
     .hud-side { position: static; width: auto; height: auto !important; max-height: none; }
     .hud-side .hud-scroll { max-height: 30vh; min-height: 0; }
   }
-  @media (max-width: 560px) { .hud-stats { display: none; } }
   `;
 
   // ── State ──
   const doneAt = new Map(); // id -> when it stopped working
   const wasActive = new Map();
-  let tab = 'now';
+  let tab = 'log';
   let hidden = ns.store.get('hudHidden') === '1';
   let min = ns.store.get('hudMin') === null ? matchMedia('(max-width: 820px)').matches : ns.store.get('hudMin') === '1';
 
@@ -246,7 +238,7 @@
             <div class="hud-tok" id="hud-tok" hidden><div class="hud-tokbar"><i id="hud-tokfill"></i></div><span id="hud-toktxt"></span></div>
             <span class="hud-kas" id="hud-kas" hidden title="${esc(S.kasTip)}"></span>
           </div>
-          <button type="button" class="hud-todo1" id="hud-todo1" data-opentab="now" hidden></button>
+          <button type="button" class="hud-todo1" id="hud-todo1" data-opentab="log" hidden></button>
           <input class="hud-idea" id="hud-idea" type="text" maxlength="500" hidden placeholder="${esc(S.ideaPh)}" aria-label="${esc(S.idea)}">
         </div>
       </div>
@@ -254,19 +246,15 @@
       <div class="hud-notes" id="hud-notes" aria-live="polite"></div>
     </div>
     <aside class="hud-side hud-box">
-      <div class="hud-stats">
-        <div class="hud-stat"><small>${esc(S.statLive)}</small><b id="hud-live"></b></div>
-        <div class="hud-stat"><small>${esc(S.statNow)}</small><b id="hud-sessions">0</b></div>
-        <div class="hud-stat"><small>${esc(S.statDone)}</small><b id="hud-today">0</b></div>
-      </div>
       <div class="hud-tabs" role="tablist">
-        <button type="button" role="tab" data-tab="now">${esc(S.tabNow)}<span class="n" id="hud-n-now">0</span></button>
-        <button type="button" role="tab" data-tab="done">${esc(S.tabDone)}<span class="n" id="hud-n-done">0</span></button>
+        <button type="button" role="tab" data-tab="log">${esc(S.tabLog)}<span class="n" id="hud-n-log">0</span></button>
+        <button type="button" role="tab" data-tab="pay">${esc(S.tabPay)}</button>
+        <i class="hud-livedot" id="hud-live"></i>
         <button type="button" class="min" title="${esc(S.min)}" aria-label="${esc(S.min)}">▾</button>
       </div>
       <div class="hud-scroll">
-        <section class="hud-pane" data-pane="now" id="hud-now"></section>
-        <section class="hud-pane" data-pane="done" id="hud-done"></section>
+        <section class="hud-pane" data-pane="log" id="hud-log"></section>
+        <section class="hud-pane" data-pane="pay" id="hud-pay"></section>
       </div>
     </aside>
     <div class="hud-bottom"><div class="hud-cards" id="hud-cards"></div></div>`;
@@ -423,7 +411,7 @@
     const workingSubs = subs.filter((c) => c.isActive).length;
     const age = ns.data?.generatedAt ? now - Date.parse(ns.data.generatedAt) : null;
     const live = age === null ? 'none' : age < 150_000 ? 'ok' : 'off';
-    $('hud-live').innerHTML = `<i class="hud-dot${live === 'ok' ? '' : ` ${live}`}"></i>${esc(live === 'ok' ? S.live : live === 'off' ? S.dead : S.nodata)}`;
+    { const el = $('hud-live'); const cls = `hud-livedot${live === 'ok' ? '' : ` ${live}`}`; if (el.className !== cls) el.className = cls; el.title = live === 'ok' ? S.live : live === 'off' ? S.dead : S.nodata; }
     let phase;
     if (!mains.length) phase = S.phaseEmpty;
     else if (workingMains.length) phase = S.phaseWork(workingMains.map((c) => ns.villagerName(c)).join(', '), workingSubs);
@@ -448,7 +436,8 @@
         act ? `<span class="row"><small>${esc(S.popNow)}</small>${esc(clip(act, 140))}</span>` : '',
         proj && proj !== task ? `<span class="row"><small>${esc(S.popFolder)}</small>${esc(proj)}</span>` : '',
       ].join('');
-      return `<button type="button" class="hud-card hud-box${sel ? ' sel' : ''}" data-id="${c.id}" aria-label="${esc(`${nm}: ${ui.label}`)}"><span class="hud-face" style="${face}"></span><span class="nm">${esc(nm)}</span><i class="hud-sdot" style="background:${ui.css}"></i><span class="pop hud-pop">${detail}</span></button>`;
+      const fl = isReal(c) && !c.asaShades && !c.asaDirector && !ns.staffOf?.(c);
+      return `<button type="button" class="hud-card hud-box${sel ? ' sel' : ''}${fl ? ' fl' : ''}" data-id="${c.id}" aria-label="${esc(`${nm}: ${ui.label}`)}"><span class="hud-face" style="${face}"></span><span class="nm">${esc(nm)}</span><i class="hud-sdot" style="background:${ui.css}"></i><span class="pop hud-pop">${detail}</span></button>`;
     });
     setHtml($('hud-cards'), cards.join(''), 'cards');
 
@@ -489,32 +478,33 @@
       + (moreWaiting > 0 ? `<div class="hud-more">${esc(S.morePlans(moreWaiting))}</div>` : '');
     setHtml($('hud-pending'), pendingHtml, 'pending');
 
-    // "Sekarang": who is working or waiting, doing what (with the session's to-do list), and "Selesai": the mailbox tasks finished today
-    const busy = chars.filter((c) => ['bekerja', 'izin', 'nunggu'].includes(stateOf(c, now)) && !c.asaResident)
-      .sort((x, y) => order(x) - order(y) || x.id - y.id);
-    const nowHtml = busy.length ? busy.map((c) => {
-      const st = stateOf(c, now);
-      const ui = STATE[st];
-      const { task, act } = lines(office, c, st);
-      const face = `background-image:url(${esc(ns.portraitUrl(c))})${c.hueShift ? `;filter:hue-rotate(${c.hueShift}deg)` : ''}`;
-      const todos = !c.isSubagent ? ((ns.data?.tasks ?? []).find((x) => x.project && x.project === c.folderName)?.todos ?? []).filter((t) => t.status !== 'completed').slice(0, 3) : [];
-      return `<div class="hud-now" data-id="${c.id}"><span class="hud-face" style="${face}"></span><div class="b"><div class="h"><span class="nm">${esc(ns.villagerName(c))}</span><span class="hud-chip" style="color:${ui.css}">${esc(ui.label)}</span></div>`
-        + `<div class="t" title="${esc(task)}">${esc(clip(task || roleOf(office, c), 70))}</div>${act ? `<div class="a">${esc(clip(act, 70))}</div>` : ''}`
-        + todos.map((t) => `<div class="hud-todo s-${esc(t.status)}"><i>${t.status === 'in_progress' ? '▶' : '○'}</i><span>${esc(clip(t.status === 'in_progress' && t.activeForm ? t.activeForm : t.content, 60))}</span></div>`).join('')
-        + '</div></div>';
-    }).join('') : `<div class="hud-empty">${esc(S.emptyNow)}</div>`;
-    setHtml($('hud-now'), nowHtml, 'now');
-    $('hud-n-now').textContent = String(busy.length);
-    $('hud-sessions').textContent = String(busy.filter((c) => c.isActive).length);
-    const doneToday = (ns.data?.mail ?? []).filter((l) => !l.report && !l.archived && l.status === 'done' && l.finishedAt && localDay(Date.parse(l.finishedAt)) === localDay(now))
-      .sort((x, y) => Date.parse(y.finishedAt) - Date.parse(x.finishedAt));
-    const doneHtml = `<div class="hud-src">${esc(S.doneSource)}</div>` + (doneToday.length ? doneToday.slice(0, 30).map((l) => {
-      const meta = [l.name ?? 'Claude', l.project, l.tokens ? `${ns.fmtTokens(l.tokens)} token` : ''].filter(Boolean).join(' · ');
-      return `<div class="hud-run" data-letter="${esc(l.id)}" style="cursor:pointer"><i style="background:${STATE.selesai.css}"></i><span class="t" title="${esc(l.title)}">${esc(l.title)}</span><span class="hud-chip" style="color:${STATE.selesai.css}">${esc(clock(fmtMin, Date.parse(l.finishedAt)))}</span><span class="w">${esc(meta)}</span></div>`;
-    }).join('') : `<div class="hud-empty">${esc(S.emptyDone)}</div>`);
-    setHtml($('hud-done'), doneHtml, 'done');
-    $('hud-n-done').textContent = String(doneToday.length);
-    $('hud-today').textContent = String(doneToday.length);
+    // "Log": what happened to the mailbox tasks today. "Gaji": what the office earned today, what the staff and the freelancers cost.
+    const todayKey = localDay(now);
+    const stLabel = { done: S.stDone, error: S.stError, stopped: S.stStopped, awaiting: S.stAwaiting };
+    const stColor = { done: STATE.selesai.css, error: '#c8503c', stopped: '#9a8a7a', awaiting: '#3f74b8' };
+    const events = (ns.data?.mail ?? []).filter((l) => !l.report && !l.archived && stLabel[l.status] && [l.finishedAt, l.createdAt].some((t) => t && localDay(Date.parse(t)) === todayKey))
+      .sort((x, y) => Date.parse(y.finishedAt ?? y.createdAt) - Date.parse(x.finishedAt ?? x.createdAt));
+    const logHtml = `<div class="hud-src">${esc(S.logSource)}</div>` + (events.length ? events.slice(0, 40).map((l) => {
+      const css2 = stColor[l.status];
+      const at = Date.parse(l.finishedAt ?? l.createdAt);
+      const meta = [l.name ?? 'Claude', l.project, l.status !== 'done' ? stLabel[l.status] : '', l.tokens ? `${ns.fmtTokens(l.tokens)} token` : ''].filter(Boolean).join(' · ');
+      return `<div class="hud-run" data-letter="${esc(l.id)}" style="cursor:pointer"><i style="background:${css2}"></i><span class="t" title="${esc(l.title)}">${esc(l.title)}</span><span class="hud-chip" style="color:${css2}">${esc(clock(fmtMin, at))}</span><span class="w">${esc(meta)}</span></div>`;
+    }).join('') : `<div class="hud-empty">${esc(S.emptyLog)}</div>`);
+    setHtml($('hud-log'), logHtml, 'now');
+    $('hud-n-log').textContent = String(events.length);
+    const bd = ns.dayEnd?.board?.();
+    if (bd) {
+      const g = (n) => `${Math.round(n).toLocaleString(locale)}g`;
+      const kinds = (c) => Object.keys(S.actKinds).filter((k) => c[k]).map((k) => `${c[k]} ${S.actKinds[k]}`).join(' · ');
+      const payHtml = `<div class="hud-pay-row"><span>${esc(S.payIncome)}</span><b>+${g(bd.income)}</b></div>`
+        + `<div class="hud-pay-row"><span>👥 ${esc(S.payStaff)}</span><b>−${g(bd.pay.total)}</b></div>`
+        + `<div class="hud-pay-row"><span>🧑‍💻 ${esc(S.payFree(bd.freelance.rows.length))}</span><b>−${g(bd.freelance.total)}</b></div>`
+        + `<div class="hud-pay-row net ${bd.net >= 0 ? 'gain' : 'lose'}"><span>${esc(S.payNet)}</span><b>${bd.net >= 0 ? '+' : '−'}${g(Math.abs(bd.net))}</b></div>`
+        + `<div class="hud-src">${esc(S.payNote)}</div><div class="hud-src" style="padding-top:8px"><b style="font-weight:normal">${esc(S.payFreeTitle)}</b></div>`
+        + (bd.freelance.rows.length ? bd.freelance.rows.map((r) => `<div class="hud-free"><div class="h"><span class="t" title="${esc(r.title)}">${esc(r.title)}</span><b style="font-weight:normal">${g(r.amount)}</b></div><div class="c">${esc([r.project, kinds(r.counts)].filter(Boolean).join(' · '))}</div></div>`).join('') : `<div class="hud-empty">${esc(S.payNoFree)}</div>`)
+        + `<div class="hud-src">${esc(S.payRates)}: ${Object.keys(bd.rates).map((k) => `${S.actKinds[k]} ${bd.rates[k]}g`).join(' · ')}</div>`;
+      setHtml($('hud-pay'), payHtml, 'done');
+    }
     for (const n of root.querySelectorAll('.hud-tabs .n')) n.hidden = n.textContent === '0';
   }
 

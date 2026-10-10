@@ -49,6 +49,7 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Kartu hero: baris chip "menunggu kamu" dihapus (sudah ada badge di tombol kotak surat dan kartu izin di bawahnya) | (PR berikutnya) |
 | ✅ | Templat tugas (chip ⚡, 💾, ⚙), jadwal dengan pilihan model, dan pencarian di isi semua percakapan | (PR berikutnya) |
 | ✅ | Pilihan composer jadi dua tingkat: siapa, proyek, dan tombol geser cara kerja selalu terlihat; sisanya di "Lanjutan" | (PR berikutnya) |
+| ✅ | Karyawan dan freelance: sesi non-staf dibayar per aktivitas (kartu pagi, Data karyawan, kapsul bergaris putus); kartu kanan jadi Log dan Gaji | (PR berikutnya) |
 
 ## Rencana (urutan prioritas)
 

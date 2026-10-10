@@ -65,7 +65,7 @@ export class ClaudeStats {
     if (!d) {
       d = {
         tools: 0, sessions: new Set(), files: new Set(), hours: new Array(24).fill(0),
-        tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, models: new Map(), messages: new Set(),
+        tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, models: new Map(), messages: new Set(), bySession: new Map(), // sessionId -> { edit, search, … } (what each session did that day)
       };
       for (const k of KINDS) d[k] = 0;
       this.perDay.set(key, d);
@@ -136,6 +136,11 @@ export class ClaudeStats {
       const kind = KIND[b.name] ?? 'other';
       d.tools++;
       d[kind]++;
+      if (rec.sessionId) {
+        let bs = d.bySession.get(rec.sessionId);
+        if (!bs) { bs = Object.fromEntries(KINDS.map((k) => [k, 0])); d.bySession.set(rec.sessionId, bs); }
+        bs[kind]++;
+      }
       d.hours[ts.getHours()]++;
       if (kind === 'edit' && typeof b.input?.file_path === 'string') d.files.add(b.input.file_path);
       if (rec.sessionId) d.sessions.add(rec.sessionId);
@@ -315,12 +320,15 @@ export class ClaudeStats {
 
   snapshot(now = new Date()) {
     const days = {};
+    const recentFrom = localDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3));
     for (const [key, d] of [...this.perDay].sort(([a], [b]) => a.localeCompare(b))) {
       const row = {
         tools: d.tools, sessions: d.sessions.size, files: d.files.size,
         tokens: d.tokens, models: Object.fromEntries([...d.models].sort((a, b) => b[1] - a[1])),
       };
       for (const k of KINDS) row[k] = d[k];
+      // What each session did, for the last few days only (freelance pay is worked out from it; counts only, no names).
+      if (key >= recentFrom) row.bySession = Object.fromEntries([...d.bySession]);
       days[key] = row;
     }
     const today = localDay(now);

@@ -9,7 +9,7 @@
   const h = ns.h;
   const S = ns.t({
     id: {
-      title: 'Data karyawan', auto: 'Ingat otomatis (agent menulis satu pelajaran di akhir tugas)', soul: 'Jiwa (kepribadian, gaya bicara, nilai)', save: 'Simpan jiwa', reset: 'Kembalikan bawaan',
+      freelance: 'Freelance', freelanceSub: 'Sesi lain, dibayar per aktivitas', freeIntro: 'Freelance adalah sesi Claude Code yang bukan staf kantor: sesi yang kamu mulai sendiri di Claude Code, atau "Claude (umum)" dari kotak surat. Mereka tidak punya gaji tetap, jiwa, atau ingatan: dibayar per aktivitas, besok pagi bersama gaji staf di kartu Selamat pagi.', freeToday: 'Hari ini', freeYesterday: 'Kemarin', freeNone: 'Tidak ada freelance yang bekerja.', freeRates: 'Tarif per aktivitas', freeTotal: 'Total', freeKinds: { edit: 'edit file', search: 'baca atau cari', command: 'perintah', web: 'web', agent: 'subagent' }, title: 'Data karyawan', auto: 'Ingat otomatis (agent menulis satu pelajaran di akhir tugas)', soul: 'Jiwa (kepribadian, gaya bicara, nilai)', save: 'Simpan jiwa', reset: 'Kembalikan bawaan',
       saved: 'Tersimpan.', custom: 'diubah', memory: (n, max) => `Ingatan (${n}/${max})`, none: 'Belum ada ingatan. Setelah tugas, agent boleh menulis satu pelajaran di sini.',
       add: 'Tambah ingatan', addPh: 'Satu kalimat yang perlu diingat…', del: 'Lupakan', manual: 'dari kamu', from: (p) => `dari tugas di ${p}`,
       stored: (f) => `Disimpan di vault Obsidian-mu: ${f} (bisa diedit di Obsidian juga)`, noVault: 'Vault Obsidian belum bisa dibaca (iCloud belum selesai sinkron, atau foldernya dipindah). Agent bekerja tanpa ingatan dan tidak menulis apa pun sampai vault kembali.',
@@ -20,7 +20,7 @@
       acc: { read: 'Baca', edit: 'Edit', test: 'Tes', web: 'Web', git: 'Git' }, head: 'Kepala kantor', done: (n, t) => `${n} selesai dari ${t}`,
     },
     en: {
-      title: 'Employee records', auto: 'Remember automatically (the agent writes one lesson at the end of a task)', soul: 'Soul (character, way of speaking, values)', save: 'Save soul', reset: 'Back to default',
+      freelance: 'Freelance', freelanceSub: 'Other sessions, paid per activity', freeIntro: 'Freelancers are the Claude Code sessions that are not office staff: sessions you start yourself in Claude Code, or "Claude (general)" from the mailbox. They have no fixed salary, soul or memories: they are paid per activity, tomorrow morning together with the staff pay on the Good morning card.', freeToday: 'Today', freeYesterday: 'Yesterday', freeNone: 'No freelancer has worked.', freeRates: 'Rate per activity', freeTotal: 'Total', freeKinds: { edit: 'file edits', search: 'reads or searches', command: 'commands', web: 'web', agent: 'sub-agents' }, title: 'Employee records', auto: 'Remember automatically (the agent writes one lesson at the end of a task)', soul: 'Soul (character, way of speaking, values)', save: 'Save soul', reset: 'Back to default',
       saved: 'Saved.', custom: 'edited', memory: (n, max) => `Memories (${n}/${max})`, none: 'No memories yet. After a task the agent may write one lesson here.',
       add: 'Add a memory', addPh: 'One sentence to remember…', del: 'Forget', manual: 'from you', from: (p) => `from a task in ${p}`,
       stored: (f) => `Kept in your Obsidian vault: ${f} (you can edit it in Obsidian too)`, noVault: 'The Obsidian vault can\'t be read right now (iCloud still syncing, or the folder moved). Agents work without memories and write nothing until it is back.',
@@ -71,7 +71,7 @@
   async function reload() {
     const j = await ns.localApi('GET', '/api/souls');
     state.data = j;
-    if (!state.agent || !j.staff.some((m) => m.agent === state.agent)) state.agent = j.staff[0]?.agent ?? null;
+    if (!state.agent || (state.agent !== '@freelance' && !j.staff.some((m) => m.agent === state.agent))) state.agent = j.staff[0]?.agent ?? null;
     state.panel?.rerender();
   }
   const act = (fn, okText) => async () => { try { await fn(); await reload(); if (okText) say(okText); } catch (e) { say(errText(e)); } };
@@ -95,16 +95,40 @@
         s && s.installed === false ? h('div', { class: 'note', style: { color: '#973a2f', marginTop: '6px' } }, S.notInstalled) : null));
   }
 
+  /** The Freelance page: who freelanced today and yesterday, what they are owed, and the rates. */
+  function freelancePage() {
+    const de = ns.dayEnd;
+    const g = (n) => `${Math.round(n).toLocaleString(undefined)}g`;
+    const day = (offset) => { const d = new Date(); d.setDate(d.getDate() - offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+    const kinds = (c) => Object.keys(S.freeKinds).filter((k) => c[k]).map((k) => `${c[k]} ${S.freeKinds[k]}`).join(' · ');
+    const section = (title, key) => {
+      const f = de?.freelanceOn?.(key) ?? { rows: [], total: 0 };
+      return h('div', {}, h('h4', {}, `${title} · ${S.freeTotal} ${g(f.total)}`),
+        f.rows.length ? f.rows.map((r) => h('div', { class: 'mem' }, h('span', {}, r.title, h('small', {}, [r.project, kinds(r.counts)].filter(Boolean).join(' · '))), h('b', { style: { fontWeight: 'normal', whiteSpace: 'nowrap' } }, g(r.amount)))) : h('p', { class: 'note' }, S.freeNone));
+    };
+    return h('div', { class: 'asa-emp-main' },
+      h('div', { class: 'asa-emp-card' }, h('span', { class: 'asa-emp-face big', style: { display: 'grid', placeItems: 'center', fontSize: '34px', background: '#fffbe9' } }, '🧑‍💻'),
+        h('div', {}, h('h3', {}, S.freelance), h('div', { class: 'role' }, S.freelanceSub), h('div', {}, S.freeIntro))),
+      h('div', { class: 'asa-soul' },
+        section(S.freeToday, day(0)), section(S.freeYesterday, day(1)),
+        h('div', {}, h('h4', {}, S.freeRates), h('div', { class: 'note' }, Object.keys(de?.rates ?? {}).map((k) => `${S.freeKinds[k]} ${de.rates[k]}g`).join(' · ')))));
+  }
+
   function body() {
     const j = state.data;
     const m = j.staff.find((x) => x.agent === state.agent);
     state.msg = h('div', { class: 'msg' });
-    const list = h('div', { class: 'asa-emp-list' }, j.staff.map((x) => {
+    const list = h('div', { class: 'asa-emp-list' }, [...j.staff.map((x) => {
       const s = staffEntry(x.agent);
       const b = h('button', { type: 'button', class: x.agent === state.agent ? 'on' : '' }, face(x.agent), h('span', {}, h('b', {}, x.name + (x.custom ? ' ✏️' : '')), h('small', {}, s ? ns.staffRole(s) : '')));
       b.onclick = () => { state.agent = x.agent; state.panel.rerender(); };
       return b;
-    }));
+    }), (() => {
+      const fb = h('button', { type: 'button', class: state.agent === '@freelance' ? 'on' : '' }, h('span', { class: 'asa-emp-face', style: { display: 'grid', placeItems: 'center', background: '#fffbe9' } }, '🧑‍💻'), h('span', {}, h('b', {}, S.freelance), h('small', {}, S.freelanceSub)));
+      fb.onclick = () => { state.agent = '@freelance'; state.panel.rerender(); };
+      return fb;
+    })()]);
+    if (state.agent === '@freelance') return h('div', { class: 'asa-emp' }, list, freelancePage());
     const auto = h('input', { type: 'checkbox' });
     auto.checked = j.auto;
     auto.onchange = act(() => ns.localApi('POST', '/api/souls', { auto: auto.checked }));
