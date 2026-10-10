@@ -40,7 +40,7 @@
       progress: (t) => `⏳ ${t}`, starting: '⏳ Lagi mulai…', writing: 'Nulis jawaban',
       copyCmd: '📋 Salin perintah Terminal', copied: '✅ Tersalin! Tempel di Terminal',
       copyNote: 'Buat lanjut ngobrol di sesi yang sama dari Terminal.',
-      tabLetters: '📮 Surat', tabSessions: '🗂 Semua sesi', search: 'Cari judul, proyek, atau isi…',
+      tplOk: 'Simpan', tplMenu: 'Templat tugas', tplTip: 'Tugas tersimpan yang bisa dimulai sekali klik', tplRun: 'Kirim sekarang', tplSave: 'Simpan tugas ini sebagai templat', tplName: 'Nama templat', tplKeepProject: 'Ingat proyeknya', tplSaved: 'Templat tersimpan.', tplNeedText: 'Tulis tugasnya dulu.', tplEdit: 'Atur templat…', deepTitle: 'Ditemukan di isi percakapan', deepSearching: 'Mencari di isi percakapan…', deepNone: 'Tidak ada di isi percakapan lain.', deepYou: 'Kamu', deepClaude: 'Claude', tabLetters: '📮 Surat', tabSessions: '🗂 Semua sesi', search: 'Cari judul, proyek, atau isi…',
       fAll: 'Semua', fRunning: '⏳ Jalan', fAwaiting: '📝 Nunggu', fDone: '✅ Selesai', allProjects: 'Semua proyek', allWho: 'Semua orang',
       noMatch: 'Gak ada yang cocok.', noSessions: 'Belum ada sesi Claude Code di Mac ini.', live: '● lagi jalan', ago: (m) => (m < 1 ? 'barusan' : m < 60 ? `${m} mnt lalu` : m < 1440 ? `${Math.round(m / 60)} jam lalu` : `${Math.round(m / 1440)} hari lalu`),
       fromMailbox: '📮 dari kotak surat', sessionsNote: 'Semua sesi Claude Code di Mac ini (Terminal, Desktop, dan kotak surat), 30 hari terakhir.',
@@ -111,7 +111,7 @@
       progress: (t) => `⏳ ${t}`, starting: '⏳ Starting…', writing: 'Writing the answer',
       copyCmd: '📋 Copy Terminal command', copied: '✅ Copied! Paste it in Terminal',
       copyNote: 'To keep talking in the same session from Terminal.',
-      tabLetters: '📮 Letters', tabSessions: '🗂 All sessions', search: 'Search title, project or text…',
+      tplOk: 'Save', tplMenu: 'Task templates', tplTip: 'Saved tasks you can start with one click', tplRun: 'Send now', tplSave: 'Save this task as a template', tplName: 'Template name', tplKeepProject: 'Remember the project', tplSaved: 'Template saved.', tplNeedText: 'Write the task first.', tplEdit: 'Manage templates…', deepTitle: 'Found in the conversation text', deepSearching: 'Searching the conversation text…', deepNone: 'Nothing in other conversations.', deepYou: 'You', deepClaude: 'Claude', tabLetters: '📮 Letters', tabSessions: '🗂 All sessions', search: 'Search title, project or text…',
       fAll: 'All', fRunning: '⏳ Running', fAwaiting: '📝 Waiting', fDone: '✅ Finished', allProjects: 'All projects', allWho: 'Everyone',
       noMatch: 'Nothing matches.', noSessions: 'No Claude Code sessions on this Mac yet.', live: '● running now', ago: (m) => (m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`),
       fromMailbox: '📮 from the mailbox', sessionsNote: 'Every Claude Code session on this Mac (Terminal, Desktop and the mailbox), last 30 days.',
@@ -328,6 +328,9 @@
   .asa-deny-row code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: #fff6dc; padding: 1px 5px; }
   .asa-deny-row small { opacity: 0.7; }
   .asa-group { font-size: 12px; opacity: 0.65; margin: 8px 2px 0; text-transform: none; }
+  .asa-snip { font-size: 12px; line-height: 1.35; opacity: 0.85; white-space: normal; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+  .asa-snip mark { background: #ffe58a; color: inherit; padding: 0 1px; }
+  .asa-snip i { font-style: normal; opacity: 0.6; margin-right: 4px; }
   .asa-plain .asa-letter-body b { font-size: 15px; font-weight: 600; }
   .asa-plain .asa-letter-body div, .asa-plain .asa-letter-status, .asa-plain .asa-note, .asa-plain .asa-muted { font-size: 13px; }
   .asa-plain .asa-chat-title b { font-size: 17px; font-weight: 600; }
@@ -335,6 +338,11 @@
   .asa-plain .asa-btn, .asa-plain .asa-chip, .asa-plain .asa-chipsel, .asa-plain .asa-filters select, .asa-plain .asa-filters input,
   .asa-plain .asa-side input[type="search"], .asa-plain .asa-comp textarea, .asa-plain .asa-mention button { font-size: 14px; }
   .asa-plain .asa-comp textarea { font-size: 15px; }
+  .asa-tpl { display: inline-flex; align-items: stretch; }
+  .asa-tpl .asa-chip:first-child { border-right-width: 1px; }
+  .asa-tpl .asa-chip.go { border-left-width: 1px; padding: 3px 6px; background: #c8503c; color: #fff6dc; border-color: #973a2f; }
+  .asa-tplbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 8px; background: #fffbe9; border: 2px solid #c9a877; margin-bottom: 6px; font-size: 13px; }
+  .asa-tplbar input[type=text] { font: inherit; font-size: 13px; padding: 3px 6px; border: 2px solid #744122; background: #fff; color: #3a2117; min-width: 0; flex: 1 1 120px; }
   .asa-chip { font: inherit; font-size: 12px; padding: 3px 8px; background: #fffbe9; color: #3a2117; border: 2px solid #d9c49a; cursor: pointer; }
   .asa-chip.on { border-color: #744122; background: #f4e6c4; }
   .asa-live { color: #3f8a36; }
@@ -687,6 +695,43 @@
     return h('div', { class: 'asa-lwrap' }, row, btn);
   }
 
+  // Search in the conversation text: after a pause in typing, the Mac looks through every transcript (search.mjs) and what it finds is listed
+  // under the title matches, with the matching words marked. It only shows chats that are not already in the list above it.
+  const deep = { q: '', results: [], loading: false, timer: null };
+  function deepLater() {
+    clearTimeout(deep.timer);
+    const q = filter.q.trim();
+    if (q.length < 2) { Object.assign(deep, { q: '', results: [], loading: false }); return; }
+    if (deep.q === q) return;
+    deep.loading = true;
+    deep.timer = setTimeout(async () => {
+      try { deep.results = (await api('GET', `/api/search?q=${encodeURIComponent(q)}`)).results ?? []; } catch { deep.results = []; }
+      deep.q = q;
+      deep.loading = false;
+      ui.refill?.();
+    }, 450);
+  }
+  const markEl = (hit) => h('div', { class: 'asa-snip' }, h('i', {}, hit.role === 'you' ? S.deepYou : S.deepClaude), hit.before, h('mark', {}, hit.match), hit.after);
+  function deepRows(shown) {
+    const q = filter.q.trim();
+    if (q.length < 2 || filter.status !== 'all') return [];
+    if (deep.loading || deep.q !== q) return [h('div', { class: 'asa-group' }, S.deepSearching)];
+    const sessions = new Map((ns.data?.sessions ?? []).map((x) => [x.id, x]));
+    const rows = [];
+    for (const r of deep.results) {
+      const l = r.letter ? letters().find((x) => x.id === r.letter) : null;
+      const x = l ? null : sessions.get(r.sessionId);
+      if (!l && !x) continue; // a session the office doesn't list (too old): nothing to open
+      if (shown.has(l ? l.id : `session:${x.id}`)) continue;
+      const head = l ? letterTitle(l) : x.title || x.project || x.id.slice(0, 8);
+      const meta = l ? [who(l), l.project, l.createdAt ? timeOf(l.createdAt) : null] : [x.project, timeOf(x.at)];
+      rows.push(h('button', { type: 'button', class: `asa-letter${sel === (l ? l.id : `session:${x.id}`) ? ' on' : ''}`, onclick: () => (l ? pickLetter(l.id) : select(`session:${x.id}`)) },
+        l ? face(l) : h('div', { class: 'asa-face envelope' }, '💬'),
+        h('div', { class: 'asa-letter-body' }, h('b', {}, head), h('div', {}, meta.filter(Boolean).join(' · ')), ...r.hits.slice(0, 2).map(markEl))));
+    }
+    return rows.length ? [h('div', { class: 'asa-group' }, S.deepTitle), ...rows] : [];
+  }
+
   let bulkArmedUntil = 0;
   function chatRows(container) {
     const archiveMode = filter.status === 'archived';
@@ -740,6 +785,9 @@
         h('div', { class: 'asa-letter-status' }, status));
       out.push(busy(l) ? row : rowWrap(row, l.report ? { t: 'report', id: l.day } : { t: 'letter', id: l.id }, archiveMode));
     }
+    const shown = new Set(items.map((it) => (it.kind === 'session' ? `session:${it.x.id}` : it.kind === 'letter' ? it.l.id : '')));
+    const more = deepRows(shown);
+    out.push(...more);
     container.replaceChildren(...(out.length ? out : [h('p', { class: 'asa-muted' }, filter.status === 'archived' && !filter.q ? S.emptyArchive : letters().length || ns.data?.sessions?.length ? S.noMatch : S.empty)]));
   }
 
@@ -749,7 +797,7 @@
     const paintBadge = () => { const n = unread(); badge.textContent = n > 9 ? '9+' : String(n); badge.style.display = n ? '' : 'none'; };
     ui.refill = () => { chatRows(rows); paintBadge(); };
     const search = h('input', { type: 'search', placeholder: S.search, value: filter.q, 'aria-label': S.search });
-    search.oninput = () => { filter.q = search.value; ui.refill(); };
+    search.oninput = () => { filter.q = search.value; deepLater(); ui.refill(); };
     // The status filter is one small menu next to the search box (five chips used to take two rows).
     const statusSel = h('select', { class: 'asa-chipsel asa-statussel', title: S.filterTip, 'aria-label': S.filterTip },
       [['all', S.fAll], ['running', S.fRunning], ['awaiting', S.fAwaiting], ['done', S.fDone], ['archived', S.fArchived]].map(([v, t]) => h('option', { value: v }, t)));
@@ -763,6 +811,7 @@
     // The tools (schedules, token limits, tidy Downloads) live in one labelled menu instead of a row of icon-only buttons.
     const closeMenu = () => ui.side.querySelector('.asa-menu')?.remove();
     const menuItems = [
+      { icon: '⚡', label: S.tplMenu, desc: S.tplTip, run: () => ns.templates?.open() },
       { icon: '⏰', label: S.menuSched, desc: S.schedTip, run: () => ns.schedule?.open() },
       { icon: '💰', label: S.menuBudget, desc: S.budgetTip, run: () => ns.budget?.open() },
       { icon: '🧹', label: S.menuTidy, desc: S.tidyTip, run: () => { prefs.cwd = '@downloads'; savePrefs(); setDraft(S.tidyDraft, 'new'); select('new'); setTimeout(() => ui.comp?.querySelector('textarea')?.focus(), 60); } },
@@ -896,7 +945,7 @@
       fillHead(l);
     }
     // Thread
-    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.tokens, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join(), (l?.asks ?? []).map((d) => d.id + d.state).join(), l?.wt?.state, JSON.stringify(l?.wtSummary?.files ?? []).length, wtOpen.has(l?.id), [...exactOpen].join()]);
+    const threadKey = JSON.stringify([sel, tplList ? tplList.length : -1, l?.status, l?.thread?.length, l?.progress, l?.error, l?.tokens, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join(), (l?.asks ?? []).map((d) => d.id + d.state).join(), l?.wt?.state, JSON.stringify(l?.wtSummary?.files ?? []).length, wtOpen.has(l?.id), [...exactOpen].join()]);
     if (force || ui.keys.thread !== threadKey) {
       ui.keys.thread = threadKey;
       const box = ui.thread;
@@ -981,13 +1030,44 @@
     try { ns.markdown.render(el, String(text ?? '').replace(/!\[([^\]]*)\]\((https?:[^)\s]*)\)/gi, '[$1]($2)')); } catch { el.textContent = text; }
     return el;
   }
+  // ── Task templates: the chips on the New chat screen (⚡ name fills the form, ▶ sends it) ──
+  let tplList = null;
+  let tplLoading = false;
+  async function loadTemplates() {
+    if (!ns.templates) { tplList = []; return; }
+    tplLoading = true;
+    try { tplList = await ns.templates.list(true); } catch { tplList = []; }
+    tplLoading = false;
+    if (panel && sel === 'new') refreshMain();
+  }
+  function applyTemplate(t, sendNow) {
+    const staff = options?.staff ?? [];
+    prefs.agent = t.agent && staff.some((m) => m.agent === t.agent) ? t.agent : '';
+    if (t.cwd && (options?.projects ?? []).some((p) => p.cwd === t.cwd)) prefs.cwd = t.cwd;
+    prefs.modes = { ...prefs.modes, [prefs.agent]: t.mode };
+    prefs.model = t.model ?? '';
+    if (t.perm && t.perm !== 'bypass') prefs.perm = t.perm;
+    setDraft(t.prompt, 'new');
+    fillComposer(null);
+    const ta = ui.comp?.querySelector('textarea');
+    ta?.focus();
+    if (sendNow) ui.comp?.querySelector('.asa-send')?.click();
+  }
+
   function fillThread(l) {
     const box = ui.thread;
     const out = [];
     if (sel === 'new') {
       const first = memberOf(prefs.agent ?? '')?.name ?? '';
       out.push(h('div', { class: 'asa-brow' }, smallFace({ agent: options?.staff?.find((x) => x.director)?.agent ?? null }), h('div', { class: 'asa-b agent' }, h('div', { class: 'asa-b-text' }, S.greeting(first)))));
-      out.push(h('div', { class: 'asa-suggest' }, S.suggestions.map((t) => h('button', { type: 'button', class: 'asa-chip', onclick: () => { setDraft(t); fillComposer(null); ui.comp.querySelector('textarea')?.focus(); } }, t))));
+      if (tplList === null && !tplLoading) loadTemplates();
+      const tpls = tplList?.length ? tplList : null;
+      out.push(h('div', { class: 'asa-suggest' }, tpls
+        ? [...tpls.map((t) => h('span', { class: 'asa-tpl', title: t.prompt },
+          h('button', { type: 'button', class: 'asa-chip', onclick: () => applyTemplate(t, false) }, `⚡ ${t.name}`),
+          h('button', { type: 'button', class: 'asa-chip go', title: S.tplRun, 'aria-label': `${S.tplRun}: ${t.name}`, onclick: () => applyTemplate(t, true) }, '▶'))),
+          h('button', { type: 'button', class: 'asa-chip', title: S.tplEdit, 'aria-label': S.tplEdit, onclick: () => ns.templates?.open() }, '⚙')]
+        : S.suggestions.map((t) => h('button', { type: 'button', class: 'asa-chip', onclick: () => { setDraft(t); fillComposer(null); ui.comp.querySelector('textarea')?.focus(); } }, t))));
     } else if (l.report) {
       out.push(h('div', { class: 'asa-b agent' }, mdText(l.text)));
     } else {
@@ -1259,6 +1339,31 @@
       syncDl();
       Object.assign(controls, { whoSel, projSel, modeSel, modelSel, permSel, isoSel, styleSel, commitBox, member, setWho });
       chips.append(whoSel, projSel, modeSel, modelSel, permSel, isoSel, styleSel, commitLab);
+      // 💾 keeps what is written, with these choices, as a template.
+      const saveTpl = h('button', { type: 'button', class: 'asa-chipsel', title: S.tplSave, 'aria-label': S.tplSave }, '💾');
+      saveTpl.onclick = () => {
+        if (chips.parentElement?.querySelector('.asa-tplbar')) return chips.parentElement.querySelector('.asa-tplbar').remove();
+        if (!ta.value.trim()) { notice = S.tplNeedText; refreshMain(); return; }
+        const nameIn = h('input', { type: 'text', maxlength: '40', placeholder: S.tplName, value: ta.value.trim().split('\n')[0].slice(0, 40) });
+        const keep = h('input', { type: 'checkbox', id: 'asa-tpl-keep' });
+        const msg = h('span', {});
+        const ok = h('button', { type: 'button', class: 'asa-btn primary' }, S.tplOk);
+        const bar = h('div', { class: 'asa-tplbar' }, nameIn, h('label', { for: 'asa-tpl-keep' }, keep, ' ', S.tplKeepProject), ok, msg);
+        ok.onclick = async () => {
+          ok.disabled = true;
+          try {
+            await api('POST', '/api/templates', { name: nameIn.value, prompt: ta.value, agent: whoSel.value || null, cwd: keep.checked ? projSel.value : '', mode: modeSel.value, model: modelSel.value || null, perm: permSel.value });
+            ns.templates?.invalidate?.();
+            tplList = null;
+            msg.textContent = S.tplSaved;
+            setTimeout(() => { bar.remove(); if (sel === 'new') refreshMain(); }, 900);
+          } catch (err) { msg.textContent = errorText(err); ok.disabled = false; }
+        };
+        chips.before(bar);
+        nameIn.focus();
+        nameIn.select();
+      };
+      chips.append(saveTpl);
     } else {
       const swappable = !l.readOnlyDir && l.kind !== 'tidy' && !locked;
       if (!swappable) {

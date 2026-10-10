@@ -10,7 +10,7 @@
   const S = ns.t({
     id: {
       title: 'Jadwal', new: 'Jadwal baru', edit: 'Ubah jadwal', empty: 'Belum ada jadwal. Bikin yang pertama di bawah, misalnya “Tiap Senin 09.00: cek status proyek”.',
-      what: 'Tugasnya', whatPh: 'Contoh: Cek status proyek, baca perubahan terbaru, dan tulis ringkasan', name: 'Nama (opsional)', who: 'Siapa', project: 'Proyek', mode: 'Cara kerja',
+      model: 'Model', modelDefault: 'Model default', fromTpl: 'Mulai dari templat', fromTplNone: '— tanpa templat —', tplReadOnly: 'Jadwal hanya membaca, jadi templat yang menulis (Langsung jalan) dijadikan Cuma laporan.', what: 'Tugasnya', whatPh: 'Contoh: Cek status proyek, baca perubahan terbaru, dan tulis ringkasan', name: 'Nama (opsional)', who: 'Siapa', project: 'Proyek', mode: 'Cara kerja',
       report: '👀 Cuma laporan (baca saja)', plan: '📝 Rencana dulu (kamu setujui)', time: 'Jam', days: 'Hari', everyDay: 'Setiap hari', weekdays: 'Sen–Jum',
       dayNames: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'], save: 'Simpan jadwal', saveEdit: 'Simpan perubahan', cancel: 'Batal', runNow: 'Jalankan sekarang', del: 'Hapus', editBtn: 'Ubah',
       on: 'Aktif', off: 'Mati', next: 'Berikutnya', last: 'Terakhir jalan', never: 'belum pernah', openLetter: 'Buka suratnya', general: 'Claude (umum)',
@@ -21,7 +21,7 @@
     },
     en: {
       title: 'Schedules', new: 'New schedule', edit: 'Edit schedule', empty: 'No schedules yet. Make the first one below, for example “Every Monday 09:00: check the project status”.',
-      what: 'The task', whatPh: 'Example: Check the project status, read the latest changes and write a summary', name: 'Name (optional)', who: 'Who', project: 'Project', mode: 'How to work',
+      model: 'Model', modelDefault: 'Default model', fromTpl: 'Start from a template', fromTplNone: '— no template —', tplReadOnly: 'Schedules only read, so a template that writes (Just do it) becomes Report only.', what: 'The task', whatPh: 'Example: Check the project status, read the latest changes and write a summary', name: 'Name (optional)', who: 'Who', project: 'Project', mode: 'How to work',
       report: '👀 Report only (read-only)', plan: '📝 Plan first (you approve)', time: 'Time', days: 'Days', everyDay: 'Every day', weekdays: 'Mon–Fri',
       dayNames: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], save: 'Save schedule', saveEdit: 'Save changes', cancel: 'Cancel', runNow: 'Run now', del: 'Delete', editBtn: 'Edit',
       on: 'On', off: 'Off', next: 'Next', last: 'Last run', never: 'never', openLetter: 'Open the letter', general: 'Claude (general)',
@@ -31,6 +31,7 @@
       today: 'today', tomorrow: 'tomorrow',
     },
   });
+  const MODELS = [['opus', 'Opus'], ['sonnet', 'Sonnet'], ['haiku', 'Haiku']];
   const locale = ns.lang === 'id' ? 'id-ID' : 'en-US';
 
   const css = `
@@ -72,6 +73,7 @@
     const [list, options] = await Promise.all([ns.localApi('GET', '/api/schedules'), state.options ? Promise.resolve(state.options) : ns.localApi('GET', '/api/options')]);
     state.list = list.schedules;
     state.options = options;
+    try { state.templates = (await ns.localApi('GET', '/api/templates')).templates; } catch { state.templates = []; }
     state.panel?.rerender();
   }
 
@@ -82,6 +84,7 @@
     const who = h('select', {}, h('option', { value: '' }, `👤 ${S.general}`), staff.map((m) => h('option', { value: m.agent }, `👤 ${m.name}`)));
     const proj = h('select', {}, (opts.projects ?? []).map((p) => h('option', { value: p.cwd, title: p.cwd }, `📁 ${p.name}`)));
     const mode = h('select', {}, [['report', S.report], ['plan', S.plan]].map(([v, t]) => h('option', { value: v }, t)));
+    const model = h('select', {}, h('option', { value: '' }, S.modelDefault), MODELS.map(([v, t]) => h('option', { value: v }, `🧠 ${t}`)));
     const name = h('input', { type: 'text', maxlength: '60', placeholder: S.name });
     const prompt = h('textarea', { placeholder: S.whatPh, maxlength: '4000', 'aria-label': S.what });
     const time = h('input', { type: 'time', value: '09:00', required: '' });
@@ -96,17 +99,30 @@
       prompt.value = editing.prompt;
       time.value = editing.time;
       days = [...(editing.days ?? [])];
+      model.value = MODELS.some(([v]) => v === editing.model) ? editing.model : '';
     } else {
       who.value = staff.find((m) => m.director)?.agent ?? '';
       days = [1, 2, 3, 4, 5];
+      if (state.prefill) { fillFrom(state.prefill); state.prefill = null; }
     }
+    // A template fills the form (a schedule only reads, so "Langsung jalan" becomes "Cuma laporan").
+    function fillFrom(t) {
+      who.value = staff.some((m) => m.agent === t.agent) ? t.agent : '';
+      if (t.cwd && (opts.projects ?? []).some((p) => p.cwd === t.cwd)) proj.value = t.cwd;
+      mode.value = t.mode === 'plan' ? 'plan' : 'report';
+      model.value = MODELS.some(([v]) => v === t.model) ? t.model : '';
+      name.value = t.name ?? '';
+      prompt.value = t.prompt ?? '';
+    }
+    const tplSel = h('select', {}, h('option', { value: '' }, S.fromTplNone), (state.templates ?? []).map((t) => h('option', { value: t.id }, t.name)));
+    tplSel.onchange = () => { const t = (state.templates ?? []).find((x) => x.id === tplSel.value); if (t) fillFrom(t); };
     paint();
     const save = h('button', { type: 'button', class: 'asa-btn primary' }, editing ? S.saveEdit : S.save);
     save.onclick = async () => {
       if (!prompt.value.trim() || !time.value) { say(`${S.failed}${S.what}`); return; }
       save.disabled = true;
       try {
-        const body = { title: name.value, prompt: prompt.value, agent: who.value || null, cwd: proj.value, mode: mode.value, time: time.value, days };
+        const body = { title: name.value, prompt: prompt.value, agent: who.value || null, cwd: proj.value, mode: mode.value, model: model.value || null, time: time.value, days };
         await ns.localApi('POST', editing ? `/api/schedules/${editing.id}` : '/api/schedules', body);
         state.editing = null;
         await reload();
@@ -114,8 +130,9 @@
     };
     const cancel = editing ? h('button', { type: 'button', class: 'asa-btn', onclick: () => { state.editing = null; state.panel.rerender(); } }, S.cancel) : null;
     return h('div', { class: 'asa-sch-form' }, h('b', {}, editing ? S.edit : S.new),
+      !editing && (state.templates ?? []).length ? h('label', {}, S.fromTpl, tplSel) : null,
       h('label', {}, S.what, prompt), h('label', {}, S.name, name),
-      h('div', { class: 'asa-sch-row' }, h('label', {}, S.who, who), h('label', {}, S.project, proj), h('label', {}, S.mode, mode)),
+      h('div', { class: 'asa-sch-row' }, h('label', {}, S.who, who), h('label', {}, S.project, proj), h('label', {}, S.mode, mode), h('label', {}, S.model, model)),
       h('div', { class: 'asa-sch-row' }, h('label', {}, S.time, time), h('label', {}, S.days, h('div', { class: 'asa-sch-days' }, dayBtns))),
       h('div', { class: 'asa-sch-note' }, S.readOnly), h('div', {}, save, ' ', cancel));
   }
@@ -127,7 +144,7 @@
     const letter = sch.lastLetter && (ns.data?.mail ?? []).find((l) => l.id === sch.lastLetter);
     return h('div', { class: `asa-sch-item${sch.enabled ? '' : ' off'}` },
       h('div', { class: 'asa-sch-head' }, h('b', { title: sch.prompt }, sch.title), h('span', {}, sch.enabled ? `● ${S.on}` : `○ ${S.off}`)),
-      h('div', { class: 'asa-sch-meta' }, `${daysText(sch.days)} · ${sch.time.replace(':', '.')} · ${member?.name ?? S.general} · ${proj} · ${sch.mode === 'plan' ? S.plan : S.report}`),
+      h('div', { class: 'asa-sch-meta' }, `${daysText(sch.days)} · ${sch.time.replace(':', '.')} · ${member?.name ?? S.general} · ${proj} · ${sch.mode === 'plan' ? S.plan : S.report}${sch.model ? ` · 🧠 ${sch.model}` : ''}`),
       h('div', { class: 'asa-sch-meta' }, `${S.next}: ${sch.enabled ? timeText(sch.next) : '—'} · ${S.last}: ${sch.lastRunAt ? timeText(sch.lastRunAt) : S.never}`),
       h('div', { class: 'asa-sch-btns' },
         h('button', { type: 'button', class: 'asa-btn', onclick: act(() => ns.localApi('POST', `/api/schedules/${sch.id}`, { enabled: !sch.enabled })) }, sch.enabled ? S.off : S.on),
@@ -137,9 +154,9 @@
         h('button', { type: 'button', class: 'asa-btn', onclick: act(() => ns.localApi('DELETE', `/api/schedules/${sch.id}`)) }, `🗑 ${S.del}`)));
   }
 
-  function open() {
+  function open(opts = {}) {
     if (!document.getElementById('asa-sch-css')) document.head.appendChild(h('style', { id: 'asa-sch-css' }, css));
-    state = { list: [], options: null, editing: null, panel: null, msg: null };
+    state = { list: [], options: null, editing: null, panel: null, msg: null, templates: [], prefill: opts.template ?? null };
     state.panel = ns.panel.open({
       theme: 'cozy', dock: 'hud', title: `⏰ ${S.title}`,
       onClose: () => { state = null; },
@@ -156,5 +173,5 @@
     reload().catch(() => { if (state) { state.offline = true; state.panel.rerender(); } });
   }
 
-  ns.schedule = { open };
+  ns.schedule = { open: (opts) => open(opts) };
 })();
