@@ -40,7 +40,7 @@
       progress: (t) => `⏳ ${t}`, starting: '⏳ Lagi mulai…', writing: 'Nulis jawaban',
       copyCmd: '📋 Salin perintah Terminal', copied: '✅ Tersalin! Tempel di Terminal',
       copyNote: 'Buat lanjut ngobrol di sesi yang sama dari Terminal.',
-      tplOk: 'Simpan', tplMenu: 'Templat tugas', tplTip: 'Tugas tersimpan yang bisa dimulai sekali klik', tplRun: 'Kirim sekarang', tplSave: 'Simpan tugas ini sebagai templat', tplName: 'Nama templat', tplKeepProject: 'Ingat proyeknya', tplSaved: 'Templat tersimpan.', tplNeedText: 'Tulis tugasnya dulu.', tplEdit: 'Atur templat…', deepTitle: 'Ditemukan di isi percakapan', deepSearching: 'Mencari di isi percakapan…', deepNone: 'Tidak ada di isi percakapan lain.', deepYou: 'Kamu', deepClaude: 'Claude', tabLetters: '📮 Surat', tabSessions: '🗂 Semua sesi', search: 'Cari judul, proyek, atau isi…',
+      segLabel: { auto: '⚡ Langsung', plan: '📝 Rencana', meeting: '🗣 Rapat' }, advLabel: 'Lanjutan', advTip: 'Model, izin, cabang terpisah, gaya Shades, boleh commit, dan lainnya', advCustom: 'Ada pilihan lanjutan yang bukan default', reportChip: '👀 Cuma laporan', reportTip: 'Claude hanya membaca dan melapor, tanpa mengubah apa pun', tplOk: 'Simpan', tplMenu: 'Templat tugas', tplTip: 'Tugas tersimpan yang bisa dimulai sekali klik', tplRun: 'Kirim sekarang', tplSave: 'Simpan tugas ini sebagai templat', tplName: 'Nama templat', tplKeepProject: 'Ingat proyeknya', tplSaved: 'Templat tersimpan.', tplNeedText: 'Tulis tugasnya dulu.', tplEdit: 'Atur templat…', deepTitle: 'Ditemukan di isi percakapan', deepSearching: 'Mencari di isi percakapan…', deepNone: 'Tidak ada di isi percakapan lain.', deepYou: 'Kamu', deepClaude: 'Claude', tabLetters: '📮 Surat', tabSessions: '🗂 Semua sesi', search: 'Cari judul, proyek, atau isi…',
       fAll: 'Semua', fRunning: '⏳ Jalan', fAwaiting: '📝 Nunggu', fDone: '✅ Selesai', allProjects: 'Semua proyek', allWho: 'Semua orang',
       noMatch: 'Gak ada yang cocok.', noSessions: 'Belum ada sesi Claude Code di Mac ini.', live: '● lagi jalan', ago: (m) => (m < 1 ? 'barusan' : m < 60 ? `${m} mnt lalu` : m < 1440 ? `${Math.round(m / 60)} jam lalu` : `${Math.round(m / 1440)} hari lalu`),
       fromMailbox: '📮 dari kotak surat', sessionsNote: 'Semua sesi Claude Code di Mac ini (Terminal, Desktop, dan kotak surat), 30 hari terakhir.',
@@ -111,7 +111,7 @@
       progress: (t) => `⏳ ${t}`, starting: '⏳ Starting…', writing: 'Writing the answer',
       copyCmd: '📋 Copy Terminal command', copied: '✅ Copied! Paste it in Terminal',
       copyNote: 'To keep talking in the same session from Terminal.',
-      tplOk: 'Save', tplMenu: 'Task templates', tplTip: 'Saved tasks you can start with one click', tplRun: 'Send now', tplSave: 'Save this task as a template', tplName: 'Template name', tplKeepProject: 'Remember the project', tplSaved: 'Template saved.', tplNeedText: 'Write the task first.', tplEdit: 'Manage templates…', deepTitle: 'Found in the conversation text', deepSearching: 'Searching the conversation text…', deepNone: 'Nothing in other conversations.', deepYou: 'You', deepClaude: 'Claude', tabLetters: '📮 Letters', tabSessions: '🗂 All sessions', search: 'Search title, project or text…',
+      segLabel: { auto: '⚡ Just do it', plan: '📝 Plan', meeting: '🗣 Meeting' }, advLabel: 'Advanced', advTip: 'Model, permissions, separate branch, Shades style, allow commit and more', advCustom: 'An advanced option is not at its default', reportChip: '👀 Report only', reportTip: 'Claude only reads and reports, and changes nothing', tplOk: 'Save', tplMenu: 'Task templates', tplTip: 'Saved tasks you can start with one click', tplRun: 'Send now', tplSave: 'Save this task as a template', tplName: 'Template name', tplKeepProject: 'Remember the project', tplSaved: 'Template saved.', tplNeedText: 'Write the task first.', tplEdit: 'Manage templates…', deepTitle: 'Found in the conversation text', deepSearching: 'Searching the conversation text…', deepNone: 'Nothing in other conversations.', deepYou: 'You', deepClaude: 'Claude', tabLetters: '📮 Letters', tabSessions: '🗂 All sessions', search: 'Search title, project or text…',
       fAll: 'All', fRunning: '⏳ Running', fAwaiting: '📝 Waiting', fDone: '✅ Finished', allProjects: 'All projects', allWho: 'Everyone',
       noMatch: 'Nothing matches.', noSessions: 'No Claude Code sessions on this Mac yet.', live: '● running now', ago: (m) => (m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`),
       fromMailbox: '📮 from the mailbox', sessionsNote: 'Every Claude Code session on this Mac (Terminal, Desktop and the mailbox), last 30 days.',
@@ -273,9 +273,21 @@
   .asa-send { flex: none; width: 40px; height: 40px; font: inherit; font-size: 18px; cursor: pointer; background: #c8503c; color: #fff6dc; border: 2px solid #973a2f; box-shadow: 0 2px 0 #973a2f; }
   .asa-send:disabled { opacity: 0.45; cursor: default; }
   .asa-send.stop { background: #fffbe9; color: #3a2117; border-color: #744122; box-shadow: 0 2px 0 #744122; }
-  .asa-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .asa-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .asa-chipsel { font: inherit; font-size: 12.5px; padding: 3px 6px; background: #fffbe9; color: #3a2117; border: 2px solid #d9c49a; max-width: 48%; cursor: pointer; }
   .asa-chipsel:hover, .asa-chipsel:focus { border-color: #744122; }
+  /* The few choices that matter stay in one row (who, project, how); everything else sits behind "Lanjutan". */
+  .asa-seg { display: inline-flex; }
+  .asa-seg button { font: inherit; font-size: 12.5px; padding: 3px 9px; cursor: pointer; background: #fffbe9; color: #3a2117; border: 2px solid #d9c49a; }
+  .asa-seg button + button { margin-left: -2px; }
+  .asa-seg button.on { background: #744122; color: #fff6dc; border-color: #744122; position: relative; }
+  .asa-seg button[hidden] { display: none; }
+  .asa-seg.dim button.on { background: #fffbe9; color: #3a2117; border-color: #d9c49a; }
+  .asa-advbtn { margin-left: auto; }
+  .asa-advdot { display: inline-block; width: 7px; height: 7px; margin-left: 4px; background: #c8503c; vertical-align: 1px; }
+  .asa-advdot[hidden] { display: none; }
+  .asa-adv { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #d9c49a; }
+  .asa-adv[hidden] { display: none; }
   .asa-pill { font-size: 12px; padding: 2px 8px; background: #e6d3a6; border: 1px solid #c9a877; }
   .asa-plane { position: fixed; left: 0; top: 0; z-index: 1200; width: 28px; height: 28px; pointer-events: none; will-change: transform; }
   .asa-spark { position: fixed; z-index: 1199; width: 5px; height: 5px; background: #f2c94c; pointer-events: none; animation: asa-spark 0.6s ease-out forwards; }
@@ -1197,6 +1209,56 @@
         h('button', { type: 'button', class: 'asa-btn', onclick: () => answer('deny') }, S.askDeny)));
   }
 
+  /**
+   * Lays the composer's choices out in two levels. The row you always see has who, the project, and how it is done as a small switch
+   * (⚡ Langsung / 📝 Rencana / 🗣 Rapat for Shades); the rest (`adv`, plus "Cuma laporan") sits behind a "Lanjutan" button that remembers
+   * whether it was open, with a red dot when something in there is not at its default. `modeSel` stays the one place the mode lives.
+   * Returns { advBox, sync }: put advBox under the row and call sync() whenever the mode or the person changed from code.
+   */
+  function layoutChips(chips, { who, proj, modeSel, isDirector, adv, isCustom }) {
+    const seg = h('div', { class: 'asa-seg', role: 'group', 'aria-label': S.mode });
+    const segBtns = ['auto', 'plan', 'meeting'].map((v) => h('button', { type: 'button', 'data-m': v, title: S.chipModes[v] }, S.segLabel[v]));
+    seg.append(...segBtns);
+    const reportBox = h('input', { type: 'checkbox' });
+    const reportLab = h('label', { class: 'asa-chipsel', title: S.reportTip, style: { display: 'inline-flex', gap: '4px', alignItems: 'center' } }, reportBox, S.reportChip);
+    const dot = h('i', { class: 'asa-advdot', title: S.advCustom, hidden: '' });
+    const advLbl = h('span', {}, `⚙ ${S.advLabel} ▾`);
+    const advBtn = h('button', { type: 'button', class: 'asa-chipsel asa-advbtn', title: S.advTip, 'aria-label': S.advTip, 'aria-expanded': 'false' }, advLbl, dot);
+    const advBox = h('div', { class: 'asa-adv' }, ...adv, reportLab);
+    let before = 'auto'; // the mode to go back to when "Cuma laporan" is unticked
+    const paintAdv = () => {
+      const open = !advBox.hidden;
+      advLbl.textContent = `⚙ ${S.advLabel} ${open ? '▴' : '▾'}`;
+      advBtn.setAttribute('aria-expanded', String(open));
+      dot.hidden = !isCustom();
+    };
+    const sync = () => {
+      const m = modeSel.value;
+      if (m !== 'report') before = m;
+      for (const b of segBtns) { b.classList.toggle('on', b.dataset.m === m); if (b.dataset.m === 'meeting') b.hidden = !isDirector(); }
+      seg.classList.toggle('dim', m === 'report');
+      reportBox.checked = m === 'report';
+      const hide = modeSel.style.display === 'none'; // the Downloads folder has no "how"
+      seg.style.display = hide ? 'none' : '';
+      reportLab.style.display = hide ? 'none' : '';
+      paintAdv();
+    };
+    const setMode = (v) => {
+      if (![...modeSel.options].some((o) => o.value === v)) return;
+      modeSel.value = v;
+      modeSel.dispatchEvent(new Event('change'));
+      sync();
+    };
+    for (const b of segBtns) b.onclick = () => setMode(b.dataset.m);
+    reportBox.onchange = () => setMode(reportBox.checked ? 'report' : before);
+    advBox.hidden = prefs.adv !== true;
+    advBtn.onclick = () => { advBox.hidden = !advBox.hidden; prefs.adv = !advBox.hidden; savePrefs(); paintAdv(); };
+    advBox.addEventListener('change', paintAdv);
+    chips.replaceChildren(who, proj, seg, advBtn);
+    sync();
+    return { advBox, sync };
+  }
+
   function fillComposer(l) {
     const comp = ui.comp;
     comp.replaceChildren();
@@ -1292,6 +1354,7 @@
       styleSel.value = prefs.style ?? 'solo';
       const commitBox = h('input', { type: 'checkbox', id: 'asa-commit' });
       const commitLab = h('label', { class: 'asa-chipsel', for: 'asa-commit', title: S.commitTip, style: { display: 'inline-flex', gap: '4px', alignItems: 'center' } }, commitBox, S.commitChip);
+      let syncLayout = () => {};
       const member = () => staff.find((m) => m.agent === whoSel.value) ?? null;
       const defaultMode = () => prefs.modes?.[whoSel.value] ?? (member()?.director ? 'plan' : 'auto');
       // "Rapat dulu" (a real team meeting) is Shades' alone: the others don't get that option.
@@ -1313,6 +1376,7 @@
         for (const el of [modeSel, whoSel, commitLab, permSel, isoSel]) el.style.display = dl ? 'none' : '';
         styleSel.style.display = !dl && member()?.director ? '' : 'none';
         ta.placeholder = dl ? S.dlPh : S.placeholder;
+        syncLayout();
       };
       const update = () => {
         fillModes();
@@ -1320,6 +1384,7 @@
         styleSel.style.display = member()?.director ? '' : 'none';
         const access = member()?.access ?? options.general?.access ?? ['read'];
         whoSel.title = `${S.who} — ${S.canDo(access.map((a) => S.access[a] ?? a).join(', '))}`;
+        syncLayout();
       };
       whoSel.onchange = () => { prefs.agent = whoSel.value; savePrefs(); update(); syncDl(); };
       const setWho = (agent) => {
@@ -1333,12 +1398,11 @@
         whoSel.classList.add('asa-flash');
       };
       projSel.onchange = () => { prefs.cwd = projSel.value; savePrefs(); syncDl(); };
-      modeSel.onchange = () => { prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value }; savePrefs(); modeSel.title = modeSel.value === 'meeting' ? S.meetTip : S.mode; };
+      modeSel.onchange = () => { prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value }; savePrefs(); modeSel.title = modeSel.value === 'meeting' ? S.meetTip : S.mode; syncLayout(); };
       styleSel.onchange = () => { prefs.style = styleSel.value; savePrefs(); };
       update();
       syncDl();
       Object.assign(controls, { whoSel, projSel, modeSel, modelSel, permSel, isoSel, styleSel, commitBox, member, setWho });
-      chips.append(whoSel, projSel, modeSel, modelSel, permSel, isoSel, styleSel, commitLab);
       // 💾 keeps what is written, with these choices, as a template.
       const saveTpl = h('button', { type: 'button', class: 'asa-chipsel', title: S.tplSave, 'aria-label': S.tplSave }, '💾');
       saveTpl.onclick = () => {
@@ -1363,7 +1427,12 @@
         nameIn.focus();
         nameIn.select();
       };
-      chips.append(saveTpl);
+      const lay = layoutChips(chips, {
+        who: whoSel, proj: projSel, modeSel, isDirector: () => !!member()?.director, adv: [modelSel, permSel, isoSel, styleSel, commitLab, saveTpl],
+        isCustom: () => !!modelSel.value || permSel.value !== 'manual' || isoSel.value === 'on' || commitBox.checked || (styleSel.style.display !== 'none' && styleSel.value === 'delegate') || modeSel.value === 'report',
+      });
+      syncLayout = lay.sync;
+      controls.advBox = lay.advBox;
     } else {
       const swappable = !l.readOnlyDir && l.kind !== 'tidy' && !locked;
       if (!swappable) {
@@ -1387,20 +1456,25 @@
         const styleSel = h('select', { class: 'asa-chipsel', title: S.style, 'aria-label': S.style }, Object.entries(S.chipStyles).map(([v, t]) => h('option', { value: v }, t)));
         styleSel.value = l.style === 'delegate' ? 'delegate' : 'solo';
         const showStyle = () => { styleSel.style.display = staff.find((m) => m.agent === whoSel.value)?.director ? '' : 'none'; };
-        whoSel.onchange = () => { showStyle(); fillModes(); };
+        const permPick = permSelect(l.perm, chips, null);
+        controls.permSel = permPick;
+        let lay = { sync: () => {} };
+        whoSel.onchange = () => { showStyle(); fillModes(); lay.sync(); };
         showStyle();
         fillModes();
         Object.assign(controls, { whoSel, modeSel, modelSel, styleSel });
-        chips.append(whoSel, h('span', { class: 'asa-pill', title: `${l.cwd}\n${S.folderLocked}` }, `📁 ${l.project}`), modeSel, modelSel, styleSel);
+        lay = layoutChips(chips, {
+          who: whoSel, proj: h('span', { class: 'asa-pill', title: `${l.cwd}\n${S.folderLocked}` }, `📁 ${l.project}`), modeSel, isDirector: () => !!staff.find((m) => m.agent === whoSel.value)?.director, adv: [modelSel, styleSel, permPick],
+          isCustom: () => !!modelSel.value || permPick.value !== 'manual' || (styleSel.style.display !== 'none' && styleSel.value === 'delegate') || modeSel.value === 'report',
+        });
+        controls.advBox = lay.advBox;
       }
-      // The permission mode can be changed between replies (it applies to the next run), except in Downloads where it is read-only anyway.
-      if (!l.readOnlyDir && l.kind !== 'tidy' && !locked) { controls.permSel = permSelect(l.perm, chips, null); chips.append(controls.permSel); }
     }
     const sendBtn = locked
       ? h('button', { type: 'button', class: 'asa-send stop', title: S.stop, 'aria-label': S.stop, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/stop`)) }, '⏹')
       : send;
-    if (attach) { chips.prepend(attach.button); comp.append(pop, attach.strip, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips); }
-    else comp.append(pop, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips);
+    if (attach) { chips.prepend(attach.button); comp.append(pop, attach.strip, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips, controls.advBox ?? ''); }
+    else comp.append(pop, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips, controls.advBox ?? '');
     grow();
     sync();
   }

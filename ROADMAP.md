@@ -48,6 +48,7 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | Rak Buku: kartu menampilkan cuplikan yang dirender sebagai Markdown, dan kartu serta catatan yang dibuka berlatar putih | (PR berikutnya) |
 | ✅ | Kartu hero: baris chip "menunggu kamu" dihapus (sudah ada badge di tombol kotak surat dan kartu izin di bawahnya) | (PR berikutnya) |
 | ✅ | Templat tugas (chip ⚡, 💾, ⚙), jadwal dengan pilihan model, dan pencarian di isi semua percakapan | (PR berikutnya) |
+| ✅ | Pilihan composer jadi dua tingkat: siapa, proyek, dan tombol geser cara kerja selalu terlihat; sisanya di "Lanjutan" | (PR berikutnya) |
 
 ## Rencana (urutan prioritas)
 
