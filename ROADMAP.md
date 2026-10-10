@@ -47,16 +47,19 @@ Bikin pengalaman coding dengan Claude Code di Mac terasa hidup lewat kantor: ter
 | ✅ | HUD dirombak: kolom kiri ramping (hero dengan tombol 3×2, jam di kanan, menunggu kamu, meter token, to-do; izin dan rencana ringkas; notifikasi meluncur dari kiri), satu kartu kanan setinggi isinya (tab Sekarang dan Selesai), kartu orang kecil dengan popup hover; panel dock di sebelah kolom kiri | (PR berikutnya) |
 | ✅ | Rak Buku: kartu menampilkan cuplikan yang dirender sebagai Markdown, dan kartu serta catatan yang dibuka berlatar putih | (PR berikutnya) |
 | ✅ | Kartu hero: baris chip "menunggu kamu" dihapus (sudah ada badge di tombol kotak surat dan kartu izin di bawahnya) | (PR berikutnya) |
+| ✅ | Templat tugas (chip ⚡, 💾, ⚙), jadwal dengan pilihan model, dan pencarian di isi semua percakapan | (PR berikutnya) |
+| ✅ | Pilihan composer jadi dua tingkat: siapa, proyek, dan tombol geser cara kerja selalu terlihat; sisanya di "Lanjutan" | (PR berikutnya) |
+| ✅ | Karyawan dan freelance: sesi non-staf dibayar per aktivitas (kartu pagi, Data karyawan, kapsul bergaris putus); kartu kanan jadi Log dan Gaji | (PR berikutnya) |
 
 ## Rencana (urutan prioritas)
 
-Butir 1 (notifikasi macOS) sudah selesai (#51); nomor lainnya dibiarkan agar rujukannya tetap sama. Butir 2 (cabang terpisah, #52) dan 3 (batas biaya, #53) juga selesai. Rapat sungguhan (#54) juga selesai. Jiwa agent (butir 11, #57) juga selesai. Pembaca PDF dan Word (butir 4) juga selesai. Berikutnya: butir 5 (templat tugas).
+Butir 1 (notifikasi macOS) sudah selesai (#51); nomor lainnya dibiarkan agar rujukannya tetap sama. Butir 2 (cabang terpisah, #52) dan 3 (batas biaya, #53) juga selesai. Rapat sungguhan (#54) juga selesai. Jiwa agent (butir 11, #57) juga selesai. Pembaca PDF dan Word (butir 4) juga selesai. Templat tugas (butir 5) dan pencarian isi percakapan (butir 6) juga selesai. Berikutnya: butir 9 (tes otomatis) atau 7.
 
 | | # | Butir | Catatan |
 |---|---|---|---|
 | ✅ | 4 | **Pembaca PDF dan Word bawaan** (baca-saja) | Selesai: `tools/doc-read.mjs` (PDFKit untuk PDF, `textutil` untuk Word). PDF scan belum dibaca (butuh OCR). |
-| ⬜ | 5 | **Templat tugas** (satu tombol) dan jadwal dengan model pilihan | |
-| ⬜ | 6 | **Cari lintas semua sesi dan surat** | Termasuk transkrip Claude Code, bukan hanya judul surat. |
+| ✅ | 5 | **Templat tugas** (satu tombol) dan jadwal dengan model pilihan | Selesai: chip ⚡ di Chat baru (isi formulir atau ▶ kirim), 💾 simpan, ⚙ kelola, jadwal punya pilihan model dan bisa dimulai dari templat. |
+| ✅ | 6 | **Cari lintas semua sesi dan surat** | Selesai: indeks isi percakapan di memori (`tools/lib/search.mjs`), hasil di bawah kotak cari kotak surat. Tool output sengaja tidak ikut. |
 | ⬜ | 7 | **Villager ikut sibuk** saat tugas "Claude (umum)"; **deteksi Claude Cowork** | Cowork: cek apakah menyimpan `.jsonl` di `~/Library/Application Support/Claude/…`. |
 | ⬜ | 8 | **Kas dan rapat lebih bermakna** | Mis. kas naik hanya untuk tugas yang selesai tanpa error. |
 | ⬜ | 9 | **Tes otomatis** | Belum ada tes. Prioritas: filter izin, `exactRules`, protokol izin (`control_request`), pembaca xlsx. |

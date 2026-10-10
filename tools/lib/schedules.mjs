@@ -34,7 +34,7 @@ export function saveSchedules(list) {
 }
 
 /** A clean schedule from untrusted input, or null. `maxPrompt` and `knownCwd(cwd)` come from the task server. */
-export function cleanSchedule(input, { maxPrompt, knownCwd, agents }) {
+export function cleanSchedule(input, { maxPrompt, knownCwd, agents, cleanModel = () => null }) {
   const b = input ?? {};
   const prompt = String(b.prompt ?? '').trim();
   if (!prompt || prompt.length > maxPrompt) return null;
@@ -47,7 +47,7 @@ export function cleanSchedule(input, { maxPrompt, knownCwd, agents }) {
   const title = String(b.title ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX_TITLE) || prompt.split('\n')[0].replace(/\s+/g, ' ').trim().slice(0, MAX_TITLE);
   return {
     title, prompt, cwd: String(b.cwd), agent, time, days, // days: 0 = Sunday … 6 = Saturday; empty = every day
-    mode: SCHEDULE_MODES.includes(b.mode) ? b.mode : 'report', enabled: b.enabled !== false,
+    mode: SCHEDULE_MODES.includes(b.mode) ? b.mode : 'report', model: cleanModel(b.model) ?? null, enabled: b.enabled !== false, // model: null = Claude Code's own default
   };
 }
 

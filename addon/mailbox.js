@@ -40,7 +40,7 @@
       progress: (t) => `⏳ ${t}`, starting: '⏳ Lagi mulai…', writing: 'Nulis jawaban',
       copyCmd: '📋 Salin perintah Terminal', copied: '✅ Tersalin! Tempel di Terminal',
       copyNote: 'Buat lanjut ngobrol di sesi yang sama dari Terminal.',
-      tabLetters: '📮 Surat', tabSessions: '🗂 Semua sesi', search: 'Cari judul, proyek, atau isi…',
+      segLabel: { auto: '⚡ Langsung', plan: '📝 Rencana', meeting: '🗣 Rapat' }, advLabel: 'Lanjutan', advTip: 'Model, izin, cabang terpisah, gaya Shades, boleh commit, dan lainnya', advCustom: 'Ada pilihan lanjutan yang bukan default', reportChip: '👀 Cuma laporan', reportTip: 'Claude hanya membaca dan melapor, tanpa mengubah apa pun', tplOk: 'Simpan', tplMenu: 'Templat tugas', tplTip: 'Tugas tersimpan yang bisa dimulai sekali klik', tplRun: 'Kirim sekarang', tplSave: 'Simpan tugas ini sebagai templat', tplName: 'Nama templat', tplKeepProject: 'Ingat proyeknya', tplSaved: 'Templat tersimpan.', tplNeedText: 'Tulis tugasnya dulu.', tplEdit: 'Atur templat…', deepTitle: 'Ditemukan di isi percakapan', deepSearching: 'Mencari di isi percakapan…', deepNone: 'Tidak ada di isi percakapan lain.', deepYou: 'Kamu', deepClaude: 'Claude', tabLetters: '📮 Surat', tabSessions: '🗂 Semua sesi', search: 'Cari judul, proyek, atau isi…',
       fAll: 'Semua', fRunning: '⏳ Jalan', fAwaiting: '📝 Nunggu', fDone: '✅ Selesai', allProjects: 'Semua proyek', allWho: 'Semua orang',
       noMatch: 'Gak ada yang cocok.', noSessions: 'Belum ada sesi Claude Code di Mac ini.', live: '● lagi jalan', ago: (m) => (m < 1 ? 'barusan' : m < 60 ? `${m} mnt lalu` : m < 1440 ? `${Math.round(m / 60)} jam lalu` : `${Math.round(m / 1440)} hari lalu`),
       fromMailbox: '📮 dari kotak surat', sessionsNote: 'Semua sesi Claude Code di Mac ini (Terminal, Desktop, dan kotak surat), 30 hari terakhir.',
@@ -111,7 +111,7 @@
       progress: (t) => `⏳ ${t}`, starting: '⏳ Starting…', writing: 'Writing the answer',
       copyCmd: '📋 Copy Terminal command', copied: '✅ Copied! Paste it in Terminal',
       copyNote: 'To keep talking in the same session from Terminal.',
-      tabLetters: '📮 Letters', tabSessions: '🗂 All sessions', search: 'Search title, project or text…',
+      segLabel: { auto: '⚡ Just do it', plan: '📝 Plan', meeting: '🗣 Meeting' }, advLabel: 'Advanced', advTip: 'Model, permissions, separate branch, Shades style, allow commit and more', advCustom: 'An advanced option is not at its default', reportChip: '👀 Report only', reportTip: 'Claude only reads and reports, and changes nothing', tplOk: 'Save', tplMenu: 'Task templates', tplTip: 'Saved tasks you can start with one click', tplRun: 'Send now', tplSave: 'Save this task as a template', tplName: 'Template name', tplKeepProject: 'Remember the project', tplSaved: 'Template saved.', tplNeedText: 'Write the task first.', tplEdit: 'Manage templates…', deepTitle: 'Found in the conversation text', deepSearching: 'Searching the conversation text…', deepNone: 'Nothing in other conversations.', deepYou: 'You', deepClaude: 'Claude', tabLetters: '📮 Letters', tabSessions: '🗂 All sessions', search: 'Search title, project or text…',
       fAll: 'All', fRunning: '⏳ Running', fAwaiting: '📝 Waiting', fDone: '✅ Finished', allProjects: 'All projects', allWho: 'Everyone',
       noMatch: 'Nothing matches.', noSessions: 'No Claude Code sessions on this Mac yet.', live: '● running now', ago: (m) => (m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`),
       fromMailbox: '📮 from the mailbox', sessionsNote: 'Every Claude Code session on this Mac (Terminal, Desktop and the mailbox), last 30 days.',
@@ -273,9 +273,21 @@
   .asa-send { flex: none; width: 40px; height: 40px; font: inherit; font-size: 18px; cursor: pointer; background: #c8503c; color: #fff6dc; border: 2px solid #973a2f; box-shadow: 0 2px 0 #973a2f; }
   .asa-send:disabled { opacity: 0.45; cursor: default; }
   .asa-send.stop { background: #fffbe9; color: #3a2117; border-color: #744122; box-shadow: 0 2px 0 #744122; }
-  .asa-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .asa-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .asa-chipsel { font: inherit; font-size: 12.5px; padding: 3px 6px; background: #fffbe9; color: #3a2117; border: 2px solid #d9c49a; max-width: 48%; cursor: pointer; }
   .asa-chipsel:hover, .asa-chipsel:focus { border-color: #744122; }
+  /* The few choices that matter stay in one row (who, project, how); everything else sits behind "Lanjutan". */
+  .asa-seg { display: inline-flex; }
+  .asa-seg button { font: inherit; font-size: 12.5px; padding: 3px 9px; cursor: pointer; background: #fffbe9; color: #3a2117; border: 2px solid #d9c49a; }
+  .asa-seg button + button { margin-left: -2px; }
+  .asa-seg button.on { background: #744122; color: #fff6dc; border-color: #744122; position: relative; }
+  .asa-seg button[hidden] { display: none; }
+  .asa-seg.dim button.on { background: #fffbe9; color: #3a2117; border-color: #d9c49a; }
+  .asa-advbtn { margin-left: auto; }
+  .asa-advdot { display: inline-block; width: 7px; height: 7px; margin-left: 4px; background: #c8503c; vertical-align: 1px; }
+  .asa-advdot[hidden] { display: none; }
+  .asa-adv { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #d9c49a; }
+  .asa-adv[hidden] { display: none; }
   .asa-pill { font-size: 12px; padding: 2px 8px; background: #e6d3a6; border: 1px solid #c9a877; }
   .asa-plane { position: fixed; left: 0; top: 0; z-index: 1200; width: 28px; height: 28px; pointer-events: none; will-change: transform; }
   .asa-spark { position: fixed; z-index: 1199; width: 5px; height: 5px; background: #f2c94c; pointer-events: none; animation: asa-spark 0.6s ease-out forwards; }
@@ -328,6 +340,9 @@
   .asa-deny-row code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: #fff6dc; padding: 1px 5px; }
   .asa-deny-row small { opacity: 0.7; }
   .asa-group { font-size: 12px; opacity: 0.65; margin: 8px 2px 0; text-transform: none; }
+  .asa-snip { font-size: 12px; line-height: 1.35; opacity: 0.85; white-space: normal; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+  .asa-snip mark { background: #ffe58a; color: inherit; padding: 0 1px; }
+  .asa-snip i { font-style: normal; opacity: 0.6; margin-right: 4px; }
   .asa-plain .asa-letter-body b { font-size: 15px; font-weight: 600; }
   .asa-plain .asa-letter-body div, .asa-plain .asa-letter-status, .asa-plain .asa-note, .asa-plain .asa-muted { font-size: 13px; }
   .asa-plain .asa-chat-title b { font-size: 17px; font-weight: 600; }
@@ -335,6 +350,11 @@
   .asa-plain .asa-btn, .asa-plain .asa-chip, .asa-plain .asa-chipsel, .asa-plain .asa-filters select, .asa-plain .asa-filters input,
   .asa-plain .asa-side input[type="search"], .asa-plain .asa-comp textarea, .asa-plain .asa-mention button { font-size: 14px; }
   .asa-plain .asa-comp textarea { font-size: 15px; }
+  .asa-tpl { display: inline-flex; align-items: stretch; }
+  .asa-tpl .asa-chip:first-child { border-right-width: 1px; }
+  .asa-tpl .asa-chip.go { border-left-width: 1px; padding: 3px 6px; background: #c8503c; color: #fff6dc; border-color: #973a2f; }
+  .asa-tplbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 8px; background: #fffbe9; border: 2px solid #c9a877; margin-bottom: 6px; font-size: 13px; }
+  .asa-tplbar input[type=text] { font: inherit; font-size: 13px; padding: 3px 6px; border: 2px solid #744122; background: #fff; color: #3a2117; min-width: 0; flex: 1 1 120px; }
   .asa-chip { font: inherit; font-size: 12px; padding: 3px 8px; background: #fffbe9; color: #3a2117; border: 2px solid #d9c49a; cursor: pointer; }
   .asa-chip.on { border-color: #744122; background: #f4e6c4; }
   .asa-live { color: #3f8a36; }
@@ -687,6 +707,43 @@
     return h('div', { class: 'asa-lwrap' }, row, btn);
   }
 
+  // Search in the conversation text: after a pause in typing, the Mac looks through every transcript (search.mjs) and what it finds is listed
+  // under the title matches, with the matching words marked. It only shows chats that are not already in the list above it.
+  const deep = { q: '', results: [], loading: false, timer: null };
+  function deepLater() {
+    clearTimeout(deep.timer);
+    const q = filter.q.trim();
+    if (q.length < 2) { Object.assign(deep, { q: '', results: [], loading: false }); return; }
+    if (deep.q === q) return;
+    deep.loading = true;
+    deep.timer = setTimeout(async () => {
+      try { deep.results = (await api('GET', `/api/search?q=${encodeURIComponent(q)}`)).results ?? []; } catch { deep.results = []; }
+      deep.q = q;
+      deep.loading = false;
+      ui.refill?.();
+    }, 450);
+  }
+  const markEl = (hit) => h('div', { class: 'asa-snip' }, h('i', {}, hit.role === 'you' ? S.deepYou : S.deepClaude), hit.before, h('mark', {}, hit.match), hit.after);
+  function deepRows(shown) {
+    const q = filter.q.trim();
+    if (q.length < 2 || filter.status !== 'all') return [];
+    if (deep.loading || deep.q !== q) return [h('div', { class: 'asa-group' }, S.deepSearching)];
+    const sessions = new Map((ns.data?.sessions ?? []).map((x) => [x.id, x]));
+    const rows = [];
+    for (const r of deep.results) {
+      const l = r.letter ? letters().find((x) => x.id === r.letter) : null;
+      const x = l ? null : sessions.get(r.sessionId);
+      if (!l && !x) continue; // a session the office doesn't list (too old): nothing to open
+      if (shown.has(l ? l.id : `session:${x.id}`)) continue;
+      const head = l ? letterTitle(l) : x.title || x.project || x.id.slice(0, 8);
+      const meta = l ? [who(l), l.project, l.createdAt ? timeOf(l.createdAt) : null] : [x.project, timeOf(x.at)];
+      rows.push(h('button', { type: 'button', class: `asa-letter${sel === (l ? l.id : `session:${x.id}`) ? ' on' : ''}`, onclick: () => (l ? pickLetter(l.id) : select(`session:${x.id}`)) },
+        l ? face(l) : h('div', { class: 'asa-face envelope' }, '💬'),
+        h('div', { class: 'asa-letter-body' }, h('b', {}, head), h('div', {}, meta.filter(Boolean).join(' · ')), ...r.hits.slice(0, 2).map(markEl))));
+    }
+    return rows.length ? [h('div', { class: 'asa-group' }, S.deepTitle), ...rows] : [];
+  }
+
   let bulkArmedUntil = 0;
   function chatRows(container) {
     const archiveMode = filter.status === 'archived';
@@ -740,6 +797,9 @@
         h('div', { class: 'asa-letter-status' }, status));
       out.push(busy(l) ? row : rowWrap(row, l.report ? { t: 'report', id: l.day } : { t: 'letter', id: l.id }, archiveMode));
     }
+    const shown = new Set(items.map((it) => (it.kind === 'session' ? `session:${it.x.id}` : it.kind === 'letter' ? it.l.id : '')));
+    const more = deepRows(shown);
+    out.push(...more);
     container.replaceChildren(...(out.length ? out : [h('p', { class: 'asa-muted' }, filter.status === 'archived' && !filter.q ? S.emptyArchive : letters().length || ns.data?.sessions?.length ? S.noMatch : S.empty)]));
   }
 
@@ -749,7 +809,7 @@
     const paintBadge = () => { const n = unread(); badge.textContent = n > 9 ? '9+' : String(n); badge.style.display = n ? '' : 'none'; };
     ui.refill = () => { chatRows(rows); paintBadge(); };
     const search = h('input', { type: 'search', placeholder: S.search, value: filter.q, 'aria-label': S.search });
-    search.oninput = () => { filter.q = search.value; ui.refill(); };
+    search.oninput = () => { filter.q = search.value; deepLater(); ui.refill(); };
     // The status filter is one small menu next to the search box (five chips used to take two rows).
     const statusSel = h('select', { class: 'asa-chipsel asa-statussel', title: S.filterTip, 'aria-label': S.filterTip },
       [['all', S.fAll], ['running', S.fRunning], ['awaiting', S.fAwaiting], ['done', S.fDone], ['archived', S.fArchived]].map(([v, t]) => h('option', { value: v }, t)));
@@ -763,6 +823,7 @@
     // The tools (schedules, token limits, tidy Downloads) live in one labelled menu instead of a row of icon-only buttons.
     const closeMenu = () => ui.side.querySelector('.asa-menu')?.remove();
     const menuItems = [
+      { icon: '⚡', label: S.tplMenu, desc: S.tplTip, run: () => ns.templates?.open() },
       { icon: '⏰', label: S.menuSched, desc: S.schedTip, run: () => ns.schedule?.open() },
       { icon: '💰', label: S.menuBudget, desc: S.budgetTip, run: () => ns.budget?.open() },
       { icon: '🧹', label: S.menuTidy, desc: S.tidyTip, run: () => { prefs.cwd = '@downloads'; savePrefs(); setDraft(S.tidyDraft, 'new'); select('new'); setTimeout(() => ui.comp?.querySelector('textarea')?.focus(), 60); } },
@@ -896,7 +957,7 @@
       fillHead(l);
     }
     // Thread
-    const threadKey = JSON.stringify([sel, l?.status, l?.thread?.length, l?.progress, l?.error, l?.tokens, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join(), (l?.asks ?? []).map((d) => d.id + d.state).join(), l?.wt?.state, JSON.stringify(l?.wtSummary?.files ?? []).length, wtOpen.has(l?.id), [...exactOpen].join()]);
+    const threadKey = JSON.stringify([sel, tplList ? tplList.length : -1, l?.status, l?.thread?.length, l?.progress, l?.error, l?.tokens, notice, options ? 1 : 0, l?.text?.length, (l?.denials ?? []).map((d) => d.id + d.state).join(), (l?.asks ?? []).map((d) => d.id + d.state).join(), l?.wt?.state, JSON.stringify(l?.wtSummary?.files ?? []).length, wtOpen.has(l?.id), [...exactOpen].join()]);
     if (force || ui.keys.thread !== threadKey) {
       ui.keys.thread = threadKey;
       const box = ui.thread;
@@ -981,13 +1042,44 @@
     try { ns.markdown.render(el, String(text ?? '').replace(/!\[([^\]]*)\]\((https?:[^)\s]*)\)/gi, '[$1]($2)')); } catch { el.textContent = text; }
     return el;
   }
+  // ── Task templates: the chips on the New chat screen (⚡ name fills the form, ▶ sends it) ──
+  let tplList = null;
+  let tplLoading = false;
+  async function loadTemplates() {
+    if (!ns.templates) { tplList = []; return; }
+    tplLoading = true;
+    try { tplList = await ns.templates.list(true); } catch { tplList = []; }
+    tplLoading = false;
+    if (panel && sel === 'new') refreshMain();
+  }
+  function applyTemplate(t, sendNow) {
+    const staff = options?.staff ?? [];
+    prefs.agent = t.agent && staff.some((m) => m.agent === t.agent) ? t.agent : '';
+    if (t.cwd && (options?.projects ?? []).some((p) => p.cwd === t.cwd)) prefs.cwd = t.cwd;
+    prefs.modes = { ...prefs.modes, [prefs.agent]: t.mode };
+    prefs.model = t.model ?? '';
+    if (t.perm && t.perm !== 'bypass') prefs.perm = t.perm;
+    setDraft(t.prompt, 'new');
+    fillComposer(null);
+    const ta = ui.comp?.querySelector('textarea');
+    ta?.focus();
+    if (sendNow) ui.comp?.querySelector('.asa-send')?.click();
+  }
+
   function fillThread(l) {
     const box = ui.thread;
     const out = [];
     if (sel === 'new') {
       const first = memberOf(prefs.agent ?? '')?.name ?? '';
       out.push(h('div', { class: 'asa-brow' }, smallFace({ agent: options?.staff?.find((x) => x.director)?.agent ?? null }), h('div', { class: 'asa-b agent' }, h('div', { class: 'asa-b-text' }, S.greeting(first)))));
-      out.push(h('div', { class: 'asa-suggest' }, S.suggestions.map((t) => h('button', { type: 'button', class: 'asa-chip', onclick: () => { setDraft(t); fillComposer(null); ui.comp.querySelector('textarea')?.focus(); } }, t))));
+      if (tplList === null && !tplLoading) loadTemplates();
+      const tpls = tplList?.length ? tplList : null;
+      out.push(h('div', { class: 'asa-suggest' }, tpls
+        ? [...tpls.map((t) => h('span', { class: 'asa-tpl', title: t.prompt },
+          h('button', { type: 'button', class: 'asa-chip', onclick: () => applyTemplate(t, false) }, `⚡ ${t.name}`),
+          h('button', { type: 'button', class: 'asa-chip go', title: S.tplRun, 'aria-label': `${S.tplRun}: ${t.name}`, onclick: () => applyTemplate(t, true) }, '▶'))),
+          h('button', { type: 'button', class: 'asa-chip', title: S.tplEdit, 'aria-label': S.tplEdit, onclick: () => ns.templates?.open() }, '⚙')]
+        : S.suggestions.map((t) => h('button', { type: 'button', class: 'asa-chip', onclick: () => { setDraft(t); fillComposer(null); ui.comp.querySelector('textarea')?.focus(); } }, t))));
     } else if (l.report) {
       out.push(h('div', { class: 'asa-b agent' }, mdText(l.text)));
     } else {
@@ -1117,6 +1209,56 @@
         h('button', { type: 'button', class: 'asa-btn', onclick: () => answer('deny') }, S.askDeny)));
   }
 
+  /**
+   * Lays the composer's choices out in two levels. The row you always see has who, the project, and how it is done as a small switch
+   * (⚡ Langsung / 📝 Rencana / 🗣 Rapat for Shades); the rest (`adv`, plus "Cuma laporan") sits behind a "Lanjutan" button that remembers
+   * whether it was open, with a red dot when something in there is not at its default. `modeSel` stays the one place the mode lives.
+   * Returns { advBox, sync }: put advBox under the row and call sync() whenever the mode or the person changed from code.
+   */
+  function layoutChips(chips, { who, proj, modeSel, isDirector, adv, isCustom }) {
+    const seg = h('div', { class: 'asa-seg', role: 'group', 'aria-label': S.mode });
+    const segBtns = ['auto', 'plan', 'meeting'].map((v) => h('button', { type: 'button', 'data-m': v, title: S.chipModes[v] }, S.segLabel[v]));
+    seg.append(...segBtns);
+    const reportBox = h('input', { type: 'checkbox' });
+    const reportLab = h('label', { class: 'asa-chipsel', title: S.reportTip, style: { display: 'inline-flex', gap: '4px', alignItems: 'center' } }, reportBox, S.reportChip);
+    const dot = h('i', { class: 'asa-advdot', title: S.advCustom, hidden: '' });
+    const advLbl = h('span', {}, `⚙ ${S.advLabel} ▾`);
+    const advBtn = h('button', { type: 'button', class: 'asa-chipsel asa-advbtn', title: S.advTip, 'aria-label': S.advTip, 'aria-expanded': 'false' }, advLbl, dot);
+    const advBox = h('div', { class: 'asa-adv' }, ...adv, reportLab);
+    let before = 'auto'; // the mode to go back to when "Cuma laporan" is unticked
+    const paintAdv = () => {
+      const open = !advBox.hidden;
+      advLbl.textContent = `⚙ ${S.advLabel} ${open ? '▴' : '▾'}`;
+      advBtn.setAttribute('aria-expanded', String(open));
+      dot.hidden = !isCustom();
+    };
+    const sync = () => {
+      const m = modeSel.value;
+      if (m !== 'report') before = m;
+      for (const b of segBtns) { b.classList.toggle('on', b.dataset.m === m); if (b.dataset.m === 'meeting') b.hidden = !isDirector(); }
+      seg.classList.toggle('dim', m === 'report');
+      reportBox.checked = m === 'report';
+      const hide = modeSel.style.display === 'none'; // the Downloads folder has no "how"
+      seg.style.display = hide ? 'none' : '';
+      reportLab.style.display = hide ? 'none' : '';
+      paintAdv();
+    };
+    const setMode = (v) => {
+      if (![...modeSel.options].some((o) => o.value === v)) return;
+      modeSel.value = v;
+      modeSel.dispatchEvent(new Event('change'));
+      sync();
+    };
+    for (const b of segBtns) b.onclick = () => setMode(b.dataset.m);
+    reportBox.onchange = () => setMode(reportBox.checked ? 'report' : before);
+    advBox.hidden = prefs.adv !== true;
+    advBtn.onclick = () => { advBox.hidden = !advBox.hidden; prefs.adv = !advBox.hidden; savePrefs(); paintAdv(); };
+    advBox.addEventListener('change', paintAdv);
+    chips.replaceChildren(who, proj, seg, advBtn);
+    sync();
+    return { advBox, sync };
+  }
+
   function fillComposer(l) {
     const comp = ui.comp;
     comp.replaceChildren();
@@ -1212,6 +1354,7 @@
       styleSel.value = prefs.style ?? 'solo';
       const commitBox = h('input', { type: 'checkbox', id: 'asa-commit' });
       const commitLab = h('label', { class: 'asa-chipsel', for: 'asa-commit', title: S.commitTip, style: { display: 'inline-flex', gap: '4px', alignItems: 'center' } }, commitBox, S.commitChip);
+      let syncLayout = () => {};
       const member = () => staff.find((m) => m.agent === whoSel.value) ?? null;
       const defaultMode = () => prefs.modes?.[whoSel.value] ?? (member()?.director ? 'plan' : 'auto');
       // "Rapat dulu" (a real team meeting) is Shades' alone: the others don't get that option.
@@ -1233,6 +1376,7 @@
         for (const el of [modeSel, whoSel, commitLab, permSel, isoSel]) el.style.display = dl ? 'none' : '';
         styleSel.style.display = !dl && member()?.director ? '' : 'none';
         ta.placeholder = dl ? S.dlPh : S.placeholder;
+        syncLayout();
       };
       const update = () => {
         fillModes();
@@ -1240,6 +1384,7 @@
         styleSel.style.display = member()?.director ? '' : 'none';
         const access = member()?.access ?? options.general?.access ?? ['read'];
         whoSel.title = `${S.who} — ${S.canDo(access.map((a) => S.access[a] ?? a).join(', '))}`;
+        syncLayout();
       };
       whoSel.onchange = () => { prefs.agent = whoSel.value; savePrefs(); update(); syncDl(); };
       const setWho = (agent) => {
@@ -1253,12 +1398,41 @@
         whoSel.classList.add('asa-flash');
       };
       projSel.onchange = () => { prefs.cwd = projSel.value; savePrefs(); syncDl(); };
-      modeSel.onchange = () => { prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value }; savePrefs(); modeSel.title = modeSel.value === 'meeting' ? S.meetTip : S.mode; };
+      modeSel.onchange = () => { prefs.modes = { ...prefs.modes, [whoSel.value]: modeSel.value }; savePrefs(); modeSel.title = modeSel.value === 'meeting' ? S.meetTip : S.mode; syncLayout(); };
       styleSel.onchange = () => { prefs.style = styleSel.value; savePrefs(); };
       update();
       syncDl();
       Object.assign(controls, { whoSel, projSel, modeSel, modelSel, permSel, isoSel, styleSel, commitBox, member, setWho });
-      chips.append(whoSel, projSel, modeSel, modelSel, permSel, isoSel, styleSel, commitLab);
+      // 💾 keeps what is written, with these choices, as a template.
+      const saveTpl = h('button', { type: 'button', class: 'asa-chipsel', title: S.tplSave, 'aria-label': S.tplSave }, '💾');
+      saveTpl.onclick = () => {
+        if (chips.parentElement?.querySelector('.asa-tplbar')) return chips.parentElement.querySelector('.asa-tplbar').remove();
+        if (!ta.value.trim()) { notice = S.tplNeedText; refreshMain(); return; }
+        const nameIn = h('input', { type: 'text', maxlength: '40', placeholder: S.tplName, value: ta.value.trim().split('\n')[0].slice(0, 40) });
+        const keep = h('input', { type: 'checkbox', id: 'asa-tpl-keep' });
+        const msg = h('span', {});
+        const ok = h('button', { type: 'button', class: 'asa-btn primary' }, S.tplOk);
+        const bar = h('div', { class: 'asa-tplbar' }, nameIn, h('label', { for: 'asa-tpl-keep' }, keep, ' ', S.tplKeepProject), ok, msg);
+        ok.onclick = async () => {
+          ok.disabled = true;
+          try {
+            await api('POST', '/api/templates', { name: nameIn.value, prompt: ta.value, agent: whoSel.value || null, cwd: keep.checked ? projSel.value : '', mode: modeSel.value, model: modelSel.value || null, perm: permSel.value });
+            ns.templates?.invalidate?.();
+            tplList = null;
+            msg.textContent = S.tplSaved;
+            setTimeout(() => { bar.remove(); if (sel === 'new') refreshMain(); }, 900);
+          } catch (err) { msg.textContent = errorText(err); ok.disabled = false; }
+        };
+        chips.before(bar);
+        nameIn.focus();
+        nameIn.select();
+      };
+      const lay = layoutChips(chips, {
+        who: whoSel, proj: projSel, modeSel, isDirector: () => !!member()?.director, adv: [modelSel, permSel, isoSel, styleSel, commitLab, saveTpl],
+        isCustom: () => !!modelSel.value || permSel.value !== 'manual' || isoSel.value === 'on' || commitBox.checked || (styleSel.style.display !== 'none' && styleSel.value === 'delegate') || modeSel.value === 'report',
+      });
+      syncLayout = lay.sync;
+      controls.advBox = lay.advBox;
     } else {
       const swappable = !l.readOnlyDir && l.kind !== 'tidy' && !locked;
       if (!swappable) {
@@ -1282,20 +1456,25 @@
         const styleSel = h('select', { class: 'asa-chipsel', title: S.style, 'aria-label': S.style }, Object.entries(S.chipStyles).map(([v, t]) => h('option', { value: v }, t)));
         styleSel.value = l.style === 'delegate' ? 'delegate' : 'solo';
         const showStyle = () => { styleSel.style.display = staff.find((m) => m.agent === whoSel.value)?.director ? '' : 'none'; };
-        whoSel.onchange = () => { showStyle(); fillModes(); };
+        const permPick = permSelect(l.perm, chips, null);
+        controls.permSel = permPick;
+        let lay = { sync: () => {} };
+        whoSel.onchange = () => { showStyle(); fillModes(); lay.sync(); };
         showStyle();
         fillModes();
         Object.assign(controls, { whoSel, modeSel, modelSel, styleSel });
-        chips.append(whoSel, h('span', { class: 'asa-pill', title: `${l.cwd}\n${S.folderLocked}` }, `📁 ${l.project}`), modeSel, modelSel, styleSel);
+        lay = layoutChips(chips, {
+          who: whoSel, proj: h('span', { class: 'asa-pill', title: `${l.cwd}\n${S.folderLocked}` }, `📁 ${l.project}`), modeSel, isDirector: () => !!staff.find((m) => m.agent === whoSel.value)?.director, adv: [modelSel, styleSel, permPick],
+          isCustom: () => !!modelSel.value || permPick.value !== 'manual' || (styleSel.style.display !== 'none' && styleSel.value === 'delegate') || modeSel.value === 'report',
+        });
+        controls.advBox = lay.advBox;
       }
-      // The permission mode can be changed between replies (it applies to the next run), except in Downloads where it is read-only anyway.
-      if (!l.readOnlyDir && l.kind !== 'tidy' && !locked) { controls.permSel = permSelect(l.perm, chips, null); chips.append(controls.permSel); }
     }
     const sendBtn = locked
       ? h('button', { type: 'button', class: 'asa-send stop', title: S.stop, 'aria-label': S.stop, onclick: () => act(() => api('POST', `/api/tasks/${l.id}/stop`)) }, '⏹')
       : send;
-    if (attach) { chips.prepend(attach.button); comp.append(pop, attach.strip, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips); }
-    else comp.append(pop, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips);
+    if (attach) { chips.prepend(attach.button); comp.append(pop, attach.strip, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips, controls.advBox ?? ''); }
+    else comp.append(pop, h('div', { class: 'asa-comp-box' }, ta, sendBtn), chips, controls.advBox ?? '');
     grow();
     sync();
   }

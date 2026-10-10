@@ -35,7 +35,9 @@ import { createNotifier } from './macnotify.mjs';
 import * as wtlib from './worktree.mjs';
 import * as mt from './meeting.mjs';
 import { tokensOf, liveCounter, fmtTokens } from './usage.mjs';
+import { SearchIndex, MIN_QUERY } from './search.mjs';
 import * as souls from './souls.mjs';
+import { cleanTemplate, loadTemplates, MAX_TEMPLATES, newTemplate, saveTemplates } from './templates.mjs';
 import { cleanSchedule, dueAction, loadSchedules, MAX_SCHEDULES, newSchedule, nextDue, saveSchedules } from './schedules.mjs';
 
 const MAX_RUNNING = 3;
@@ -226,7 +228,7 @@ const safeEqual = (a, b) => {
  * extraDirs (always-allowed folders, e.g. the office workspace), onChange() when letters change, log.
  * Returns { port, letters(), agentMap(), stop() }.
  */
-export async function startTaskServer({ root, token, officePort, port, projects, sessions = () => [], extraDirs = [], onChange = () => {}, onNamesChange = () => {}, journal = null, log = console.log }) {
+export async function startTaskServer({ root, token, officePort, port, projects, sessions = () => [], extraDirs = [], onChange = () => {}, onNamesChange = () => {}, journal = null, searchRoot, log = console.log }) {
   const mailFile = path.join(os.homedir(), '.pixel-agents', 'asaoffice-mail.json');
   const roster = () => {
     try { return JSON.parse(fs.readFileSync(path.join(root, 'staff', 'roster.json'), 'utf8')); } catch { return { staff: [], general: { access: ['read'] } }; }
@@ -786,6 +788,15 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     });
   }
 
+  // ── Search across every conversation on this Mac (search.mjs): read once in the background, then looked up in memory ──
+  const searchIndex = new SearchIndex(searchRoot ? { root: searchRoot } : {});
+  const searchWarm = setTimeout(() => { searchIndex.update().catch(() => {}); }, 15_000);
+
+  // ── Task templates (templates.mjs): saved tasks started with one click from the mailbox ──
+  let templates = loadTemplates();
+  const saveTpl = () => saveTemplates(templates);
+  const tplOpts = () => ({ maxPrompt: MAX_PROMPT, agents: agentIds(), knownCwd: (c) => allowedDirs().some((p) => p.cwd === c), cleanModel, perms: PERMS, modes: MODES });
+
   // ── Scheduled tasks (see schedules.mjs): read-only reports or plans, fired while the office runs ──
   let schedules = loadSchedules();
   const saveSched = () => { saveSchedules(schedules); onChange(); };
@@ -798,7 +809,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     const letter = {
       id: crypto.randomUUID().slice(0, 8), agent: sch.agent, name: member?.name ?? null, cwd: sch.cwd, project: allowedDirs().find((p) => p.cwd === sch.cwd)?.name ?? path.basename(sch.cwd),
       sessionId: crypto.randomUUID(), status: 'running', read: false, createdAt: new Date().toISOString(), title: `⏰ ${sch.title}`,
-      mode: sch.mode, style: 'solo', phase: sch.mode === 'plan' ? 'plan' : 'work', commit: false, scheduled: sch.id,
+      mode: sch.mode, style: 'solo', phase: sch.mode === 'plan' ? 'plan' : 'work', commit: false, scheduled: sch.id, model: cleanModel(sch.model),
       thread: [{ from: 'you', text: sch.prompt, at: new Date().toISOString() }],
     };
     letters.unshift(letter);
@@ -952,10 +963,41 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         return send(res, 200, { native: settings.notifyMac !== false }, origin);
       }
       // Scheduled tasks
+      // Search the text of all conversations (what you typed, what Claude answered): { results: [{ sessionId, letter, mtime, hits: [{ role, at, before, match, after }] }] }
+      if (url.pathname === '/api/search' && req.method === 'GET') {
+        const q = (url.searchParams.get('q') ?? '').trim();
+        if (q.length < MIN_QUERY) return send(res, 400, { error: 'short' }, origin);
+        const byId = new Map(letters.filter((l) => l.sessionId).map((l) => [l.sessionId, l.id]));
+        const found = await searchIndex.search(q);
+        return send(res, 200, { q, results: found.map((r) => ({ ...r, letter: byId.get(r.sessionId) ?? null })) }, origin);
+      }
+      if (url.pathname === '/api/templates' && req.method === 'GET') return send(res, 200, { templates }, origin);
+      if (url.pathname === '/api/templates' && req.method === 'POST') {
+        if (templates.length >= MAX_TEMPLATES) return send(res, 429, { error: 'too many' }, origin);
+        const clean = cleanTemplate(await readBody(req), tplOpts());
+        if (!clean) return send(res, 400, { error: 'template' }, origin);
+        const t = newTemplate(clean);
+        templates.push(t);
+        saveTpl();
+        return send(res, 200, { template: t }, origin);
+      }
+      const tm = /^\/api\/templates\/([\w-]+)$/.exec(url.pathname);
+      if (tm) {
+        const t = templates.find((x) => x.id === tm[1]);
+        if (!t) return send(res, 404, { error: 'template' }, origin);
+        if (req.method === 'DELETE') { templates = templates.filter((x) => x.id !== t.id); saveTpl(); return send(res, 200, { ok: true }, origin); }
+        if (req.method === 'POST') {
+          const merged = cleanTemplate({ ...t, ...(await readBody(req)) }, tplOpts());
+          if (!merged) return send(res, 400, { error: 'template' }, origin);
+          Object.assign(t, merged);
+          saveTpl();
+          return send(res, 200, { template: t }, origin);
+        }
+      }
       if (url.pathname === '/api/schedules' && req.method === 'GET') return send(res, 200, { schedules: schedView() }, origin);
       if (url.pathname === '/api/schedules' && req.method === 'POST') {
         if (schedules.length >= MAX_SCHEDULES) return send(res, 429, { error: 'too many' }, origin);
-        const clean = cleanSchedule(await readBody(req), { maxPrompt: MAX_PROMPT, knownCwd: (c) => allowedDirs().some((p) => p.cwd === c), agents: agentIds() });
+        const clean = cleanSchedule(await readBody(req), { maxPrompt: MAX_PROMPT, knownCwd: (c) => allowedDirs().some((p) => p.cwd === c), agents: agentIds(), cleanModel });
         if (!clean) return send(res, 400, { error: 'schedule' }, origin);
         const sch = newSchedule(clean);
         // A schedule made after today's time doesn't fire retroactively: its first run is the next occurrence.
@@ -985,7 +1027,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         }
         if (req.method === 'POST' && !sm[2]) {
           const b = await readBody(req);
-          const merged = cleanSchedule({ ...sch, ...b }, { maxPrompt: MAX_PROMPT, knownCwd: (c) => allowedDirs().some((p) => p.cwd === c), agents: agentIds() });
+          const merged = cleanSchedule({ ...sch, ...b }, { maxPrompt: MAX_PROMPT, knownCwd: (c) => allowedDirs().some((p) => p.cwd === c), agents: agentIds(), cleanModel });
           if (!merged) return send(res, 400, { error: 'schedule' }, origin);
           Object.assign(sch, merged);
           saveSched();
@@ -999,7 +1041,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
         // Décor upkeep is computed here from the server's own shop state, not trusted from the client: it's a small,
         // flat daily bill (see shop.mjs's dailyUpkeep) for every permanent décor piece already owned.
         const upkeep = dailyUpkeep(loadShop().decor);
-        const r = collectIncome(b.through, b.income ?? b.amount, b.salary ?? 0, upkeep);
+        const r = collectIncome(b.through, b.income ?? b.amount, b.salary ?? 0, upkeep, b.freelance ?? 0);
         return r ? send(res, 200, { ...r.ledger, paid: r.paid, before: r.before ?? r.ledger.kas, upkeep }, origin) : send(res, 400, { error: 'collect' }, origin);
       }
       // Archiving chats that aren't mailbox letters (outside Claude Code sessions, daily reports): { kind: 'sessions' | 'reports', id, archived }
@@ -1413,6 +1455,7 @@ export async function startTaskServer({ root, token, officePort, port, projects,
     schedules: schedView,
     stop() {
       clearInterval(schedTimer);
+      clearTimeout(searchWarm);
       for (const timer of holds.values()) clearTimeout(timer);
       for (const [id, child] of running) {
         const l = letters.find((x) => x.id === id);
